@@ -154,4 +154,39 @@ With the hybrid networking configuration in `firebase.json`, Firebase Hosting re
 
 Deploy the static assets by running the following command from the repository root:
 
-    firebase deploy --only hosting
+
+---
+
+## Authentication & Project Management FAQ
+
+### I am getting "Error: An unexpected error has occurred" when running firebase commands.
+This is often caused by a timeout during the Firebase CLI's automated telemetry ping. Disable usage tracking to fix this:
+```bash
+# Disable usage tracking permanently
+sed -i 's/"usage": true/"usage": false/' ~/.config/configstore/firebase-tools.json
+```
+
+### How do I switch Firebase/GCloud accounts?
+The CLI tools are separate. Use the following commands to manage accounts:
+
+* **Google Cloud (gcloud):**
+  ```bash
+  gcloud auth login                # Log in as a new user
+  gcloud auth list                 # View all accounts
+  gcloud config set account <email> # Switch active account
+  ```
+
+* **Firebase CLI:**
+  ```bash
+  firebase login:add               # Authorize additional account
+  firebase login:list              # List authorized accounts
+  firebase login:use <email>       # Switch active account
+  ```
+
+### How do I ensure I'm using the right project?
+To list all projects you have access to, and set the default for your current directory:
+```bash
+firebase projects:list
+firebase use <project-id>
+```
+Your current project is also stored in `.firebaserc`. Ensure the `default` key matches your target `project-id`.
