@@ -71,7 +71,15 @@ We enforce a three-part separation:
 3. **Ephemeral DOM Toggles:**
    * Presentation-only UI state that does not communicate with the backend or manage persistent data (such as modal open/close toggles, mobile navigation menus, or accordion disclosures) may use inline `x-data="{ open: false }"` directly in the HTML.
 
-### 3.3 Backend API Decoupling
-* The FastAPI backend remains a pure, headless JSON API.
-* Routes accept and return Pydantic models (e.g. `PingResponse`).
-* The backend does **not** serve Jinja2 templates or HTML fragments.
+### 3.4 Global Notification System (Toasts)
+For user feedback, we use a global `Alpine.store('ui')` instance that manages a transient list of notifications.
+
+* **Usage:** Trigger toasts from any Alpine component using `$store.ui.add(message, type)`:
+  ```javascript
+  // Trigger from an async handler in Alpine.data('app')
+  Alpine.store('ui').add('Operation successful', 'success');
+  Alpine.store('ui').add('An error occurred', 'error');
+  ```
+* **Supported Categories:** `success` (green), `error` (red), and `info` (indigo/default).
+* **Implementation:** The toasts are automatically managed and removed by the store after a timeout (default 4s). The container is a fixed-position div in `index.html` using `x-for` to render the notification queue.
+
