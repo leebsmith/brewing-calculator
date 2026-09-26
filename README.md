@@ -8,23 +8,30 @@ This project enforces strict architectural boundaries using Tach and utilizes uv
 
 ## Toolchain
 
-* **Frontend:** Vanilla HTML/JS (ready for Alpine/HTMX), deployed via Firebase Hosting.
+* **Frontend:** Vanilla HTML/JS augmented with Alpine.js and HTMX, deployed via Firebase Hosting.
 * **Backend:** Python 3.12+ with FastAPI, deployed via Google Cloud Run.
+* **Authentication:** Firebase Authentication (Google SSO) using short-lived Bearer tokens.
+* **Networking:** Hybrid Single-Origin Pattern via Firebase Hosting rewrites (`/api/**` to Cloud Run in production; dev CORS locally).
 * **Environment Management:** uv (Replaces pip and venv).
 * **Architecture Linting:** Tach (Enforces clean dependency injection and boundaries).
-* **Local Dev:** Firebase Local Emulator Suite.
+* **Local Dev:** Firebase Local Emulator Suite (Firestore, Auth, Hosting).
 
 ---
 
 ## Architecture
 
 The backend follows a strict Clean Architecture dependency flow, enforced at the module level:
-main (Router) → service (Business Logic) → repositories (Data Access) → schemas (Data Models)
+`main` (Router) → `auth` (Verification) / `service` (Business Logic) → `repositories` (Data Access) → `schemas` (Data Models)
 
 * **No direct database access** in the service layer.
 * **No external framework imports** in the repository or schema layers.
-* **Dependency Injection** passes the database client from main downwards.
+* **Authentication isolation:** Token verification is isolated in `app.auth` and injected via FastAPI dependencies in `app.main`.
+* **Dependency Injection** passes verified user context and the database client from `main` downwards.
 * **Boundary Rules:** Custom architecture constraints and module maps are defined locally in `backend/tach.toml`.
+
+### Hybrid Networking Pattern
+* **Production:** Firebase Hosting rewrites `/api/**` to Cloud Run (`api-backend`), providing a unified single-origin domain. CORS is eliminated and all client-side calls use clean relative paths (`/api/...`).
+* **Local Development:** Frontend assets run on `http://127.0.0.1:5000` while FastAPI runs natively on `http://127.0.0.1:8000` with local dev CORS enabled.
 
 ---
 
@@ -61,19 +68,21 @@ Local development relies on the Firebase Local Emulator Suite. You do not need G
 
 ### 1. Start the Emulators (Terminal 1 - Repository Root)
 
-From the root of the repository, start the Firestore and Hosting emulators in demo mode:
+From the root of the repository, start the Firestore, Auth, and Hosting emulators in demo mode:
 
     firebase emulators:start
 
 * **Emulator UI:** http://127.0.0.1:4000
 * **Frontend:** http://127.0.0.1:5000
+* **Auth Emulator:** http://127.0.0.1:9099
+* **Firestore Emulator:** http://127.0.0.1:8080
 
 ### 2. Start the Backend (Terminal 2 - Backend Directory)
 
-Navigate to the backend directory and start FastAPI. The injected environment variable ensures the Firebase Admin SDK connects to the local emulator instead of production:
+Navigate to the backend directory and start FastAPI. The injected environment variables ensure the Firebase Admin SDK connects to the local emulators instead of production:
 
     cd backend
-    FIRESTORE_EMULATOR_HOST="127.0.0.1:8080" uv run fastapi dev app/main.py
+    FIRESTORE_EMULATOR_HOST="127.0.0.1:8080" FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099" uv run fastapi dev app/main.py
 
 * **API Docs (Swagger UI):** http://127.0.0.1:8000/docs
 
@@ -139,12 +148,10 @@ Google Cloud Run can build your Dockerfile directly from source and deploy it in
 
 *Verification Note:* Visiting the root URL may display a `{"detail": "Not Found"}` JSON response. This is a standard FastAPI 404 error indicating no endpoint is explicitly defined for the root path (`/`). Append `/docs` to your new URL to view the interactive Swagger UI, which confirms your Python backend is successfully containerized, deployed, and serving traffic.
 
-### 5. Connect & Deploy Frontend (Firebase Hosting)
+### 5. Deploy Frontend (Firebase Hosting)
 
-Before deploying the frontend, you must tell it where the live backend is.
+With the hybrid networking configuration in `firebase.json`, Firebase Hosting rewrites `/api/**` requests to your deployed Cloud Run service automatically under your single hosting origin. No hardcoded backend URLs or CORS configurations are needed in production frontend code.
 
-1. Open `frontend/script.js`.
-2. Change the `fetch()` URL from `http://127.0.0.1:8000` to your new Cloud Run URL.
-3. Deploy the static assets by running the following command from the repository root:
+Deploy the static assets by running the following command from the repository root:
 
     firebase deploy --only hosting
