@@ -1,0 +1,17 @@
+# Python / uv
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Firebase Emulators
+firebase-export/
+firestore-debug.log
+ui-debug.log
+
+# IDEs
+.idea/
+.vscode/
+
+# OS
+.DS_Store

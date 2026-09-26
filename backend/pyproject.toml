@@ -1,0 +1,21 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "FastAPI backend for Cloud Run and Firebase"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.115.0",
+    "firebase-admin>=6.5.0",
+    "pydantic>=2.9.0",
+    "uvicorn>=0.30.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.13.1",
+    "pytest>=8.3.0",
+    "tach>=0.13.0",
+]
+[tool.pytest.ini_options]
+pythonpath = ["."]

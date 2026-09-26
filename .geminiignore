@@ -1,0 +1,4 @@
+backend/.venv/
+firebase-export/
+__pycache__/
+.git/

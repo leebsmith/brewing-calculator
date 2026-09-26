@@ -1,0 +1,31 @@
+source_roots = ["."]
+exact = true
+
+[[modules]]
+path = "app.main"
+depends_on = [
+    "app.service",
+    "app.schemas",
+    "app.database"
+]
+
+[[modules]]
+path = "app.service"
+depends_on = [
+    "app.repositories",
+    "app.schemas"
+]
+
+[[modules]]
+path = "app.repositories"
+depends_on = [
+    "app.schemas"
+]
+
+[[modules]]
+path = "app.database"
+depends_on = []
+
+[[modules]]
+path = "app.schemas"
+depends_on = []
