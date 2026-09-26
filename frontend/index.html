@@ -244,6 +244,22 @@
     </div>
   </main>
 
+  <!-- Global Toast Notification Container -->
+  <div class="fixed bottom-0 right-0 p-6 space-y-4 z-50">
+    <template x-for="toast in $store.ui.toasts" :key="toast.id">
+      <div
+        x-transition
+        class="p-4 rounded-lg shadow-lg border text-xs font-medium flex items-center space-x-3 min-w-[280px]"
+        :class="toast.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 
+                toast.type === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200' : 
+                'bg-indigo-50 text-indigo-800 border-indigo-200'"
+      >
+        <span x-text="toast.message"></span>
+        <button @click="$store.ui.remove(toast.id)" class="ml-auto hover:opacity-75">✕</button>
+      </div>
+    </template>
+  </div>
+
   <!-- Footer -->
   <footer class="border-t border-slate-200 bg-white py-4">
     <div class="max-w-4xl mx-auto px-4 text-center text-xs text-slate-400">

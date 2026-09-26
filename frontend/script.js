@@ -113,6 +113,19 @@ document.addEventListener('alpine:init', () => {
     }
   });
 
+  // Global UI Store for notifications
+  Alpine.store('ui', {
+    toasts: [],
+    add(message, type = 'info', timeout = 4000) {
+      const id = Date.now();
+      this.toasts.push({ id, message, type });
+      setTimeout(() => this.remove(id), timeout);
+    },
+    remove(id) {
+      this.toasts = this.toasts.filter(t => t.id !== id);
+    }
+  });
+
   // Main Page Interactive Component
   Alpine.data('app', () => ({
     messageInput: '',
@@ -131,10 +144,13 @@ document.addEventListener('alpine:init', () => {
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.detail || `HTTP ${res.status}: ${res.statusText}`);
+          const errMsg = errData.detail || `HTTP ${res.status}: ${res.statusText}`;
+          Alpine.store('ui').add(errMsg, 'error');
+          throw new Error(errMsg);
         }
 
         this.response = await res.json();
+        Alpine.store('ui').add('Ping processed successfully!', 'success');
       } catch (err) {
         this.error = err instanceof Error ? err.message : String(err);
       } finally {
