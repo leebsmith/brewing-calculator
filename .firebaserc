@@ -1,5 +1,5 @@
 {
   "projects": {
-    "default": "demo-monorepo"
+    "default": "mono-repo-default"
   }
 }
