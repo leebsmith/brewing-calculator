@@ -3,6 +3,8 @@ from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
 from app.main import app
 from app.database import get_db
+from app.auth import get_current_user
+from app.schemas.models import AuthenticatedUser
 
 @pytest.fixture
 def mock_db():
@@ -13,12 +15,30 @@ def mock_db():
     return mock
 
 @pytest.fixture
-def client(mock_db):
-    """Yields a TestClient with the database dependency overridden."""
-    # Swap the real get_db for our mock
+def mock_user():
+    """Returns a mock AuthenticatedUser object for offline tests."""
+    return AuthenticatedUser(
+        uid="mock_user_123",
+        email="user@example.com",
+        name="Mock User",
+        picture="https://example.com/avatar.png"
+    )
+
+@pytest.fixture
+def client(mock_db, mock_user):
+    """Yields an authenticated TestClient with both database and auth overridden."""
+    app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    
+    yield TestClient(app)
+    
+    app.dependency_overrides.clear()
+
+@pytest.fixture
+def unauthenticated_client(mock_db):
+    """Yields a TestClient with only database overridden, preserving real auth dependency."""
     app.dependency_overrides[get_db] = lambda: mock_db
     
     yield TestClient(app)
     
-    # Clean up overrides after the test completes
     app.dependency_overrides.clear()

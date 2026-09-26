@@ -3,12 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FastAPI + Alpine.js + Tailwind</title>
+  <title>FastAPI + Firebase Auth + Alpine.js + Tailwind</title>
+
+  <!-- Prevent FOUC with Alpine x-cloak -->
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
 
   <!-- Tailwind CSS (Play CDN for zero-build workflow) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Application logic registering Alpine.data components -->
+  <!-- Firebase Web SDK (Compat libraries for CDN delivery) -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+
+  <!-- Application logic defining Alpine.store and Alpine.data -->
   <script src="script.js"></script>
 
   <!-- Alpine.js (deferred CDN) -->
@@ -17,61 +26,117 @@
 <body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans antialiased">
   <!-- Top Navigation Bar -->
   <header class="bg-white border-b border-slate-200 shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-indigo-600 text-white font-bold text-sm">
+        <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-indigo-600 text-white font-bold text-sm shadow-sm">
           M
         </span>
-        <h1 class="text-lg font-semibold tracking-tight text-slate-800">Mono-Repo Starter</h1>
+        <h1 class="text-base font-semibold tracking-tight text-slate-800">Mono-Repo Starter</h1>
       </div>
 
-      <!-- Ephemeral UI Toggle: Presentation-only modal state -->
-      <div x-data="{ showInfo: false }">
-        <button
-          type="button"
-          @click="showInfo = true"
-          class="text-xs font-medium text-slate-600 hover:text-indigo-600 transition-colors px-2.5 py-1.5 rounded-md hover:bg-slate-100 border border-slate-200"
-        >
-          Architecture Info
-        </button>
-
-        <!-- Ephemeral Modal Backdrop & Panel -->
-        <div
-          x-show="showInfo"
-          x-transition.opacity.duration.200ms
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-          style="display: none;"
-          @keydown.escape.window="showInfo = false"
-        >
-          <div
-            @click.outside="showInfo = false"
-            class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 border border-slate-200"
+      <div class="flex items-center space-x-3">
+        <!-- Ephemeral UI Toggle: Architecture modal state -->
+        <div x-data="{ showInfo: false }">
+          <button
+            type="button"
+            @click="showInfo = true"
+            class="text-xs font-medium text-slate-600 hover:text-indigo-600 transition-colors px-2.5 py-1.5 rounded-md hover:bg-slate-100 border border-slate-200"
           >
-            <div class="flex items-center justify-between">
-              <h2 class="text-base font-semibold text-slate-900">Frontend Stack & Conventions</h2>
-              <button
-                @click="showInfo = false"
-                class="text-slate-400 hover:text-slate-600 text-sm font-semibold"
-                aria-label="Close modal"
-              >
-                ✕
-              </button>
-            </div>
-            <div class="text-xs text-slate-600 space-y-2">
-              <p><strong>Zero-Build Architecture:</strong> Tailwind Play CDN and Alpine.js via CDN script tags.</p>
-              <p><strong>Alpine.data():</strong> Async backend API calls and application state live in <code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">script.js</code>.</p>
-              <p><strong>Ephemeral Toggles:</strong> This modal is driven by an inline <code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">x-data="{ showInfo: false }"</code> attribute.</p>
-            </div>
-            <div class="pt-2 flex justify-end">
-              <button
-                type="button"
-                @click="showInfo = false"
-                class="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors"
-              >
-                Close
-              </button>
+            Architecture Info
+          </button>
+
+          <!-- Ephemeral Modal Backdrop & Panel -->
+          <div
+            x-show="showInfo"
+            x-transition.opacity.duration.200ms
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+            style="display: none;"
+            @keydown.escape.window="showInfo = false"
+          >
+            <div
+              @click.outside="showInfo = false"
+              class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 border border-slate-200"
+            >
+              <div class="flex items-center justify-between">
+                <h2 class="text-base font-semibold text-slate-900">Auth & Frontend Architecture</h2>
+                <button
+                  @click="showInfo = false"
+                  class="text-slate-400 hover:text-slate-600 text-sm font-semibold"
+                  aria-label="Close modal"
+                >
+                  ✕
+                </button>
+              </div>
+              <div class="text-xs text-slate-600 space-y-2">
+                <p><strong>Zero-Build Frontend:</strong> Tailwind Play CDN, Firebase SDK CDN, and Alpine.js.</p>
+                <p><strong>Global Auth Store:</strong> Managed via <code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">$store.auth</code> and Firebase Auth (emulator port 9099 locally).</p>
+                <p><strong>Token Injection:</strong> Handled by <code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">apiFetch()</code>, passing fresh Bearer ID tokens to FastAPI.</p>
+                <p><strong>Protected Backend:</strong> FastAPI validates JWTs via Firebase Admin SDK with strict Tach boundaries.</p>
+              </div>
+              <div class="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  @click="showInfo = false"
+                  class="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
+        </div>
+
+        <!-- Global Auth Controls bound to $store.auth -->
+        <div class="flex items-center">
+          <!-- Auth Loading State -->
+          <template x-if="$store.auth.loading">
+            <span class="inline-flex items-center text-xs text-slate-400 space-x-1.5 px-2 py-1">
+              <svg class="animate-spin h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Checking session...</span>
+            </span>
+          </template>
+
+          <!-- Authenticated User Profile -->
+          <template x-if="!$store.auth.loading && $store.auth.user">
+            <div class="flex items-center space-x-3">
+              <div class="flex items-center space-x-2">
+                <template x-if="$store.auth.user.photoURL">
+                  <img :src="$store.auth.user.photoURL" alt="User avatar" class="h-7 w-7 rounded-full border border-slate-200" />
+                </template>
+                <template x-if="!$store.auth.user.photoURL">
+                  <span class="h-7 w-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold" x-text="$store.auth.user.displayName.charAt(0)"></span>
+                </template>
+                <span class="text-xs font-medium text-slate-700 hidden sm:inline" x-text="$store.auth.user.displayName"></span>
+              </div>
+              <button
+                type="button"
+                @click="$store.auth.signOut()"
+                class="text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-md border border-rose-200 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </template>
+
+          <!-- Unauthenticated Sign-In Button -->
+          <template x-if="!$store.auth.loading && !$store.auth.user">
+            <button
+              type="button"
+              @click="$store.auth.signInWithGoogle()"
+              class="inline-flex items-center space-x-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-md shadow-sm transition-colors"
+            >
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+              <span>Sign in with Google</span>
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -80,11 +145,26 @@
   <!-- Main Content Container: Alpine.data Component -->
   <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 lg:p-8" x-data="app">
     <div class="max-w-xl mx-auto space-y-6">
-      <!-- Intro Card -->
+      <!-- Auth Status Banner -->
+      <div
+        x-cloak
+        x-show="!$store.auth.loading && !$store.auth.user"
+        class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800 space-y-1"
+      >
+        <div class="font-semibold flex items-center space-x-1.5">
+          <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+          <span>Authentication Required</span>
+        </div>
+        <p class="text-amber-700">
+          The <code class="font-mono bg-amber-100 px-1 py-0.5 rounded">/api/ping</code> endpoint requires a valid Google Firebase Bearer token. Sign in with Google above to send authenticated requests.
+        </p>
+      </div>
+
+      <!-- Ping Card -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <h2 class="text-lg font-semibold text-slate-900 mb-1">FastAPI Backend Ping</h2>
+        <h2 class="text-base font-semibold text-slate-900 mb-1">FastAPI Backend Ping</h2>
         <p class="text-xs text-slate-500 mb-4">
-          Send a request to the headless FastAPI service and receive a strongly typed JSON response.
+          Submits a message to Cloud Run / FastAPI, which enforces token authentication and persists the ping with your user ID.
         </p>
 
         <!-- Ping Form -->
@@ -137,7 +217,7 @@
           <div class="flex items-center justify-between">
             <span class="inline-flex items-center text-xs font-semibold text-emerald-700 space-x-1.5">
               <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-              <span>200 OK — Response Received</span>
+              <span>200 OK — Authenticated Response</span>
             </span>
             <span class="text-xs text-slate-400 font-mono" x-text="formatTimestamp(response.timestamp)"></span>
           </div>
@@ -145,6 +225,7 @@
           <div class="bg-white rounded-lg border border-slate-200 p-3 font-mono text-xs text-slate-800 space-y-1">
             <div><span class="text-slate-400">ID:</span> <span x-text="response.id" class="text-indigo-600"></span></div>
             <div><span class="text-slate-400">Message:</span> <span x-text="response.message" class="font-semibold"></span></div>
+            <div><span class="text-slate-400">User ID:</span> <span x-text="response.user_id" class="text-emerald-700 font-semibold"></span></div>
             <div><span class="text-slate-400">Timestamp:</span> <span x-text="response.timestamp"></span></div>
           </div>
         </div>
@@ -155,7 +236,7 @@
         <div class="bg-white rounded-xl border border-rose-200 bg-rose-50/40 shadow-sm p-4 text-xs text-rose-700 space-y-1">
           <div class="font-semibold flex items-center space-x-1.5">
             <span class="h-2 w-2 rounded-full bg-rose-500"></span>
-            <span>Request Failed</span>
+            <span>Request Error</span>
           </div>
           <p x-text="error" class="text-rose-600"></p>
         </div>

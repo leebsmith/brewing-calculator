@@ -2,7 +2,7 @@ import time
 from typing import Any
 from app.schemas.models import PingResponse
 
-def save_ping(db: Any, message: str) -> PingResponse:
+def save_ping(db: Any, message: str, user_id: str | None = None) -> PingResponse:
     """Writes a ping record to Firestore and returns the mapped schema."""
     collection_ref = db.collection("pings")
     
@@ -13,7 +13,8 @@ def save_ping(db: Any, message: str) -> PingResponse:
     data = {
         "id": doc_ref.id,
         "message": message,
-        "timestamp": timestamp
+        "timestamp": timestamp,
+        "user_id": user_id,
     }
     
     # Execute the write

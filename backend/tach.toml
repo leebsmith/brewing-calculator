@@ -6,7 +6,14 @@ path = "app.main"
 depends_on = [
     "app.service",
     "app.schemas",
-    "app.database"
+    "app.database",
+    "app.auth"
+]
+
+[[modules]]
+path = "app.auth"
+depends_on = [
+    "app.schemas"
 ]
 
 [[modules]]
