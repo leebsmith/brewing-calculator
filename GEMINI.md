@@ -1,6 +1,6 @@
 # Gemini Context & Assistant Guidelines
 
-This project is a mono-repo containing a vanilla HTML/JS frontend and a FastAPI/Python backend, designed for Firebase Hosting and Google Cloud Run. Read and adhere to these rules before suggesting modifications.
+This project is a mono-repo containing an Alpine.js/Tailwind CSS static frontend and a FastAPI/Python backend, designed for Firebase Hosting and Google Cloud Run. Read and adhere to these rules before suggesting modifications.
 
 ## 1. Interaction Style & Code Generation
 * When asked "how to achieve" a programming task or solve a problem, DO NOT automatically generate code.
@@ -9,10 +9,21 @@ This project is a mono-repo containing a vanilla HTML/JS frontend and a FastAPI/
 
 ## 2. Toolchain & Environments
 * Do not suggest commands using `pip`, `venv`, or `virtualenv`.
-* This project exclusively uses `uv` for dependency and environment management.
-* Always formulate commands as `uv run <command>`, `uv add <package>`, or `uv sync`.
+* This project exclusively uses `uv` for backend dependency and environment management.
+* Always formulate backend commands as `uv run <command>`, `uv add <package>`, or `uv sync`.
+* The frontend has no Node.js or `npm` build toolchain. Do not introduce `package.json`, `npm`, `npx`, or frontend bundlers.
 
-## 3. Backend Architecture & Tach Rules
+## 3. Frontend Architecture & Conventions
+The frontend is a lightweight, zero-build static application hosted via Firebase Hosting. It pairs **Alpine.js** for reactive UI state with **Tailwind CSS (Play CDN)** for styling.
+
+**Key Conventions:**
+* **Zero-Build Delivery:** Dependencies are loaded strictly via CDN scripts (`<script src="https://cdn.tailwindcss.com"></script>` and `<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>`).
+* **Async API Interactions & App State (`Alpine.data`):** Core application state, async `fetch` requests to the FastAPI backend, response handling, and error states belong in `frontend/script.js` encapsulated within `Alpine.data(...)` components.
+* **Clean, Declarative Templates:** `frontend/index.html` stays focused on layout, structure, and Tailwind utility styling, binding to component state via Alpine directives (`x-bind`, `x-on`, `x-model`, `x-text`).
+* **Ephemeral DOM Toggles:** Presentation-only UI state (such as dropdown visibility, modal toggles, or expandable menus) may use lightweight inline `x-data="{ open: false }"` attributes directly in markup.
+* **Headless Decoupling:** The frontend remains fully decoupled from the backend. The FastAPI service is a headless JSON API and must not return HTML partials or Jinja2 templates.
+
+## 4. Backend Architecture & Tach Rules
 The Python backend enforces strict module boundaries using `Tach`. You MUST respect these rules when generating or modifying Python code. 
 
 **The Module Hierarchy:**
@@ -31,14 +42,14 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
 * `app.database` MAY ONLY import `firebase_admin` and standard libraries. It MUST NOT import internal modules.
 * `app.schemas` MUST NOT import from ANY other internal module.
 
-## 4. Hybrid Networking & CORS Rules
+## 5. Hybrid Networking & CORS Rules
 * **Production:** Firebase Hosting rewrites `/api/**` to Cloud Run, operating under a unified single origin (`https://<project>.web.app`). CORS is eliminated; all client requests must use relative paths (e.g., `/api/...`).
 * **Local Development:** The frontend runs on the Hosting emulator (`http://127.0.0.1:5000`) and the backend runs natively (`http://127.0.0.1:8000`). FastAPI enables development-scoped `CORSMiddleware` for port 5000 origins.
 
-## 5. Local Emulation & Testing
+## 6. Local Emulation & Testing
 * By default, the backend expects the Firebase Emulator Suite. Connections should assume `FIRESTORE_EMULATOR_HOST` (e.g., `127.0.0.1:8080`) and `FIREBASE_AUTH_EMULATOR_HOST` (e.g., `127.0.0.1:9099`) may be set in the environment. Do not suggest generating GCP service account keys for local dev.
 * Unit tests must utilize FastAPI's `dependency_overrides` in `conftest.py` to mock both the Firestore client (`get_db`) and authentication (`get_current_user`), ensuring tests execute entirely offline.
 
-## 6. Documentation & Planning
+## 7. Documentation & Planning
 * Centralized planning documents, design proposals, and task roadmaps reside in the `plans/` directory.
 * General project documentation and operational guides reside in the `docs/` directory.
