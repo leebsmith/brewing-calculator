@@ -3,12 +3,14 @@
  * Registers Alpine.js global auth store and components for API interactions.
  */
 
-// Firebase Configuration (Emulator-compatible default)
+// Firebase Configuration
 const firebaseConfig = {
-  apiKey: "demo-api-key",
-  authDomain: "mono-repo-default.firebaseapp.com",
-  projectId: "mono-repo-default",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyBBuDb_MHITk-wNTvwbiklhrRxFGEi04P4",
+  authDomain: "batch-brewing-calculator.firebaseapp.com",
+  projectId: "batch-brewing-calculator",
+  storageBucket: "batch-brewing-calculator.firebasestorage.app",
+  messagingSenderId: "1062737044340",
+  appId: "1:1062737044340:web:5b24e2450ac96449ee8221"
 };
 
 // Initialize Firebase App & Auth

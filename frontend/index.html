@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FastAPI + Firebase Auth + Alpine.js + Tailwind</title>
+  <title>Batch Brewing Calculator</title>
 
   <!-- Prevent FOUC with Alpine x-cloak -->
   <style>
     [x-cloak] { display: none !important; }
   </style>
 
-  <!-- Tailwind CSS (Play CDN for zero-build workflow) -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Design System Tokens & Modular Vanilla Stylesheets -->
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="style.css" />
 
   <!-- Firebase Web SDK (Compat libraries for CDN delivery) -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -23,24 +24,22 @@
   <!-- Alpine.js (deferred CDN) -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans antialiased">
+<body class="app-shell">
   <!-- Top Navigation Bar -->
-  <header class="bg-white border-b border-slate-200 shadow-sm" x-data>
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-indigo-600 text-white font-bold text-sm shadow-sm">
-          M
-        </span>
-        <h1 class="text-base font-semibold tracking-tight text-slate-800">Mono-Repo Starter</h1>
+  <header class="site-header" x-data>
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark">B</span>
+        <h1 class="brand-title">Batch Brewing Calculator</h1>
       </div>
 
-      <div class="flex items-center space-x-3">
+      <div class="header-actions">
         <!-- Ephemeral UI Toggle: Architecture modal state -->
         <div x-data="{ showInfo: false }">
           <button
             type="button"
             @click="showInfo = true"
-            class="text-xs font-medium text-slate-600 hover:text-indigo-600 transition-colors px-2.5 py-1.5 rounded-md hover:bg-slate-100 border border-slate-200"
+            class="btn btn-secondary"
           >
             Architecture Info
           </button>
@@ -49,35 +48,36 @@
           <div
             x-show="showInfo"
             x-transition.opacity.duration.200ms
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+            class="modal-backdrop"
             style="display: none;"
             @keydown.escape.window="showInfo = false"
           >
             <div
               @click.outside="showInfo = false"
-              class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 border border-slate-200"
+              class="modal-dialog"
             >
-              <div class="flex items-center justify-between">
-                <h2 class="text-base font-semibold text-slate-900">Auth & Frontend Architecture</h2>
+              <div class="modal-header">
+                <h2 class="modal-title">Auth & Frontend Architecture</h2>
                 <button
+                  type="button"
                   @click="showInfo = false"
-                  class="text-slate-400 hover:text-slate-600 text-sm font-semibold"
+                  class="btn-close"
                   aria-label="Close modal"
                 >
                   ✕
                 </button>
               </div>
-              <div class="text-xs text-slate-600 space-y-2">
-                <p><strong>Zero-Build Frontend:</strong> Tailwind Play CDN, Firebase SDK CDN, and Alpine.js.</p>
-                <p><strong>Global Auth Store:</strong> Managed via <code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">$store.auth</code> and Firebase Auth (emulator port 9099 locally).</p>
-                <p><strong>Token Injection:</strong> Handled by <code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">apiFetch()</code>, passing fresh Bearer ID tokens to FastAPI.</p>
+              <div class="modal-body">
+                <p><strong>Zero-Build Frontend:</strong> Modular Vanilla CSS (Design Tokens), Firebase SDK CDN, and Alpine.js.</p>
+                <p><strong>Global Auth Store:</strong> Managed via <code>$store.auth</code> and Firebase Auth (emulator port 9099 locally).</p>
+                <p><strong>Token Injection:</strong> Handled by <code>apiFetch()</code>, passing fresh Bearer ID tokens to FastAPI.</p>
                 <p><strong>Protected Backend:</strong> FastAPI validates JWTs via Firebase Admin SDK with strict Tach boundaries.</p>
               </div>
-              <div class="pt-2 flex justify-end">
+              <div class="modal-footer">
                 <button
                   type="button"
                   @click="showInfo = false"
-                  class="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors"
+                  class="btn btn-secondary"
                 >
                   Close
                 </button>
@@ -87,13 +87,13 @@
         </div>
 
         <!-- Global Auth Controls bound to $store.auth -->
-        <div class="flex items-center">
+        <div class="user-profile">
           <!-- Auth Loading State -->
           <template x-if="$store.auth.loading">
-            <span class="inline-flex items-center text-xs text-slate-400 space-x-1.5 px-2 py-1">
-              <svg class="animate-spin h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <span class="auth-loading">
+              <svg class="spin icon-spin" fill="none" viewBox="0 0 24 24">
+                <circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               <span>Checking session...</span>
             </span>
@@ -101,20 +101,20 @@
 
           <!-- Authenticated User Profile -->
           <template x-if="!$store.auth.loading && $store.auth.user">
-            <div class="flex items-center space-x-3">
-              <div class="flex items-center space-x-2">
+            <div class="user-profile">
+              <div class="user-meta">
                 <template x-if="$store.auth.user.photoURL">
-                  <img :src="$store.auth.user.photoURL" alt="User avatar" class="h-7 w-7 rounded-full border border-slate-200" />
+                  <img :src="$store.auth.user.photoURL" alt="User avatar" class="user-avatar" />
                 </template>
                 <template x-if="!$store.auth.user.photoURL">
-                  <span class="h-7 w-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold" x-text="$store.auth.user.displayName.charAt(0)"></span>
+                  <span class="user-avatar-placeholder" x-text="$store.auth.user.displayName.charAt(0)"></span>
                 </template>
-                <span class="text-xs font-medium text-slate-700 hidden sm:inline" x-text="$store.auth.user.displayName"></span>
+                <span class="user-name" x-text="$store.auth.user.displayName"></span>
               </div>
               <button
                 type="button"
                 @click="$store.auth.signOut()"
-                class="text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-md border border-rose-200 transition-colors"
+                class="btn btn-danger-outline"
               >
                 Sign Out
               </button>
@@ -126,9 +126,9 @@
             <button
               type="button"
               @click="$store.auth.signInWithGoogle()"
-              class="inline-flex items-center space-x-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-md shadow-sm transition-colors"
+              class="btn btn-outline"
             >
-              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24">
+              <svg class="icon-spin" style="animation: none;" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
@@ -143,34 +143,34 @@
   </header>
 
   <!-- Main Content Container: Alpine.data Component -->
-  <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 lg:p-8" x-data="app">
-    <div class="max-w-xl mx-auto space-y-6">
+  <main class="main-content" x-data="app">
+    <div class="content-stack">
       <!-- Auth Status Banner -->
       <div
         x-cloak
         x-show="!$store.auth.loading && !$store.auth.user"
-        class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800 space-y-1"
+        class="alert alert-warning"
       >
-        <div class="font-semibold flex items-center space-x-1.5">
-          <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+        <div class="alert-header">
+          <span class="alert-dot"></span>
           <span>Authentication Required</span>
         </div>
-        <p class="text-amber-700">
-          The <code class="font-mono bg-amber-100 px-1 py-0.5 rounded">/api/ping</code> endpoint requires a valid Google Firebase Bearer token. Sign in with Google above to send authenticated requests.
+        <p>
+          The <code class="alert-code">/api/ping</code> endpoint requires a valid Google Firebase Bearer token. Sign in with Google above to send authenticated requests.
         </p>
       </div>
 
       <!-- Ping Card -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <h2 class="text-base font-semibold text-slate-900 mb-1">FastAPI Backend Ping</h2>
-        <p class="text-xs text-slate-500 mb-4">
+      <div class="card">
+        <h2 class="card-title">FastAPI Backend Ping</h2>
+        <p class="card-description">
           Submits a message to Cloud Run / FastAPI, which enforces token authentication and persists the ping with your user ID.
         </p>
 
         <!-- Ping Form -->
-        <form @submit.prevent="sendPing" class="space-y-4">
-          <div>
-            <label for="ping-message" class="block text-xs font-medium text-slate-700 mb-1">
+        <form @submit.prevent="sendPing" class="form-group">
+          <div class="form-group">
+            <label for="ping-message" class="form-label">
               Custom Message
             </label>
             <input
@@ -178,22 +178,22 @@
               type="text"
               x-model="messageInput"
               placeholder="Hello Cloud Run"
-              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              class="form-input"
               :disabled="loading"
             />
           </div>
 
-          <div class="flex items-center space-x-3">
+          <div class="form-actions">
             <button
               type="submit"
               :disabled="loading"
-              class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              class="btn btn-primary btn-lg"
             >
               <span x-show="!loading">Send Ping</span>
-              <span x-show="loading" class="flex items-center space-x-1" style="display: none;">
-                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <span x-show="loading" class="btn-spinner-content" style="display: none;">
+                <svg class="spin icon-spin" fill="none" viewBox="0 0 24 24">
+                  <circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 <span>Processing...</span>
               </span>
@@ -202,7 +202,7 @@
               type="button"
               @click="clearResponse"
               x-show="response || error"
-              class="text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors"
+              class="btn btn-link"
               style="display: none;"
             >
               Clear
@@ -213,56 +213,56 @@
 
       <!-- Response Panel -->
       <template x-if="response">
-        <div class="bg-white rounded-xl border border-emerald-200 bg-emerald-50/30 shadow-sm p-5 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="inline-flex items-center text-xs font-semibold text-emerald-700 space-x-1.5">
-              <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+        <div class="panel-response">
+          <div class="panel-response-header">
+            <span class="status-badge status-badge-success">
+              <span class="status-dot status-dot-success"></span>
               <span>200 OK — Authenticated Response</span>
             </span>
-            <span class="text-xs text-slate-400 font-mono" x-text="formatTimestamp(response.timestamp)"></span>
+            <span class="panel-timestamp" x-text="formatTimestamp(response.timestamp)"></span>
           </div>
 
-          <div class="bg-white rounded-lg border border-slate-200 p-3 font-mono text-xs text-slate-800 space-y-1">
-            <div><span class="text-slate-400">ID:</span> <span x-text="response.id" class="text-indigo-600"></span></div>
-            <div><span class="text-slate-400">Message:</span> <span x-text="response.message" class="font-semibold"></span></div>
-            <div><span class="text-slate-400">User ID:</span> <span x-text="response.user_id" class="text-emerald-700 font-semibold"></span></div>
-            <div><span class="text-slate-400">Timestamp:</span> <span x-text="response.timestamp"></span></div>
+          <div class="panel-ledger">
+            <div class="ledger-row"><span class="ledger-label">ID:</span> <span x-text="response.id" class="ledger-value ledger-value-accent"></span></div>
+            <div class="ledger-row"><span class="ledger-label">Message:</span> <span x-text="response.message" class="ledger-value"></span></div>
+            <div class="ledger-row"><span class="ledger-label">User ID:</span> <span x-text="response.user_id" class="ledger-value ledger-value-success"></span></div>
+            <div class="ledger-row"><span class="ledger-label">Timestamp:</span> <span x-text="response.timestamp" class="ledger-value"></span></div>
           </div>
         </div>
       </template>
 
       <!-- Error Panel -->
       <template x-if="error">
-        <div class="bg-white rounded-xl border border-rose-200 bg-rose-50/40 shadow-sm p-4 text-xs text-rose-700 space-y-1">
-          <div class="font-semibold flex items-center space-x-1.5">
-            <span class="h-2 w-2 rounded-full bg-rose-500"></span>
+        <div class="panel-error">
+          <div class="alert-header">
+            <span class="status-dot status-dot-error"></span>
             <span>Request Error</span>
           </div>
-          <p x-text="error" class="text-rose-600"></p>
+          <p x-text="error"></p>
         </div>
       </template>
     </div>
   </main>
 
   <!-- Global Toast Notification Container -->
-  <div class="fixed bottom-0 right-0 p-6 space-y-4 z-50">
+  <div class="toast-container">
     <template x-for="toast in $store.ui.toasts" :key="toast.id">
       <div
         x-transition
-        class="p-4 rounded-lg shadow-lg border text-xs font-medium flex items-center space-x-3 min-w-[280px]"
-        :class="toast.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 
-                toast.type === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200' : 
-                'bg-indigo-50 text-indigo-800 border-indigo-200'"
+        class="toast"
+        :class="toast.type === 'success' ? 'toast-success' : 
+                toast.type === 'error' ? 'toast-error' : 
+                'toast-info'"
       >
         <span x-text="toast.message"></span>
-        <button @click="$store.ui.remove(toast.id)" class="ml-auto hover:opacity-75">✕</button>
+        <button @click="$store.ui.remove(toast.id)" class="toast-close" aria-label="Close notification">✕</button>
       </div>
     </template>
   </div>
 
   <!-- Footer -->
-  <footer class="border-t border-slate-200 bg-white py-4">
-    <div class="max-w-4xl mx-auto px-4 text-center text-xs text-slate-400">
+  <footer class="site-footer">
+    <div>
       Decoupled SPA / Headless FastAPI Architecture
     </div>
   </footer>

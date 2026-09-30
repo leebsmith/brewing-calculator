@@ -1,6 +1,6 @@
 # Gemini Context & Assistant Guidelines
 
-This project is a mono-repo containing an Alpine.js/Tailwind CSS static frontend and a FastAPI/Python backend, designed for Firebase Hosting and Google Cloud Run. Read and adhere to these rules before suggesting modifications.
+This project is a mono-repo containing vanilla JavaScript with Alpine.js and pure CSS static frontend and a FastAPI/Python backend, designed for Firebase Hosting and Google Cloud Run. Read and adhere to these rules before suggesting modifications.
 
 ## 1. Interaction Style & Code Generation
 * When asked "how to achieve" a programming task or solve a problem, DO NOT automatically generate code.
@@ -12,14 +12,15 @@ This project is a mono-repo containing an Alpine.js/Tailwind CSS static frontend
 * This project exclusively uses `uv` for backend dependency and environment management.
 * Always formulate backend commands as `uv run <command>`, `uv add <package>`, or `uv sync`.
 * The frontend has no Node.js or `npm` build toolchain. Do not introduce `package.json`, `npm`, `npx`, or frontend bundlers.
+* When running git commands in the agentic CLI, prepend GIT_PAGER=cat (e.g., GIT_PAGER=cat git diff or GIT_PAGER=cat git log -n 3) to stream output non-interactively without tripping flag-security filters or affecting your normal terminal pager settings.
 
 ## 3. Frontend Architecture & Conventions
-The frontend is a lightweight, zero-build static application hosted via Firebase Hosting. It pairs **Alpine.js** for reactive UI state with **Tailwind CSS (Play CDN)** for styling.
+The frontend is a lightweight, zero-build static application hosted via Firebase Hosting. It pairs **Alpine.js** for reactive UI state with **modular Vanilla CSS** (`tokens.css` and `style.css`) for tokenized styling, native dark mode, and zero build tools.
 
 **Key Conventions:**
-* **Zero-Build Delivery:** Dependencies are loaded strictly via CDN scripts (`<script src="https://cdn.tailwindcss.com"></script>` and `<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>`).
+* **Authoritative UI Blueprint:** All frontend templates, stylesheets, components, and state machines MUST strictly implement the patterns defined in `plans/master-frontend-ui-requirements.md`.
 * **Async API Interactions & App State (`Alpine.data`):** Core application state, async `fetch` requests to the FastAPI backend, response handling, and error states belong in `frontend/script.js` encapsulated within `Alpine.data(...)` components.
-* **Clean, Declarative Templates:** `frontend/index.html` stays focused on layout, structure, and Tailwind utility styling, binding to component state via Alpine directives (`x-bind`, `x-on`, `x-model`, `x-text`).
+* **Clean, Declarative Templates:** `frontend/index.html` stays focused on layout, structure, binding to component state via Alpine directives (`x-bind`, `x-on`, `x-model`, `x-text`).
 * **Ephemeral DOM Toggles:** Presentation-only UI state (such as dropdown visibility, modal toggles, or expandable menus) may use lightweight inline `x-data="{ open: false }"` attributes directly in markup.
 * **Headless Decoupling:** The frontend remains fully decoupled from the backend. The FastAPI service is a headless JSON API and must not return HTML partials or Jinja2 templates.
 
@@ -53,3 +54,6 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
 ## 7. Documentation & Planning
 * Centralized planning documents, design proposals, and task roadmaps reside in the `plans/` directory.
 * General project documentation and operational guides reside in the `docs/` directory.
+* **Frontend UI Single Source of Truth:** `plans/master-frontend-ui-requirements.md` is the definitive, globally authoritative, and exhaustive single source of truth for the entire frontend UI/UX architecture, design token system, responsive table implementations, 12-step FSM sequence, unit normalization engine, and accessibility standards.
+  * Historical foundational documents in `docs/` (such as `calculator-design-spec.pdf`, `SPA Wizard UI Design Plan - Google Docs.md`, and `docs/design_requirements/*`) are strictly supplemental background context.
+  * Treat `plans/master-frontend-ui-requirements.md` as exhaustive. If an edge case or detail is unspecified or conflicts with older historical files, DO NOT assume the historical documentation overrides the master plan; stop and ask the user for clarification.

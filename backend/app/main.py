@@ -6,7 +6,7 @@ from app.service import logic
 from app.auth import get_current_user
 from app.schemas.models import PingResponse, AuthenticatedUser
 
-app = FastAPI(title="Mono-Repo MWE")
+app = FastAPI(title="Batch Brewing Calculator")
 
 # Development CORS configuration
 app.add_middleware(

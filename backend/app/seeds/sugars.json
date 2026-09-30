@@ -1,0 +1,121 @@
+[
+  {
+    "id": "agave-nectar",
+    "name": "Agave Nectar",
+    "potential_sg": 1.038,
+    "color_srm": 3.0,
+    "notes": "Fructose-rich syrup from agave plants. Highly fermentable with mild neutral honey-like character."
+  },
+  {
+    "id": "brown-sugar",
+    "name": "Brown Sugar",
+    "potential_sg": 1.045,
+    "color_srm": 15.0,
+    "notes": "Sucrose with molasses content. Contributes subtle rum, caramel, and toffee character in stouts and winter warmers."
+  },
+  {
+    "id": "candi-sugar",
+    "name": "Candi Sugar",
+    "potential_sg": 1.045,
+    "color_srm": 1.0,
+    "notes": "Crystallized beet sugar popular in Belgian brewing. Lightens body while increasing ABV without harsh hot-alcohol bite."
+  },
+  {
+    "id": "candi-syrup",
+    "name": "Candi Syrup",
+    "potential_sg": 1.032,
+    "color_srm": 60.0,
+    "notes": "Caramelized invert sugar syrup essential for Belgian Dubbels and Dark Strong Ales. Imparts rich dark fruit, toffee, and plum."
+  },
+  {
+    "id": "cane-sugar",
+    "name": "Cane Sugar",
+    "potential_sg": 1.046,
+    "color_srm": 0.0,
+    "notes": "Pure sucrose from sugar cane. 100% fermentable, commonly used to dry out high-gravity Belgian tripels and strong ales."
+  },
+  {
+    "id": "caramel",
+    "name": "Caramel",
+    "potential_sg": 1.035,
+    "color_srm": 40.0,
+    "notes": "Caramelized culinary sugar offering rich burnt sugar notes and golden-brown hue."
+  },
+  {
+    "id": "corn-sugar",
+    "name": "Corn Sugar",
+    "potential_sg": 1.046,
+    "color_srm": 0.0,
+    "notes": "100% fermentable D-glucose (dextrose). Ideal for bottle priming and boosting gravity while drying out IPAs and strong ales."
+  },
+  {
+    "id": "corn-syrup",
+    "name": "Corn Syrup",
+    "potential_sg": 1.037,
+    "color_srm": 0.5,
+    "notes": "Liquid glucose syrup used to boost gravity and lighten body in light lagers and IPAs."
+  },
+  {
+    "id": "honey",
+    "name": "Honey",
+    "potential_sg": 1.035,
+    "color_srm": 1.5,
+    "notes": "Natural unpasteurized bee honey. High in fructose and glucose; adds delicate floral aroma and crisp dryness when added late."
+  },
+  {
+    "id": "lactose-milk-sugar",
+    "name": "Lactose (Milk Sugar)",
+    "potential_sg": 1.035,
+    "color_srm": 0.0,
+    "notes": "Unfermentable milk sugar by brewer's yeast. Retains permanent residual sweetness, milky mouthfeel, and body in Milk Stouts and Pastry Sours."
+  },
+  {
+    "id": "maltodextrin",
+    "name": "Maltodextrin",
+    "potential_sg": 1.04,
+    "color_srm": 0.0,
+    "notes": "Non-sweet unfermentable complex polysaccharide. Enhances body, head retention, and viscosity without adding sweetness."
+  },
+  {
+    "id": "maple-syrup",
+    "name": "Maple Syrup",
+    "potential_sg": 1.03,
+    "color_srm": 35.0,
+    "notes": "Boiled maple sap syrup. Delivers distinct earthy woody sweetness and delicate maple aroma in dark ales and porters."
+  },
+  {
+    "id": "molasses",
+    "name": "Molasses",
+    "potential_sg": 1.036,
+    "color_srm": 80.0,
+    "notes": "Cane sugar refining byproduct. Delivers bold pungent dark sugar, licorice, rum, and burnt molasses flavor in imperial stouts."
+  },
+  {
+    "id": "rice-syrup",
+    "name": "Rice Syrup",
+    "potential_sg": 1.036,
+    "color_srm": 1.0,
+    "notes": "Fermentable syrup made from cultured rice. Enhances crisp dry finish in lagers."
+  },
+  {
+    "id": "sorghum-syrup",
+    "name": "Sorghum Syrup",
+    "potential_sg": 1.037,
+    "color_srm": 2.5,
+    "notes": "Key ingredient in gluten-free brewing. Liquid extract from sweet sorghum cane yielding herbal, citrusy, and sweet notes."
+  },
+  {
+    "id": "sugar",
+    "name": "Sugar",
+    "potential_sg": 1.046,
+    "color_srm": 0.0,
+    "notes": "Standard granulated white table sugar (sucrose). Ferments completely leaving zero residual sweetness or color."
+  },
+  {
+    "id": "turbinado",
+    "name": "Turbinado",
+    "potential_sg": 1.045,
+    "color_srm": 10.0,
+    "notes": "Raw cane sugar with light molasses remnants providing soft honey-like sweetness and delicate caramel color."
+  }
+]

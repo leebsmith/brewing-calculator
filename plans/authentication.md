@@ -4,7 +4,7 @@
 
 This document defines the architectural blueprint and phased implementation plan for adding **Google Single Sign-On (SSO)** authentication and establishing a **Hybrid Networking Pattern** across the mono-repo.
 
-* **Frontend:** Zero-build static architecture with **Alpine.js** (reactive state & global stores) and **Tailwind CSS** (Play CDN).
+* **Frontend:** Zero-build static architecture with **Alpine.js** (reactive state & global stores) and **modular Vanilla CSS** (`tokens.css` & `style.css`).
 * **Backend:** **FastAPI** (Python 3.12+, managed with `uv`) operating as a strictly typed JSON API.
 * **Authentication:** **Firebase Authentication (Google Provider)** issuing short-lived Firebase ID Tokens (Bearer JWTs).
 * **Networking & Routing:** **Hybrid Pattern** — Firebase Hosting rewrites (`/api/**`) in production for zero-CORS single-origin requests, paired with a local development server on port 8000 with scoped CORS.
@@ -196,7 +196,7 @@ def ping_endpoint(
 
 ### Phase 4: Frontend Implementation
 1. **`frontend/index.html`**:
-   * Include Tailwind Play CDN and Alpine.js via CDN script tags.
+   * Include modular stylesheets (`tokens.css`, `style.css`) and Alpine.js via CDN script tags.
    * Include Firebase v10/v11 Web SDK (modular or compat scripts via CDN).
    * Provide reactive UI components:
      * Header with Google Sign-in button or user profile banner (display name, email, avatar, Sign-out button) bound to `$store.auth`.

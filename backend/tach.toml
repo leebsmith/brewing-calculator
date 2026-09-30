@@ -30,6 +30,12 @@ depends_on = [
 ]
 
 [[modules]]
+path = "app.seeds"
+depends_on = [
+    "app.schemas"
+]
+
+[[modules]]
 path = "app.database"
 depends_on = []
 
