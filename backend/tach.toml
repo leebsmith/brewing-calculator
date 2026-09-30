@@ -26,7 +26,8 @@ depends_on = [
 [[modules]]
 path = "app.repositories"
 depends_on = [
-    "app.schemas"
+    "app.schemas",
+    "app.seeds"
 ]
 
 [[modules]]

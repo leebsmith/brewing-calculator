@@ -23,3 +23,17 @@ def test_ping_endpoint_legacy_path_alias(client):
     data = response.json()
     assert data["message"] == "ALIAS TEST"
     assert data["user_id"] == "mock_user_123"
+
+
+def test_fermentables_endpoint(client):
+    """
+    Verifies that /api/fermentables returns valid malts and sugars catalogs.
+    """
+    response = client.get("/api/fermentables")
+    assert response.status_code == 200
+    data = response.json()
+    assert "malts" in data
+    assert "sugars" in data
+    assert len(data["malts"]) >= 100
+    assert len(data["sugars"]) >= 15
+
