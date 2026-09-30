@@ -170,11 +170,11 @@ When rendering any numerical input field, the unit is resolved via a strict fall
 4. **Translation:** The component intercepts the input event, converts the display value back to base metric ($200 \times 0.001 = 0.200\text{ kg}$).
 5. **Dispatch:** The normalized metric base value ($0.200\text{ kg}$) is written to the Alpine state store, triggering downstream DAG recalculations.
 
-### 3.5 Inline Unit Switching UX
-The unit label attached to the input is an interactive `<button>` toggle. 
-
-* Clicking the unit label opens a micro-popover displaying available units in that domain.
-* Selecting an alternative unit updates the user's preference map, converts the visible input number immediately, and leaves the underlying metric base value unchanged.
+### 3.6 Reactive Unit Store & Backend Persistence Pattern
+To support seamless per-field and per-domain unit customization across sessions without sacrificing UI performance:
+* **Alpine Reactive Store (`Alpine.store('units', ...)`):** All unit preferences are held in a centralized reactive store, making every `UnitInput` component instantly reactive across all wizard steps and modals.
+* **Startup Hydration:** Upon initial application authentication and bootstrap, the store fetches the user's unit preference map from their Firestore profile document (with a robust fallback to `localStorage` or default metric base).
+* **On-Change Background Synchronization:** When a user toggles a unit on any field or domain (e.g., switching hop mass from `g` to `oz`), the store immediately updates local UI reactivity and triggers a lightweight asynchronous background request (`PATCH /api/user/preferences`) to persist the preference map, ensuring cross-device continuity for infrequent preference updates.
 
 ---
 
