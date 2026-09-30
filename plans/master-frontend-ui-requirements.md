@@ -175,6 +175,10 @@ To support seamless per-field and per-domain unit customization across sessions 
 * **Alpine Reactive Store (`Alpine.store('units', ...)`):** All unit preferences are held in a centralized reactive store, making every `UnitInput` component instantly reactive across all wizard steps and modals.
 * **Startup Hydration:** Upon initial application authentication and bootstrap, the store fetches the user's unit preference map from their Firestore profile document (with a robust fallback to `localStorage` or default metric base).
 * **On-Change Background Synchronization:** When a user toggles a unit on any field or domain (e.g., switching hop mass from `g` to `oz`), the store immediately updates local UI reactivity and triggers a lightweight asynchronous background request (`PATCH /api/user/preferences`) to persist the preference map, ensuring cross-device continuity for infrequent preference updates.
+* **Global Toggle vs. Granular Overrides (Option C):** When a user triggers the global master unit toggle (e.g., switching between Metric and US Imperial), the store checks for active per-field custom overrides (`is_customized: true`). If overrides exist, a lightweight clarification prompt is surfaced offering two distinct actions:
+  1. **"Apply to All":** Overwrites custom modifications, resetting all domains to the selected global preset.
+  2. **"Update Unmodified Only":** Preserves intentional custom overrides (e.g., maintaining hop mass in grams) while updating all unmodded domains to the new preset.
+
 
 ---
 
