@@ -125,7 +125,9 @@ document.addEventListener('alpine:init', () => {
       hopMass: 'g',
       temperature: 'C',
       gravity: 'SG',
-      percentage: '%'
+      percentage: '%',
+      compound: 'L/kg',
+      extract_potential: 'L·°/kg'
     },
     preferences: {
       // domain-level fallbacks
@@ -134,7 +136,9 @@ document.addEventListener('alpine:init', () => {
       hopMass: { unit: 'g', is_customized: false },
       temperature: { unit: 'C', is_customized: false },
       gravity: { unit: 'SG', is_customized: false },
-      percentage: { unit: '%', is_customized: false }
+      percentage: { unit: '%', is_customized: false },
+      compound: { unit: 'L/kg', is_customized: false },
+      extract_potential: { unit: 'L·°/kg', is_customized: false }
     },
     fieldPreferences: {
       // fieldKey -> { unit, is_customized }
