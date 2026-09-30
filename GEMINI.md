@@ -13,7 +13,7 @@ This project is a mono-repo containing vanilla JavaScript with Alpine.js and pur
 * Always formulate backend commands as `uv run <command>`, `uv add <package>`, or `uv sync`.
 * The frontend has no Node.js or `npm` build toolchain. Do not introduce `package.json`, `npm`, `npx`, or frontend bundlers.
 * When running git commands in the agentic CLI, prepend GIT_PAGER=cat (e.g., GIT_PAGER=cat git diff or GIT_PAGER=cat git log -n 3) to stream output non-interactively without tripping flag-security filters or affecting your normal terminal pager settings.
-* **No Combined Git Flags:** Never chain multiple git commands or flags together with `&&` or complex flag combinations (like `git diff --stat HEAD`) in shell calls; execute single standalone git statements to prevent false positive security warnings.
+* **No Combined Git Flags or File Path Arguments:** Never chain multiple git commands or flags together with `&&` or complex flag combinations (like `git diff --stat HEAD`), and never pass individual file paths as arguments to `git add` in shell calls (use `git add -A` instead) to prevent false positive security warnings.
 
 ## 3. Frontend Architecture & Conventions
 The frontend is a lightweight, zero-build static application hosted via Firebase Hosting. It pairs **Alpine.js** for reactive UI state with **modular Vanilla CSS** (`tokens.css` and `style.css`) for tokenized styling, native dark mode, and zero build tools.
