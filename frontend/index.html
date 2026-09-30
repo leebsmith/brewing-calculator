@@ -145,102 +145,380 @@
   <!-- Main Content Container: Alpine.data Component -->
   <main class="main-content" x-data="app">
     <div class="content-stack">
-      <!-- Auth Status Banner -->
+      <!-- Auth Status Banner / Guest State Gate -->
       <div
         x-cloak
         x-show="!$store.auth.loading && !$store.auth.user"
-        class="alert alert-warning"
+        class="card text-center space-y-4 py-12"
       >
-        <div class="alert-header">
-          <span class="alert-dot"></span>
-          <span>Authentication Required</span>
-        </div>
-        <p>
-          The <code class="alert-code">/api/ping</code> endpoint requires a valid Google Firebase Bearer token. Sign in with Google above to send authenticated requests.
+        <h2 class="card-title text-xl font-bold text-slate-900">Batch Brewing Calculator</h2>
+        <p class="card-description max-w-md mx-auto">
+          Please sign in with Google using the button in the top navigation bar to authenticate and access the secure brewing calculation engine and ingredient catalog.
         </p>
       </div>
 
-      <!-- Ping Card -->
-      <div class="card">
-        <h2 class="card-title">FastAPI Backend Ping</h2>
-        <p class="card-description">
-          Submits a message to Cloud Run / FastAPI, which enforces token authentication and persists the ping with your user ID.
-        </p>
-
-        <!-- Ping Form -->
-        <form @submit.prevent="sendPing" class="form-group">
-          <div class="form-group">
-            <label for="ping-message" class="form-label">
-              Custom Message
-            </label>
-            <input
-              id="ping-message"
-              type="text"
-              x-model="messageInput"
-              placeholder="Hello Cloud Run"
-              class="form-input"
-              :disabled="loading"
-            />
-          </div>
-
-          <div class="form-actions">
-            <button
-              type="submit"
-              :disabled="loading"
-              class="btn btn-primary btn-lg"
-            >
-              <span x-show="!loading">Send Ping</span>
-              <span x-show="loading" class="btn-spinner-content" style="display: none;">
-                <svg class="spin icon-spin" fill="none" viewBox="0 0 24 24">
-                  <circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Processing...</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              @click="clearResponse"
-              x-show="response || error"
-              class="btn btn-link"
-              style="display: none;"
-            >
-              Clear
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Response Panel -->
-      <template x-if="response">
-        <div class="panel-response">
-          <div class="panel-response-header">
+      <!-- Authenticated Workspace -->
+      <div
+        x-cloak
+        x-show="!$store.auth.loading && $store.auth.user"
+        class="space-y-6"
+        x-data="wizard"
+      >
+        <!-- Ingredient Catalog Status Card -->
+        <div class="card">
+          <h2 class="card-title">Ingredient Catalog Status</h2>
+          <p class="card-description">
+            Reference primitives loaded securely from the backend repository shim via Firebase Authentication.
+          </p>
+          <div class="flex items-center space-x-4 pt-3 text-xs font-medium">
             <span class="status-badge status-badge-success">
               <span class="status-dot status-dot-success"></span>
-              <span>200 OK — Authenticated Response</span>
+              <span x-text="$store.catalog.malts.length + ' Malts Loaded'"></span>
             </span>
-            <span class="panel-timestamp" x-text="formatTimestamp(response.timestamp)"></span>
-          </div>
-
-          <div class="panel-ledger">
-            <div class="ledger-row"><span class="ledger-label">ID:</span> <span x-text="response.id" class="ledger-value ledger-value-accent"></span></div>
-            <div class="ledger-row"><span class="ledger-label">Message:</span> <span x-text="response.message" class="ledger-value"></span></div>
-            <div class="ledger-row"><span class="ledger-label">User ID:</span> <span x-text="response.user_id" class="ledger-value ledger-value-success"></span></div>
-            <div class="ledger-row"><span class="ledger-label">Timestamp:</span> <span x-text="response.timestamp" class="ledger-value"></span></div>
+            <span class="status-badge status-badge-success">
+              <span class="status-dot status-dot-success"></span>
+              <span x-text="$store.catalog.sugars.length + ' Sugars Loaded'"></span>
+            </span>
+            <template x-if="$store.catalog.loading">
+              <span class="text-slate-400 italic">Loading catalog...</span>
+            </template>
           </div>
         </div>
-      </template>
 
-      <!-- Error Panel -->
-      <template x-if="error">
-        <div class="panel-error">
-          <div class="alert-header">
-            <span class="status-dot status-dot-error"></span>
-            <span>Request Error</span>
+        <!-- Step 1: Equipment Profile Accordion Card -->
+        <div class="step-card" :class="{ 'is-active': activeStep === 1, 'is-completed': completedSteps.includes(1) }">
+          <div class="accordion-header">
+            <button
+              type="button"
+              class="accordion-trigger"
+              :aria-expanded="activeStep === 1"
+              aria-controls="step-panel-1"
+              id="step-trigger-1"
+              @click="setActiveStep(1)"
+            >
+              <div class="accordion-title-wrap">
+                <span class="accordion-step-num">1</span>
+                <div>
+                  <span class="accordion-title">Equipment Profile</span>
+                  <span class="accordion-subtitle">Hardware capacities, vessel limits & fixed losses</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="accordion-status-pill" :class="{
+                  'accordion-status-active': activeStep === 1,
+                  'accordion-status-complete': completedSteps.includes(1)
+                }" x-text="completedSteps.includes(1) ? 'Configured' : (activeStep === 1 ? 'Active' : 'Locked')"></span>
+                <span class="text-xs text-slate-400" x-text="activeStep === 1 ? '▲' : '▼'"></span>
+              </div>
+            </button>
           </div>
-          <p x-text="error"></p>
+
+          <div
+            id="step-panel-1"
+            role="region"
+            aria-labelledby="step-trigger-1"
+            x-show="activeStep === 1"
+            x-collapse
+            class="step-card-body space-y-6"
+          >
+            <!-- Profile Preset Selector & Drawer Trigger -->
+            <div class="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">
+              <div class="flex-1 min-w-[240px]">
+                <label for="profile-selector" class="form-label text-xs uppercase tracking-wider mb-1 block">Hardware Preset Library</label>
+                <div class="flex items-center gap-2">
+                  <select
+                    id="profile-selector"
+                    class="form-select text-sm"
+                    x-model="manifest.equipment_profile_id"
+                    @change="selectProfile($event.target.value)"
+                  >
+                    <option value="">-- Custom Profile --</option>
+                    <template x-for="p in $store.equipment.profiles" :key="p.id">
+                      <option :value="p.id" x-text="p.name"></option>
+                    </template>
+                  </select>
+                  <template x-if="isCustomModified">
+                    <span class="status-badge status-badge-warning text-xs">Custom Modified</span>
+                  </template>
+                </div>
+              </div>
+              <div>
+                <button
+                  type="button"
+                  @click="openProfileDrawer()"
+                  class="btn btn-secondary text-xs"
+                >
+                  Manage Profiles (CRUD)
+                </button>
+              </div>
+            </div>
+
+            <!-- 10 Equipment Parameters Grid -->
+            <div class="step-grid-2col grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Max Kettle Volume -->
+              <div class="form-group">
+                <label class="form-label">Max Kettle Volume</label>
+                <div class="input-group">
+                  <input type="number" step="0.5" min="1" x-model.number="manifest.equipment.max_kettle_volume_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">L</span>
+                </div>
+                <span class="form-hint">Boil kettle brim capacity</span>
+              </div>
+
+              <!-- Max Mash Tun Volume -->
+              <div class="form-group">
+                <label class="form-label">Max Mash Tun Volume</label>
+                <div class="input-group">
+                  <input type="number" step="0.5" min="1" x-model.number="manifest.equipment.max_mash_tun_volume_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">L</span>
+                </div>
+                <span class="form-hint">Mash vessel overflow limit</span>
+              </div>
+
+              <!-- Max HLT Volume -->
+              <div class="form-group">
+                <label class="form-label">Max HLT Volume</label>
+                <div class="input-group">
+                  <input type="number" step="0.5" min="0" x-model.number="manifest.equipment.max_hlt_volume_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">L</span>
+                </div>
+                <span class="form-hint">Hot Liquor Tank initial fill capacity</span>
+              </div>
+
+              <!-- HLT Min Coil Floor -->
+              <div class="form-group">
+                <label class="form-label">HLT Min Coil Floor</label>
+                <div class="input-group">
+                  <input type="number" step="0.5" min="0" x-model.number="manifest.equipment.hlt_min_volume_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">L</span>
+                </div>
+                <span class="form-hint">HERMS coil submersion floor</span>
+              </div>
+
+              <!-- Mash Dead Space -->
+              <div class="form-group">
+                <label class="form-label">Mash Dead Space</label>
+                <div class="input-group">
+                  <input type="number" step="0.1" min="0" x-model.number="manifest.equipment.mash_dead_space_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">L</span>
+                </div>
+                <span class="form-hint">Unrecoverable mash plumbing loss</span>
+              </div>
+
+              <!-- Trub Loss -->
+              <div class="form-group">
+                <label class="form-label">Trub Loss</label>
+                <div class="input-group">
+                  <input type="number" step="0.1" min="0" x-model.number="manifest.equipment.trub_loss_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">L</span>
+                </div>
+                <span class="form-hint">Kettle bottom sediment loss</span>
+              </div>
+
+              <!-- Boil-Off Rate -->
+              <div class="form-group">
+                <label class="form-label">Boil-Off Rate</label>
+                <div class="input-group">
+                  <input type="number" step="0.1" min="0.1" x-model.number="manifest.equipment.boil_off_rate_l_per_hr" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">L/hr</span>
+                </div>
+                <span class="form-hint">Evaporation rate per hour</span>
+              </div>
+
+              <!-- Grain Absorption Factor -->
+              <div class="form-group">
+                <label class="form-label">Grain Absorption Factor</label>
+                <div class="input-group">
+                  <input type="number" step="0.01" min="0.5" max="2.0" x-model.number="manifest.equipment.grain_absorption_factor_l_per_kg" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">L/kg</span>
+                </div>
+                <span class="form-hint">Wort retained per kg of dry malt (default 0.96)</span>
+              </div>
+
+              <!-- Conversion Efficiency -->
+              <div class="form-group">
+                <label class="form-label">Conversion Efficiency (Ce)</label>
+                <div class="input-group">
+                  <input type="number" step="0.01" min="0.5" max="1.0" x-model.number="manifest.equipment.conversion_efficiency" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">fraction</span>
+                </div>
+                <span class="form-hint">Starch conversion efficiency (e.g. 0.95 = 95%)</span>
+              </div>
+
+              <!-- Cooling Shrinkage -->
+              <div class="form-group">
+                <label class="form-label">Cooling Shrinkage</label>
+                <div class="input-group">
+                  <input type="number" step="0.005" min="0" max="0.1" x-model.number="manifest.equipment.shrinkage_pct" @input="onEquipmentChange" class="form-input tabular-nums" />
+                  <span class="input-addon">fraction</span>
+                </div>
+                <span class="form-hint">Hot-to-cold contraction (default 0.04 = 4%)</span>
+              </div>
+            </div>
+
+            <!-- Synthesized Output Summary Card -->
+            <div class="synthesized-card p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Synthesized Hardware Summary</span>
+                <span class="status-badge status-badge-success text-xs">DAG Entry Validated</span>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span class="text-xs text-slate-400 block">Kettle Limit</span>
+                  <span class="font-mono font-bold tabular-nums" x-text="kettleCapacity + ' L'"></span>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-400 block">Fixed Losses</span>
+                  <span class="font-mono font-bold tabular-nums" x-text="fixedSystemLoss + ' L'"></span>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-400 block">Boil-Off Rate</span>
+                  <span class="font-mono font-bold tabular-nums" x-text="hourlyEvaporation + ' L/hr'"></span>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-400 block">HERMS Coil Floor</span>
+                  <span class="font-mono font-bold tabular-nums" x-text="hltCoilFloor + ' L'"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step Action Button -->
+            <div class="flex justify-end pt-2">
+              <button
+                type="button"
+                @click="markStepComplete(1)"
+                class="btn btn-primary"
+              >
+                Next: Batch Metadata →
+              </button>
+            </div>
+          </div>
         </div>
-      </template>
+
+        <!-- Slide-Over CRUD Drawer for Equipment Profiles -->
+        <div
+          x-show="showProfileDrawer"
+          x-transition.opacity
+          class="drawer-backdrop"
+          style="display: none;"
+          @keydown.escape.window="closeProfileDrawer()"
+        >
+          <div
+            @click.outside="closeProfileDrawer()"
+            class="drawer-panel"
+          >
+            <div class="drawer-header">
+              <h2 class="drawer-title" x-text="drawerMode === 'list' ? 'Equipment Profile Library' : (drawerMode === 'create' ? 'Create Custom Profile' : 'Edit Profile')"></h2>
+              <button type="button" @click="closeProfileDrawer()" class="btn-close">✕</button>
+            </div>
+
+            <div class="drawer-body">
+              <template x-if="drawerError">
+                <div class="panel-error p-3 text-xs" x-text="drawerError"></div>
+              </template>
+
+              <!-- List Mode -->
+              <template x-if="drawerMode === 'list'">
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-500">Select preset or create custom hardware profile.</span>
+                    <button type="button" @click="startCreateProfile()" class="btn btn-primary text-xs">+ New Profile</button>
+                  </div>
+                  <div class="profile-roster">
+                    <template x-for="p in $store.equipment.profiles" :key="p.id">
+                      <div class="profile-card-item" :class="{ 'is-selected': manifest.equipment_profile_id === p.id }">
+                        <div>
+                          <div class="font-semibold text-sm flex items-center gap-2">
+                            <span x-text="p.name"></span>
+                            <template x-if="p.is_custom">
+                              <span class="status-badge status-badge-info text-[10px]">Custom</span>
+                            </template>
+                          </div>
+                          <div class="text-xs text-slate-400" x-text="p.description || 'No description'"></div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <button type="button" @click="selectProfile(p.id); closeProfileDrawer();" class="btn btn-secondary text-xs">Load</button>
+                          <template x-if="p.is_custom">
+                            <div class="flex items-center gap-1">
+                              <button type="button" @click="editProfile(p)" class="btn btn-secondary text-xs">Edit</button>
+                              <button type="button" @click="removeCustomProfile(p.id)" class="btn btn-danger-outline text-xs">Delete</button>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Create / Edit Form Mode -->
+              <template x-if="drawerMode === 'create' || drawerMode === 'edit'">
+                <form @submit.prevent="submitDrawerProfile()" class="space-y-4">
+                  <div class="form-group">
+                    <label class="form-label">Profile Identifier (Slug)</label>
+                    <input type="text" x-model="drawerForm.id" :disabled="drawerMode === 'edit'" class="form-input" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Profile Name</label>
+                    <input type="text" x-model="drawerForm.name" class="form-input" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea x-model="drawerForm.description" class="form-input" rows="2"></textarea>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="form-group">
+                      <label class="form-label">Max Kettle (L)</label>
+                      <input type="number" step="0.5" x-model.number="drawerForm.max_kettle_volume_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Max Mash Tun (L)</label>
+                      <input type="number" step="0.5" x-model.number="drawerForm.max_mash_tun_volume_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Max HLT (L)</label>
+                      <input type="number" step="0.5" x-model.number="drawerForm.max_hlt_volume_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">HLT Coil Floor (L)</label>
+                      <input type="number" step="0.5" x-model.number="drawerForm.hlt_min_volume_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Mash Dead Space (L)</label>
+                      <input type="number" step="0.1" x-model.number="drawerForm.mash_dead_space_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Trub Loss (L)</label>
+                      <input type="number" step="0.1" x-model.number="drawerForm.trub_loss_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Boil-Off (L/hr)</label>
+                      <input type="number" step="0.1" x-model.number="drawerForm.boil_off_rate_l_per_hr" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Grain Absorption (L/kg)</label>
+                      <input type="number" step="0.01" x-model.number="drawerForm.grain_absorption_factor_l_per_kg" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Conversion Efficiency (Ce)</label>
+                      <input type="number" step="0.01" x-model.number="drawerForm.conversion_efficiency" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Shrinkage (%)</label>
+                      <input type="number" step="0.005" x-model.number="drawerForm.shrinkage_pct" class="form-input" required />
+                    </div>
+                  </div>
+
+                  <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" @click="drawerMode = 'list'" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Profile</button>
+                  </div>
+                </form>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 

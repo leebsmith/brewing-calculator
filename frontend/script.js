@@ -77,8 +77,16 @@ document.addEventListener('alpine:init', () => {
             email: firebaseUser.email,
             photoURL: firebaseUser.photoURL || null,
           };
+          // Fetch ingredient catalog and equipment profiles upon successful authentication
+          Alpine.store('catalog').fetchCatalog();
+          Alpine.store('equipment').fetchProfiles();
         } else {
           this.user = null;
+          Alpine.store('catalog').malts = [];
+          Alpine.store('catalog').sugars = [];
+          Alpine.store('catalog').loaded = false;
+          Alpine.store('equipment').profiles = [];
+          Alpine.store('equipment').loaded = false;
         }
         this.loading = false;
       });
@@ -127,6 +135,404 @@ document.addEventListener('alpine:init', () => {
       this.toasts = this.toasts.filter(t => t.id !== id);
     }
   });
+
+  // Global Catalog Store for Fermentables (Malts & Sugars)
+  Alpine.store('catalog', {
+    malts: [],
+    sugars: [],
+    loading: false,
+    error: null,
+    loaded: false,
+
+    async fetchCatalog() {
+      if (this.loaded || this.loading) return;
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await apiFetch('/api/fermentables');
+        if (!response.ok) {
+          throw new Error(`Failed to load fermentables catalog: ${response.status}`);
+        }
+        const data = await response.json();
+        this.malts = data.malts || [];
+        this.sugars = data.sugars || [];
+        this.loaded = true;
+      } catch (err) {
+        this.error = err.message;
+        console.error('Error fetching fermentables catalog:', err);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    getMaltById(id) {
+      return this.malts.find(m => m.id === id) || null;
+    },
+
+    getSugarById(id) {
+      return this.sugars.find(s => s.id === id) || null;
+    },
+
+    getMaltsByCategory(category) {
+      return this.malts.filter(m => m.category === category);
+    }
+  });
+
+  // Global Equipment Profiles Store
+  Alpine.store('equipment', {
+    profiles: [],
+    loading: false,
+    error: null,
+    loaded: false,
+
+    async fetchProfiles() {
+      if (this.loaded || this.loading) return;
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await apiFetch('/api/equipment-profiles');
+        if (!response.ok) {
+          throw new Error(`Failed to load equipment profiles: ${response.status}`);
+        }
+        const data = await response.json();
+        this.profiles = data.profiles || [];
+        this.loaded = true;
+      } catch (err) {
+        this.error = err.message;
+        console.error('Error fetching equipment profiles:', err);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    getProfileById(id) {
+      return this.profiles.find(p => p.id === id) || null;
+    },
+
+    async saveProfile(profileData) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await apiFetch('/api/equipment-profiles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profileData)
+        });
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.detail || `Save failed: HTTP ${response.status}`);
+        }
+        const saved = await response.json();
+        const existingIdx = this.profiles.findIndex(p => p.id === saved.id);
+        if (existingIdx >= 0) {
+          this.profiles[existingIdx] = saved;
+        } else {
+          this.profiles.push(saved);
+        }
+        Alpine.store('ui').add(`Saved profile "${saved.name}"`, 'success');
+        return saved;
+      } catch (err) {
+        this.error = err.message;
+        Alpine.store('ui').add(err.message, 'error');
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async deleteProfile(profileId) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await apiFetch(`/api/equipment-profiles/${encodeURIComponent(profileId)}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.detail || `Delete failed: HTTP ${response.status}`);
+        }
+        this.profiles = this.profiles.filter(p => p.id !== profileId);
+        Alpine.store('ui').add('Equipment profile deleted', 'info');
+        return true;
+      } catch (err) {
+        this.error = err.message;
+        Alpine.store('ui').add(err.message, 'error');
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    }
+  });
+
+  // Progressive 12-Step Wizard State Machine
+  Alpine.data('wizard', () => ({
+    // Presentation FSM State
+    activeStep: 1,
+    completedSteps: [],
+    highWaterMark: 1,
+    dirtySteps: [],
+    expansionMode: 'exclusive',
+
+    // Profile Management Drawer State
+    showProfileDrawer: false,
+    drawerMode: 'list', // 'list' | 'create' | 'edit'
+    drawerForm: {
+      id: '',
+      name: '',
+      description: '',
+      max_kettle_volume_l: 35.0,
+      max_mash_tun_volume_l: 35.0,
+      max_hlt_volume_l: 35.0,
+      mash_dead_space_l: 0.0,
+      trub_loss_l: 1.5,
+      boil_off_rate_l_per_hr: 3.0,
+      grain_absorption_factor_l_per_kg: 0.90,
+      conversion_efficiency: 0.90,
+      shrinkage_pct: 0.04,
+      hlt_min_volume_l: 0.0,
+    },
+    drawerError: null,
+
+    // Working Recipe Manifest
+    manifest: {
+      name: 'Untitled Batch',
+      equipment_profile_id: 'herms-30l',
+      equipment: {
+        max_kettle_volume_l: 38.0,
+        max_mash_tun_volume_l: 38.0,
+        max_hlt_volume_l: 38.0,
+        mash_dead_space_l: 1.5,
+        trub_loss_l: 2.0,
+        boil_off_rate_l_per_hr: 3.5,
+        grain_absorption_factor_l_per_kg: 0.96,
+        conversion_efficiency: 0.95,
+        shrinkage_pct: 0.04,
+        hlt_min_volume_l: 12.0,
+      },
+      target_volume_l: 20.0,
+      target_og: 1.055,
+      boil_time_min: 60,
+      grain_bill: [],
+      late_additions: [],
+      mash_profile: [],
+      water_profile_id: null,
+      hop_schedule: [],
+      yeast_id: null,
+      fermentation_schedule: [],
+      dry_hops: []
+    },
+
+    init() {
+      // Auto-load matching preset once equipment profiles are available
+      this.$watch('$store.equipment.profiles', (profiles) => {
+        if (profiles && profiles.length > 0 && !this.manifest.equipment_profile_id) {
+          this.selectProfile(profiles[0].id);
+        }
+      });
+    },
+
+    // Step 1 Synthesized Outputs
+    get fixedSystemLoss() {
+      const eq = this.manifest.equipment;
+      const deadSpace = parseFloat(eq.mash_dead_space_l) || 0;
+      const trub = parseFloat(eq.trub_loss_l) || 0;
+      return (deadSpace + trub).toFixed(2);
+    },
+
+    get hourlyEvaporation() {
+      return (parseFloat(this.manifest.equipment.boil_off_rate_l_per_hr) || 0).toFixed(2);
+    },
+
+    get kettleCapacity() {
+      return (parseFloat(this.manifest.equipment.max_kettle_volume_l) || 0).toFixed(1);
+    },
+
+    get hltCoilFloor() {
+      return (parseFloat(this.manifest.equipment.hlt_min_volume_l) || 0).toFixed(1);
+    },
+
+    get isCustomModified() {
+      const selectedId = this.manifest.equipment_profile_id;
+      if (!selectedId) return true;
+      const preset = Alpine.store('equipment').getProfileById(selectedId);
+      if (!preset) return true;
+
+      const eq = this.manifest.equipment;
+      return (
+        Number(eq.max_kettle_volume_l) !== Number(preset.max_kettle_volume_l) ||
+        Number(eq.max_mash_tun_volume_l) !== Number(preset.max_mash_tun_volume_l) ||
+        Number(eq.max_hlt_volume_l) !== Number(preset.max_hlt_volume_l) ||
+        Number(eq.mash_dead_space_l) !== Number(preset.mash_dead_space_l) ||
+        Number(eq.trub_loss_l) !== Number(preset.trub_loss_l) ||
+        Number(eq.boil_off_rate_l_per_hr) !== Number(preset.boil_off_rate_l_per_hr) ||
+        Number(eq.grain_absorption_factor_l_per_kg) !== Number(preset.grain_absorption_factor_l_per_kg) ||
+        Number(eq.conversion_efficiency) !== Number(preset.conversion_efficiency) ||
+        Number(eq.shrinkage_pct) !== Number(preset.shrinkage_pct) ||
+        Number(eq.hlt_min_volume_l) !== Number(preset.hlt_min_volume_l)
+      );
+    },
+
+    selectProfile(profileId) {
+      this.manifest.equipment_profile_id = profileId;
+      if (!profileId) return;
+
+      const preset = Alpine.store('equipment').getProfileById(profileId);
+      if (preset) {
+        this.manifest.equipment = {
+          max_kettle_volume_l: preset.max_kettle_volume_l,
+          max_mash_tun_volume_l: preset.max_mash_tun_volume_l,
+          max_hlt_volume_l: preset.max_hlt_volume_l,
+          mash_dead_space_l: preset.mash_dead_space_l,
+          trub_loss_l: preset.trub_loss_l,
+          boil_off_rate_l_per_hr: preset.boil_off_rate_l_per_hr,
+          grain_absorption_factor_l_per_kg: preset.grain_absorption_factor_l_per_kg,
+          conversion_efficiency: preset.conversion_efficiency,
+          shrinkage_pct: preset.shrinkage_pct,
+          hlt_min_volume_l: preset.hlt_min_volume_l,
+        };
+        this.invalidateDownstream(1);
+      }
+    },
+
+    onEquipmentChange() {
+      this.invalidateDownstream(1);
+    },
+
+    setActiveStep(stepNumber) {
+      if (stepNumber <= this.highWaterMark || this.expansionMode === 'concurrent') {
+        this.activeStep = stepNumber;
+      }
+    },
+
+    markStepComplete(stepNumber) {
+      // Validate Step 1
+      if (stepNumber === 1) {
+        const eq = this.manifest.equipment;
+        if (!eq.max_kettle_volume_l || eq.max_kettle_volume_l <= 0) {
+          Alpine.store('ui').add('Maximum kettle volume must be greater than zero.', 'error');
+          return;
+        }
+        if (!eq.boil_off_rate_l_per_hr || eq.boil_off_rate_l_per_hr <= 0) {
+          Alpine.store('ui').add('Boil-off rate must be greater than zero.', 'error');
+          return;
+        }
+      }
+
+      if (!this.completedSteps.includes(stepNumber)) {
+        this.completedSteps.push(stepNumber);
+      }
+      this.highWaterMark = Math.max(this.highWaterMark, stepNumber + 1);
+      this.activeStep = stepNumber + 1;
+      Alpine.store('ui').add(`Step ${stepNumber} configured.`, 'success');
+    },
+
+    invalidateDownstream(fromStepNumber) {
+      // Mark downstream solved steps dirty
+      this.dirtySteps = [6, 7, 8, 9, 11, 12].filter(step => step > fromStepNumber);
+    },
+
+    // Drawer CRUD helpers
+    openProfileDrawer() {
+      this.showProfileDrawer = true;
+      this.drawerMode = 'list';
+      this.drawerError = null;
+    },
+
+    closeProfileDrawer() {
+      this.showProfileDrawer = false;
+      this.drawerError = null;
+    },
+
+    startCreateProfile() {
+      this.drawerMode = 'create';
+      this.drawerError = null;
+      // Copy current working values as a starting template
+      const current = this.manifest.equipment;
+      this.drawerForm = {
+        id: `custom-${Date.now()}`,
+        name: 'My Custom Profile',
+        description: '',
+        max_kettle_volume_l: current.max_kettle_volume_l || 35.0,
+        max_mash_tun_volume_l: current.max_mash_tun_volume_l || 35.0,
+        max_hlt_volume_l: current.max_hlt_volume_l || 35.0,
+        mash_dead_space_l: current.mash_dead_space_l || 0.0,
+        trub_loss_l: current.trub_loss_l || 1.5,
+        boil_off_rate_l_per_hr: current.boil_off_rate_l_per_hr || 3.0,
+        grain_absorption_factor_l_per_kg: current.grain_absorption_factor_l_per_kg || 0.96,
+        conversion_efficiency: current.conversion_efficiency || 0.95,
+        shrinkage_pct: current.shrinkage_pct || 0.04,
+        hlt_min_volume_l: current.hlt_min_volume_l || 0.0,
+      };
+    },
+
+    editProfile(profile) {
+      this.drawerMode = 'edit';
+      this.drawerError = null;
+      this.drawerForm = {
+        id: profile.id,
+        name: profile.name,
+        description: profile.description || '',
+        max_kettle_volume_l: profile.max_kettle_volume_l,
+        max_mash_tun_volume_l: profile.max_mash_tun_volume_l,
+        max_hlt_volume_l: profile.max_hlt_volume_l,
+        mash_dead_space_l: profile.mash_dead_space_l,
+        trub_loss_l: profile.trub_loss_l,
+        boil_off_rate_l_per_hr: profile.boil_off_rate_l_per_hr,
+        grain_absorption_factor_l_per_kg: profile.grain_absorption_factor_l_per_kg,
+        conversion_efficiency: profile.conversion_efficiency,
+        shrinkage_pct: profile.shrinkage_pct,
+        hlt_min_volume_l: profile.hlt_min_volume_l,
+      };
+    },
+
+    async submitDrawerProfile() {
+      this.drawerError = null;
+      try {
+        if (!this.drawerForm.name.trim()) {
+          throw new Error('Profile name is required.');
+        }
+        if (Number(this.drawerForm.max_kettle_volume_l) <= 0) {
+          throw new Error('Kettle volume must be greater than zero.');
+        }
+        if (Number(this.drawerForm.boil_off_rate_l_per_hr) <= 0) {
+          throw new Error('Boil-off rate must be greater than zero.');
+        }
+
+        const payload = {
+          ...this.drawerForm,
+          max_kettle_volume_l: Number(this.drawerForm.max_kettle_volume_l),
+          max_mash_tun_volume_l: Number(this.drawerForm.max_mash_tun_volume_l),
+          max_hlt_volume_l: Number(this.drawerForm.max_hlt_volume_l),
+          mash_dead_space_l: Number(this.drawerForm.mash_dead_space_l),
+          trub_loss_l: Number(this.drawerForm.trub_loss_l),
+          boil_off_rate_l_per_hr: Number(this.drawerForm.boil_off_rate_l_per_hr),
+          grain_absorption_factor_l_per_kg: Number(this.drawerForm.grain_absorption_factor_l_per_kg),
+          conversion_efficiency: Number(this.drawerForm.conversion_efficiency),
+          shrinkage_pct: Number(this.drawerForm.shrinkage_pct),
+          hlt_min_volume_l: Number(this.drawerForm.hlt_min_volume_l),
+        };
+
+        const saved = await Alpine.store('equipment').saveProfile(payload);
+        this.selectProfile(saved.id);
+        this.drawerMode = 'list';
+      } catch (err) {
+        this.drawerError = err.message;
+      }
+    },
+
+    async removeCustomProfile(profileId) {
+      if (!confirm('Are you sure you want to delete this custom profile?')) return;
+      try {
+        await Alpine.store('equipment').deleteProfile(profileId);
+        if (this.manifest.equipment_profile_id === profileId) {
+          const first = Alpine.store('equipment').profiles[0];
+          if (first) this.selectProfile(first.id);
+        }
+      } catch (err) {
+        // error handled in store
+      }
+    }
+  }));
 
   // Main Page Interactive Component
   Alpine.data('app', () => ({

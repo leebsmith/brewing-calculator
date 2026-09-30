@@ -698,3 +698,360 @@ pre {
   height: 0.875rem;
   vertical-align: middle;
 }
+
+/* ==========================================================================
+   12. Step Accordion Architecture
+   ========================================================================== */
+
+.step-card {
+  container-type: inline-size;
+  background-color: var(--sys-surface-default);
+  border: 1px solid var(--sys-border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sys-shadow-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  overflow: hidden;
+}
+
+.step-card.is-active {
+  border-color: var(--sys-color-action-primary);
+  box-shadow: var(--sys-shadow-md);
+}
+
+.step-card.is-completed {
+  border-color: var(--sys-color-success-border);
+}
+
+.step-card.is-locked {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.step-card.is-dirty {
+  border-color: var(--sys-color-warning-accent);
+}
+
+.accordion-header {
+  margin: 0;
+  padding: 0;
+}
+
+.accordion-trigger {
+  width: 100%;
+  min-height: 44px;
+  padding: 1rem 1.25rem;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+  color: var(--sys-text-primary);
+  font-family: inherit;
+  transition: background-color var(--transition-fast);
+}
+
+.accordion-trigger:hover {
+  background-color: var(--sys-surface-canvas);
+}
+
+.accordion-trigger:focus-visible {
+  outline: 2px solid var(--sys-border-focus);
+  outline-offset: -2px;
+}
+
+.accordion-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.accordion-step-num {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  background-color: var(--sys-surface-canvas);
+  color: var(--sys-text-secondary);
+  border: 1px solid var(--sys-border-default);
+}
+
+.step-card.is-active .accordion-step-num {
+  background-color: var(--sys-color-action-primary);
+  color: #ffffff;
+  border-color: var(--sys-color-action-primary);
+}
+
+.step-card.is-completed .accordion-step-num {
+  background-color: var(--sys-color-success-accent);
+  color: #ffffff;
+  border-color: var(--sys-color-success-accent);
+}
+
+.accordion-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--sys-text-primary);
+  margin: 0;
+}
+
+.accordion-subtitle {
+  font-size: var(--text-xs);
+  color: var(--sys-text-muted);
+  display: block;
+}
+
+.accordion-status-pill {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.accordion-status-active {
+  background-color: var(--color-indigo-50);
+  color: var(--color-indigo-700);
+}
+
+.accordion-status-complete {
+  background-color: var(--color-emerald-50);
+  color: var(--color-emerald-700);
+}
+
+.accordion-status-locked {
+  background-color: var(--color-slate-100);
+  color: var(--color-slate-500);
+}
+
+@media (prefers-color-scheme: dark) {
+  .accordion-status-active {
+    background-color: rgba(99, 102, 241, 0.2);
+    color: var(--color-indigo-300);
+  }
+  .accordion-status-complete {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: var(--color-emerald-300);
+  }
+  .accordion-status-locked {
+    background-color: rgba(148, 163, 184, 0.2);
+    color: var(--color-slate-400);
+  }
+}
+
+.step-card-body {
+  padding: 1.25rem;
+  border-top: 1px solid var(--sys-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.step-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@container (max-width: 600px) {
+  .step-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   13. Form Input with Unit Suffix Addon
+   ========================================================================== */
+
+.input-addon-group {
+  display: flex;
+  position: relative;
+  align-items: stretch;
+}
+
+.input-addon-group .form-input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.input-addon-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  background-color: var(--sys-surface-canvas);
+  color: var(--sys-text-secondary);
+  border: 1px solid var(--sys-border-default);
+  border-left: none;
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   14. Synthesized Output Cards & Metric Strips
+   ========================================================================== */
+
+.synthesized-card {
+  background-color: var(--sys-surface-canvas);
+  border: 1px solid var(--sys-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.synthesized-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.synthesized-title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sys-text-secondary);
+  margin: 0;
+}
+
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.metric-cell {
+  background-color: var(--sys-surface-default);
+  border: 1px solid var(--sys-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-cell-label {
+  font-size: var(--text-xs);
+  color: var(--sys-text-muted);
+  line-height: 1.2;
+}
+
+.metric-cell-value-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.metric-cell-val {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--sys-text-primary);
+}
+
+.metric-cell-unit {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--sys-text-secondary);
+}
+
+/* ==========================================================================
+   15. Slide-Over Drawer Component
+   ========================================================================== */
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: var(--z-modal-backdrop);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer-panel {
+  width: 100%;
+  max-width: 32rem;
+  height: 100%;
+  background-color: var(--sys-surface-default);
+  box-shadow: var(--sys-shadow-xl);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-modal);
+  overflow: hidden;
+}
+
+.drawer-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--sys-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawer-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--sys-text-primary);
+  margin: 0;
+}
+
+.drawer-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.drawer-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--sys-border-subtle);
+  background-color: var(--sys-surface-canvas);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.profile-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-card-item {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--sys-border-default);
+  border-radius: var(--radius-md);
+  background-color: var(--sys-surface-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.profile-card-item.is-selected {
+  border-color: var(--sys-color-action-primary);
+  background-color: var(--color-indigo-50);
+}
+
+@media (prefers-color-scheme: dark) {
+  .profile-card-item.is-selected {
+    background-color: rgba(99, 102, 241, 0.15);
+  }
+}
+
