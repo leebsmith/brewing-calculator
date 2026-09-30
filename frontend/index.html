@@ -468,40 +468,27 @@
               </div>
 
               <!-- Solver Mode Toggle -->
-              <div class="form-group bg-slate-100/70 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
-                <div class="flex items-center justify-between">
-                  <label class="form-label font-semibold text-slate-800 dark:text-slate-200">Boil Solver Mode</label>
-                  <span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono" x-text="manifest.boil_solver_mode === 'option_b' ? 'Mode: Hardware-Driven (B)' : 'Mode: Target-Driven (A)'"></span>
+              <div class="form-group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="form-label mb-0">Boil Solver Mode</label>
+                  <span class="text-[11px] text-slate-400 font-mono" x-text="manifest.boil_solver_mode === 'option_b' ? 'Fixing Rate → Solving Post-Vol' : 'Fixing Post-Vol → Solving Rate'"></span>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
                   <button
                     type="button"
                     @click="setBoilSolverMode('option_b')"
-                    class="relative p-3.5 text-left rounded-xl border-2 transition-all duration-200 flex flex-col justify-between group shadow-sm hover:shadow"
-                    :class="manifest.boil_solver_mode === 'option_b' ? 'bg-primary-50/80 dark:bg-primary-950/40 border-primary-500 dark:border-primary-400 ring-1 ring-primary-500/20' : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600'"
+                    class="flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all text-center truncate"
+                    :class="manifest.boil_solver_mode === 'option_b' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
                   >
-                    <div class="flex items-center justify-between w-full mb-1">
-                      <span class="text-xs font-bold uppercase tracking-wider" :class="manifest.boil_solver_mode === 'option_b' ? 'text-primary-700 dark:text-primary-300' : 'text-slate-700 dark:text-slate-300'">Hardware-Driven (Option B)</span>
-                      <span class="w-4 h-4 rounded-full border flex items-center justify-center transition-colors" :class="manifest.boil_solver_mode === 'option_b' ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-300 dark:border-slate-600 bg-transparent'">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="manifest.boil_solver_mode === 'option_b'"></span>
-                      </span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">Fix Pre-boil Vol/Gravity & Rate → Solve Post-boil Vol & Target OG</p>
+                    Hardware-Driven (Option B)
                   </button>
-
                   <button
                     type="button"
                     @click="setBoilSolverMode('option_a')"
-                    class="relative p-3.5 text-left rounded-xl border-2 transition-all duration-200 flex flex-col justify-between group shadow-sm hover:shadow"
-                    :class="manifest.boil_solver_mode === 'option_a' ? 'bg-primary-50/80 dark:bg-primary-950/40 border-primary-500 dark:border-primary-400 ring-1 ring-primary-500/20' : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600'"
+                    class="flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all text-center truncate"
+                    :class="manifest.boil_solver_mode === 'option_a' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
                   >
-                    <div class="flex items-center justify-between w-full mb-1">
-                      <span class="text-xs font-bold uppercase tracking-wider" :class="manifest.boil_solver_mode === 'option_a' ? 'text-primary-700 dark:text-primary-300' : 'text-slate-700 dark:text-slate-300'">Target-Driven (Option A)</span>
-                      <span class="w-4 h-4 rounded-full border flex items-center justify-center transition-colors" :class="manifest.boil_solver_mode === 'option_a' ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-300 dark:border-slate-600 bg-transparent'">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="manifest.boil_solver_mode === 'option_a'"></span>
-                      </span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">Fix Pre-boil & Post-boil Vol → Solve Required Rate & OG</p>
+                    Target-Driven (Option A)
                   </button>
                 </div>
               </div>
