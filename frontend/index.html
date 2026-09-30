@@ -361,19 +361,19 @@
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <span class="text-xs text-slate-400 block">Kettle Limit</span>
-                  <span class="font-mono font-bold tabular-nums" x-text="kettleCapacity + ' L'"></span>
+                  <span class="font-mono font-bold tabular-nums" x-text="volDisplay(manifest.equipment.max_kettle_volume_l) + ' ' + $store.units.preferences.volume.unit"></span>
                 </div>
                 <div>
                   <span class="text-xs text-slate-400 block">Fixed Losses</span>
-                  <span class="font-mono font-bold tabular-nums" x-text="fixedSystemLoss + ' L'"></span>
+                  <span class="font-mono font-bold tabular-nums" x-text="volDisplay((parseFloat(manifest.equipment.mash_dead_space_l) || 0) + (parseFloat(manifest.equipment.trub_loss_l) || 0)) + ' ' + $store.units.preferences.volume.unit"></span>
                 </div>
                 <div>
                   <span class="text-xs text-slate-400 block">Boil-Off Rate</span>
-                  <span class="font-mono font-bold tabular-nums" x-text="hourlyEvaporation + ' L/hr'"></span>
+                  <span class="font-mono font-bold tabular-nums" x-text="volDisplay(manifest.equipment.boil_off_rate_l_per_hr) + ' ' + $store.units.preferences.volume.unit + '/hr'"></span>
                 </div>
                 <div>
                   <span class="text-xs text-slate-400 block">HERMS Coil Floor</span>
-                  <span class="font-mono font-bold tabular-nums" x-text="hltCoilFloor + ' L'"></span>
+                  <span class="font-mono font-bold tabular-nums" x-text="volDisplay(manifest.equipment.hlt_min_volume_l) + ' ' + $store.units.preferences.volume.unit"></span>
                 </div>
               </div>
             </div>
