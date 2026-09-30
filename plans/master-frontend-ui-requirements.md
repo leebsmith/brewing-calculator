@@ -147,6 +147,13 @@ const UNIT_REGISTRY = {
       SG:    { label: 'SG',    to_base: (v) => v, from_base: (v) => v, precision: 3 },
       Plato: { label: '°P',    to_base: (p) => 1 + (p / (258.6 - (p/258.2) * 227.1)), from_base: (sg) => (-1 * 616.868) + (1111.14 * sg) - (630.272 * Math.pow(sg, 2)) + (135.997 * Math.pow(sg, 3)), precision: 1 }
     }
+  },
+  percentage: {
+    base_unit: 'fraction',
+    units: {
+      fraction: { label: 'fraction', to_base: (v) => v, from_base: (v) => v, precision: 3 },
+      '%':      { label: '%',        to_base: (v) => v / 100, from_base: (v) => v * 100, precision: 1 }
+    }
   }
 };
 ```

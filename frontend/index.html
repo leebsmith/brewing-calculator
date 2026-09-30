@@ -21,15 +21,16 @@
   <!-- Centralized Constants -->
   <script src="constants.js"></script>
 
-  <!-- Application logic defining Alpine.store and Alpine.data -->
+  <!-- Application logic defining Alpine.store and Alpine.data (registers alpine:init listener) -->
   <script src="script.js"></script>
 
-  <!-- Alpine.js (deferred CDN) -->
+  <!-- Alpine.js Collapse Plugin & Core (deferred so they initialize after listeners are registered) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="app-shell">
+<body class="app-shell" x-data>
   <!-- Top Navigation Bar -->
-  <header class="site-header" x-data>
+  <header class="site-header">
     <div class="header-inner">
       <div class="brand">
         <span class="brand-mark">B</span>
@@ -41,21 +42,21 @@
         <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
           <button
             type="button"
-            @click="$store.units.setPreset('metric')"
+            @click="$store.units.setPreset(BREW_CONSTANTS.UNIT_PRESET_METRIC)"
             class="px-2 py-1 rounded font-medium transition-colors"
-            :class="$store.units.activePreset === 'metric' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            :class="$store.units.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
           >
             Metric (L)
           </button>
           <button
             type="button"
-            @click="$store.units.setPreset('imperial')"
+            @click="$store.units.setPreset(BREW_CONSTANTS.UNIT_PRESET_IMPERIAL)"
             class="px-2 py-1 rounded font-medium transition-colors"
-            :class="$store.units.activePreset === 'imperial' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            :class="$store.units.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
           >
             Imperial (gal)
           </button>
-          <template x-if="$store.units.activePreset === 'custom'">
+          <template x-if="$store.units.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM">
             <span class="px-2 py-1 text-primary-600 dark:text-primary-400 font-bold">Custom</span>
           </template>
         </div>
@@ -363,16 +364,22 @@
 
               <!-- Conversion Efficiency -->
               <div class="form-group">
-                <label class="form-label">Conversion Efficiency (Ce)</label>
-                <input type="number" step="0.01" min="0.5" max="1.0" x-model.number="manifest.equipment.conversion_efficiency" @input="onEquipmentChange" class="form-input tabular-nums" />
-                <span class="form-hint">Starch conversion efficiency (e.g. 0.90 = 90%)</span>
+                <div class="flex items-center justify-between">
+                  <label class="form-label">Conversion Efficiency (Ce)</label>
+                  <button type="button" @click="$store.units.togglePercentage('conversion_efficiency')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('conversion_efficiency') }" x-text="$store.units.getFieldUnit('percentage', 'conversion_efficiency')" title="Click to toggle unit"></button>
+                </div>
+                <input type="number" step="1" min="0" max="100" :value="percentageDisplay(manifest.equipment.conversion_efficiency, 'conversion_efficiency')" @input="setPercentageDisplay(manifest.equipment, 'conversion_efficiency', $event.target.value, 'conversion_efficiency'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Starch conversion efficiency</span>
               </div>
 
               <!-- Cooling Shrinkage -->
               <div class="form-group">
-                <label class="form-label">Cooling Shrinkage (fraction)</label>
-                <input type="number" step="0.005" min="0" max="0.1" x-model.number="manifest.equipment.shrinkage_pct" @input="onEquipmentChange" class="form-input tabular-nums" />
-                <span class="form-hint">Hot-to-cold contraction (default 0.04 = 4%)</span>
+                <div class="flex items-center justify-between">
+                  <label class="form-label">Cooling Shrinkage</label>
+                  <button type="button" @click="$store.units.togglePercentage('shrinkage_pct')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('shrinkage_pct') }" x-text="$store.units.getFieldUnit('percentage', 'shrinkage_pct')" title="Click to toggle unit"></button>
+                </div>
+                <input type="number" step="0.5" min="0" max="20" :value="percentageDisplay(manifest.equipment.shrinkage_pct, 'shrinkage_pct')" @input="setPercentageDisplay(manifest.equipment, 'shrinkage_pct', $event.target.value, 'shrinkage_pct'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Hot-to-cold contraction factor</span>
               </div>
             </div>
 
@@ -495,9 +502,12 @@
 
                 <!-- Pre-Boil Gravity -->
                 <div class="form-group">
-                  <label class="form-label">Pre-Boil Gravity (<span x-text="$store.units.preferences.gravity.unit"></span>)</label>
-                  <input type="number" step="0.001" min="1.010" max="1.150" x-model.number="manifest.preboil_gravity" @input="onBatchMetaChange" class="form-input tabular-nums" required />
-                  <span class="form-hint">Specific gravity measured before applying heat</span>
+                  <div class="flex items-center justify-between">
+                    <label class="form-label">Pre-Boil Gravity</label>
+                    <button type="button" @click="$store.units.toggleField('gravity', 'preboil_gravity')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('preboil_gravity') }" x-text="$store.units.getFieldUnit('gravity', 'preboil_gravity')" title="Click to toggle gravity unit"></button>
+                  </div>
+                  <input type="number" step="0.001" min="1.000" max="1.200" :value="gravityDisplay(manifest.preboil_gravity, 'preboil_gravity')" @input="setGravityDisplay(manifest, 'preboil_gravity', $event.target.value, 'preboil_gravity')" class="form-input tabular-nums" required />
+                  <span class="form-hint">Specific gravity or Plato measured before boil</span>
                 </div>
 
                 <!-- Boil Time -->

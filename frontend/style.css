@@ -271,10 +271,44 @@ pre {
 }
 
 .form-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: var(--text-xs);
   font-weight: 500;
   color: var(--sys-text-secondary);
+}
+
+.unit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--sys-surface-subtle, rgba(0,0,0,0.04));
+  border: 1px solid var(--sys-border-subtle, rgba(0,0,0,0.1));
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--sys-text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.unit-badge:hover {
+  background-color: var(--sys-color-action-primary-hover, rgba(59, 130, 246, 0.12));
+  border-color: var(--sys-color-action-primary, #3b82f6);
+  color: var(--sys-color-action-primary, #3b82f6);
+}
+
+.unit-badge-customized::after {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--sys-color-accent, #f59e0b);
+  margin-left: 0.1rem;
 }
 
 .form-input {

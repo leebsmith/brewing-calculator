@@ -92,11 +92,25 @@ const UNIT_REGISTRY = {
       Plato: { label: '°P',    to_base: (p) => 1 + (p / (258.6 - (p/258.2) * 227.1)), from_base: (sg) => (-1 * 616.868) + (1111.14 * sg) - (630.272 * Math.pow(sg, 2)) + (135.997 * Math.pow(sg, 3)), precision: 1 }
     }
   },
+  percentage: {
+    base_unit: 'fraction',
+    units: {
+      fraction: { label: 'fraction', to_base: (v) => v, from_base: (v) => v, precision: 3 },
+      '%':      { label: '%',        to_base: (v) => v / 100, from_base: (v) => v * 100, precision: 1 }
+    }
+  },
   compound: {
     base_unit: 'L/kg',
     units: {
       'L/kg':  { label: 'L/kg',  to_base: (v) => v, from_base: (v) => v, precision: 2 },
       'qt/lb': { label: 'qt/lb', to_base: (v) => v * 2.08635, from_base: (v) => v / 2.08635, precision: 2 }
+    }
+  },
+  extract_potential: {
+    base_unit: 'L·°/kg',
+    units: {
+      'L·°/kg':    { label: 'L·°/kg',    to_base: (v) => v, from_base: (v) => v, precision: 2 },
+      'gal·°/lb': { label: 'gal·°/lb', to_base: (v) => v * 8.3454, from_base: (v) => v / 8.3454, precision: 2 }
     }
   }
 };
@@ -104,13 +118,14 @@ const UNIT_REGISTRY = {
 document.addEventListener('alpine:init', () => {
   // Global Units Store with Option C toggle support & per-field overrides
   Alpine.store('units', {
-    activePreset: 'metric', // 'metric' | 'imperial' | 'custom'
+    activePreset: BREW_CONSTANTS.UNIT_PRESET_METRIC, // 'metric' | 'imperial' | 'custom'
     domainDefaults: {
       volume: 'L',
       mass: 'kg',
       hopMass: 'g',
       temperature: 'C',
-      gravity: 'SG'
+      gravity: 'SG',
+      percentage: '%'
     },
     preferences: {
       // domain-level fallbacks
@@ -118,7 +133,8 @@ document.addEventListener('alpine:init', () => {
       mass: { unit: 'kg', is_customized: false },
       hopMass: { unit: 'g', is_customized: false },
       temperature: { unit: 'C', is_customized: false },
-      gravity: { unit: 'SG', is_customized: false }
+      gravity: { unit: 'SG', is_customized: false },
+      percentage: { unit: '%', is_customized: false }
     },
     fieldPreferences: {
       // fieldKey -> { unit, is_customized }
@@ -129,7 +145,7 @@ document.addEventListener('alpine:init', () => {
     init() {
       // Hydrate from localStorage if available
       try {
-        const saved = localStorage.getItem('brew_unit_preferences');
+        const saved = localStorage.getItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed.activePreset) this.activePreset = parsed.activePreset;
@@ -143,7 +159,7 @@ document.addEventListener('alpine:init', () => {
 
     saveToStorage() {
       try {
-        localStorage.setItem('brew_unit_preferences', JSON.stringify({
+        localStorage.setItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES, JSON.stringify({
           activePreset: this.activePreset,
           preferences: this.preferences,
           fieldPreferences: this.fieldPreferences
@@ -168,31 +184,34 @@ document.addEventListener('alpine:init', () => {
       this.activePreset = presetName;
       this.promptModalOpen = false;
 
-      const newUnits = presetName === 'imperial'
-        ? { volume: 'gal', mass: 'lb', hopMass: 'oz', temperature: 'F', gravity: 'SG' }
-        : { volume: 'L', mass: 'kg', hopMass: 'g', temperature: 'C', gravity: 'SG' };
+      const newUnits = presetName === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL
+        ? { volume: 'gal', mass: 'lb', hopMass: 'oz', temperature: 'F', gravity: 'SG', percentage: '%' }
+        : { volume: 'L', mass: 'kg', hopMass: 'g', temperature: 'C', gravity: 'SG', percentage: '%' };
 
+      const updatedPrefs = { ...this.preferences };
       for (const [domain, unit] of Object.entries(newUnits)) {
-        if (overwriteAll || !this.preferences[domain]?.is_customized) {
-          this.preferences[domain] = { unit, is_customized: false };
+        if (overwriteAll || !updatedPrefs[domain]?.is_customized) {
+          updatedPrefs[domain] = { unit, is_customized: false };
         }
       }
+      this.preferences = updatedPrefs;
 
       if (overwriteAll) {
         this.fieldPreferences = {};
       } else {
-        // Remove non-customized fields, keep customized ones
-        for (const [fieldKey, pref] of Object.entries(this.fieldPreferences)) {
+        const updatedFields = { ...this.fieldPreferences };
+        for (const [fieldKey, pref] of Object.entries(updatedFields)) {
           if (!pref.is_customized) {
-            delete this.fieldPreferences[fieldKey];
+            delete updatedFields[fieldKey];
           }
         }
+        this.fieldPreferences = updatedFields;
       }
       this.saveToStorage();
     },
 
     getFieldUnit(domain, fieldKey) {
-      if (fieldKey && this.fieldPreferences[fieldKey]) {
+      if (fieldKey && this.fieldPreferences[fieldKey] && this.fieldPreferences[fieldKey].is_customized) {
         return this.fieldPreferences[fieldKey].unit;
       }
       return this.preferences[domain]?.unit || this.domainDefaults[domain] || 'L';
@@ -200,6 +219,40 @@ document.addEventListener('alpine:init', () => {
 
     isFieldCustomized(fieldKey) {
       return !!this.fieldPreferences[fieldKey]?.is_customized;
+    },
+
+    toggleField(domain, fieldKey) {
+      const current = this.getFieldUnit(domain, fieldKey);
+      let next = current;
+      if (domain === 'volume') {
+        next = current === 'L' ? 'gal' : 'L';
+      } else if (domain === 'mass' || domain === 'hopMass') {
+        next = current === 'kg' ? 'lb' : 'kg';
+      } else if (domain === 'temperature') {
+        next = current === 'C' ? 'F' : 'C';
+      } else if (domain === 'gravity') {
+        next = current === 'SG' ? 'Plato' : 'SG';
+      } else if (domain === 'percentage') {
+        next = current === 'fraction' ? '%' : 'fraction';
+      }
+
+      const defaultUnit = this.activePreset === 'imperial'
+        ? (domain === 'mass' || domain === 'hopMass' ? 'lb' : (domain === 'volume' ? 'gal' : (domain === 'temperature' ? 'F' : (domain === 'gravity' ? 'SG' : (domain === 'percentage' ? '%' : 'fraction')))))
+        : (domain === 'mass' || domain === 'hopMass' ? 'kg' : (domain === 'volume' ? 'L' : (domain === 'temperature' ? 'C' : (domain === 'gravity' ? 'SG' : (domain === 'percentage' ? '%' : 'fraction')))));
+
+      const isCustom = next !== defaultUnit;
+      this.activePreset = 'custom';
+
+      if (fieldKey) {
+        if (isCustom) {
+          this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
+        } else {
+          delete this.fieldPreferences[fieldKey];
+        }
+      } else {
+        this.preferences[domain] = { unit: next, is_customized: isCustom };
+      }
+      this.saveToStorage();
     },
 
     toggleCompound(fieldKey) {
@@ -213,6 +266,33 @@ document.addEventListener('alpine:init', () => {
         delete this.fieldPreferences[fieldKey];
       }
       this.saveToStorage();
+    },
+
+    toggleExtractPotential(fieldKey) {
+      const current = this.getFieldUnit('extract_potential', fieldKey);
+      const next = current === 'L·°/kg' ? 'gal·°/lb' : 'L·°/kg';
+      const isCustom = next !== 'L·°/kg';
+      this.activePreset = 'custom';
+      if (isCustom) {
+        this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
+      } else {
+        delete this.fieldPreferences[fieldKey];
+      }
+      this.saveToStorage();
+    },
+
+    togglePercentage(fieldKey) {
+      const current = this.getFieldUnit('percentage', fieldKey);
+      const next = current === 'fraction' ? '%' : 'fraction';
+      const isCustom = next !== '%';
+      this.activePreset = 'custom';
+      if (isCustom) {
+        this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
+      } else {
+        delete this.fieldPreferences[fieldKey];
+      }
+      this.saveToStorage();
+    },
     },
 
     toDisplay(domain, baseValue, fieldKey) {
@@ -558,6 +638,21 @@ document.addEventListener('alpine:init', () => {
     setCompoundDisplay(obj, prop, displayVal, fieldKey) {
       const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('compound', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
       obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+    },
+    percentageDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('percentage', baseVal, fieldKey) : baseVal;
+    },
+    setPercentageDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('percentage', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+    },
+    gravityDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('gravity', baseVal, fieldKey) : baseVal;
+    },
+    setGravityDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('gravity', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 1.0 : baseVal;
+      this.runBoilSolver();
     },
 
     onBatchMetaChange() {

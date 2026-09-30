@@ -26,6 +26,21 @@ const BREW_CONSTANTS = {
   // Drawer / Custom Profile Defaults
   DEFAULT_CUSTOM_PROFILE_NAME: 'My Custom Profile',
 
+  // Unit System Constants & Presets
+  UNIT_PRESET_METRIC: 'metric',
+  UNIT_PRESET_IMPERIAL: 'imperial',
+  UNIT_PRESET_CUSTOM: 'custom',
+  STORAGE_KEY_UNIT_PREFERENCES: 'brew_unit_preferences',
+
+  UNIT_DOMAIN_MASS: 'mass',
+  UNIT_DOMAIN_VOLUME: 'volume',
+  UNIT_DOMAIN_HOP_MASS: 'hopMass',
+  UNIT_DOMAIN_TEMPERATURE: 'temperature',
+  UNIT_DOMAIN_GRAVITY: 'gravity',
+  UNIT_DOMAIN_PERCENTAGE: 'percentage',
+  UNIT_DOMAIN_COMPOUND: 'compound',
+  UNIT_DOMAIN_EXTRACT_POTENTIAL: 'extract_potential',
+
   // UI Messages & Labels
   MSG_KETTLE_VOLUME_REQUIRED: 'Maximum kettle volume must be greater than zero.',
   MSG_BOIL_OFF_REQUIRED: 'Boil-off rate must be greater than zero.',
