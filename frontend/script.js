@@ -56,7 +56,156 @@ async function apiFetch(path, options = {}) {
   return response;
 }
 
+/**
+ * Universal Unit Registry & Conversion Engine
+ */
+const UNIT_REGISTRY = {
+  mass: {
+    base_unit: 'kg',
+    units: {
+      kg: { label: 'kg', factor: 1.0, precision: 3 },
+      g:  { label: 'g',  factor: 0.001, precision: 1 },
+      lb: { label: 'lb', factor: 0.45359237, precision: 2 },
+      oz: { label: 'oz', factor: 0.028349523, precision: 2 }
+    }
+  },
+  volume: {
+    base_unit: 'L',
+    units: {
+      L:   { label: 'L',   factor: 1.0, precision: 2 },
+      ml:  { label: 'mL',  factor: 0.001, precision: 0 },
+      gal: { label: 'gal', factor: 3.785411784, precision: 2 },
+      qt:  { label: 'qt',  factor: 0.946352946, precision: 2 }
+    }
+  },
+  temperature: {
+    base_unit: 'C',
+    units: {
+      C: { label: '°C', to_base: (v) => v, from_base: (v) => v, precision: 1 },
+      F: { label: '°F', to_base: (v) => (v - 32) * (5/9), from_base: (v) => (v * (9/5)) + 32, precision: 1 }
+    }
+  },
+  gravity: {
+    base_unit: 'SG',
+    units: {
+      SG:    { label: 'SG',    to_base: (v) => v, from_base: (v) => v, precision: 3 },
+      Plato: { label: '°P',    to_base: (p) => 1 + (p / (258.6 - (p/258.2) * 227.1)), from_base: (sg) => (-1 * 616.868) + (1111.14 * sg) - (630.272 * Math.pow(sg, 2)) + (135.997 * Math.pow(sg, 3)), precision: 1 }
+    }
+  }
+};
+
 document.addEventListener('alpine:init', () => {
+  // Global Units Store with Option C toggle support
+  Alpine.store('units', {
+    activePreset: 'metric', // 'metric' | 'imperial' | 'custom'
+    preferences: {
+      volume: { unit: 'L', is_customized: false },
+      mass: { unit: 'kg', is_customized: false },
+      hopMass: { unit: 'g', is_customized: false },
+      temperature: { unit: 'C', is_customized: false },
+      gravity: { unit: 'SG', is_customized: false }
+    },
+    promptModalOpen: false,
+    pendingPreset: null,
+
+    init() {
+      // Hydrate from localStorage if available
+      try {
+        const saved = localStorage.getItem('brew_unit_preferences');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.activePreset) this.activePreset = parsed.activePreset;
+          if (parsed.preferences) this.preferences = { ...this.preferences, ...parsed.preferences };
+        }
+      } catch (err) {
+        console.warn('Failed to load unit preferences from localStorage:', err);
+      }
+    },
+
+    saveToStorage() {
+      try {
+        localStorage.setItem('brew_unit_preferences', JSON.stringify({
+          activePreset: this.activePreset,
+          preferences: this.preferences
+        }));
+      } catch (err) {
+        console.warn('Failed to save unit preferences to localStorage:', err);
+      }
+    },
+
+    setPreset(presetName) {
+      // Check for active custom overrides (Option C)
+      const hasCustomOverrides = Object.values(this.preferences).some(p => p.is_customized);
+      if (hasCustomOverrides && presetName !== this.activePreset) {
+        this.pendingPreset = presetName;
+        this.promptModalOpen = true;
+        return;
+      }
+      this.applyPreset(presetName, true);
+    },
+
+    applyPreset(presetName, overwriteAll = true) {
+      this.activePreset = presetName;
+      this.promptModalOpen = false;
+
+      const newUnits = presetName === 'imperial'
+        ? { volume: 'gal', mass: 'lb', hopMass: 'oz', temperature: 'F', gravity: 'SG' }
+        : { volume: 'L', mass: 'kg', hopMass: 'g', temperature: 'C', gravity: 'SG' };
+
+      for (const [domain, unit] of Object.entries(newUnits)) {
+        if (overwriteAll || !this.preferences[domain]?.is_customized) {
+          this.preferences[domain] = { unit, is_customized: false };
+        }
+      }
+      this.saveToStorage();
+    },
+
+    setFieldUnit(domain, unit) {
+      this.activePreset = 'custom';
+      const defaultUnit = this.activePreset === 'imperial' ? (domain === 'mass' || domain === 'hopMass' ? 'lb' : 'gal') : (domain === 'mass' || domain === 'hopMass' ? 'kg' : 'L');
+      const isCustom = unit !== defaultUnit;
+      this.preferences[domain] = { unit, is_customized: isCustom };
+      this.saveToStorage();
+    },
+
+    toDisplay(domain, baseValue) {
+      if (baseValue == null || isNaN(baseValue)) return 0;
+      const domainDef = UNIT_REGISTRY[domain];
+      if (!domainDef) return baseValue;
+      const pref = this.preferences[domain]?.unit || domainDef.base_unit;
+      const unitDef = domainDef.units[pref];
+      if (!unitDef) return baseValue;
+
+      let converted = 0;
+      if (unitDef.to_base) {
+        // Temperature or Gravity
+        // Note: unitDef.to_base converts display -> base, so from_base converts base -> display
+        // Wait, for temperature: C is base. to_base(F) = C. from_base(C) = F.
+        converted = unitDef.from_base ? unitDef.from_base(baseValue) : baseValue;
+      } else {
+        converted = baseValue / unitDef.factor;
+      }
+      return Number(converted.toFixed(unitDef.precision || 2));
+    },
+
+    toBase(domain, displayValue) {
+      if (displayValue == null || isNaN(displayValue)) return 0;
+      const domainDef = UNIT_REGISTRY[domain];
+      if (!domainDef) return displayValue;
+      const pref = this.preferences[domain]?.unit || domainDef.base_unit;
+      const unitDef = domainDef.units[pref];
+      if (!unitDef) return displayValue;
+
+      let baseVal = 0;
+      if (unitDef.to_base) {
+        baseVal = unitDef.to_base(displayValue);
+      } else {
+        baseVal = displayValue * unitDef.factor;
+      }
+      return baseVal;
+    }
+  });
+
   // Global Authentication Store
   Alpine.store('auth', {
     user: null,
