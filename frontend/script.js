@@ -293,7 +293,6 @@ document.addEventListener('alpine:init', () => {
       }
       this.saveToStorage();
     },
-    },
 
     toDisplay(domain, baseValue, fieldKey) {
       if (baseValue == null || isNaN(baseValue)) return 0;
