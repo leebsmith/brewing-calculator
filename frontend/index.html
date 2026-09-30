@@ -364,20 +364,20 @@
 
               <!-- Conversion Efficiency -->
               <div class="form-group">
-                <div class="flex items-center justify-between">
-                  <label class="form-label">Conversion Efficiency (Ce)</label>
+                <label class="form-label">
+                  <span>Conversion Efficiency (Ce)</span>
                   <button type="button" @click="$store.units.togglePercentage('conversion_efficiency')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('conversion_efficiency') }" x-text="$store.units.getFieldUnit('percentage', 'conversion_efficiency')" title="Click to toggle unit"></button>
-                </div>
+                </label>
                 <input type="number" step="1" min="0" max="100" :value="percentageDisplay(manifest.equipment.conversion_efficiency, 'conversion_efficiency')" @input="setPercentageDisplay(manifest.equipment, 'conversion_efficiency', $event.target.value, 'conversion_efficiency'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Starch conversion efficiency</span>
               </div>
 
               <!-- Cooling Shrinkage -->
               <div class="form-group">
-                <div class="flex items-center justify-between">
-                  <label class="form-label">Cooling Shrinkage</label>
+                <label class="form-label">
+                  <span>Cooling Shrinkage</span>
                   <button type="button" @click="$store.units.togglePercentage('shrinkage_pct')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('shrinkage_pct') }" x-text="$store.units.getFieldUnit('percentage', 'shrinkage_pct')" title="Click to toggle unit"></button>
-                </div>
+                </label>
                 <input type="number" step="0.5" min="0" max="20" :value="percentageDisplay(manifest.equipment.shrinkage_pct, 'shrinkage_pct')" @input="setPercentageDisplay(manifest.equipment, 'shrinkage_pct', $event.target.value, 'shrinkage_pct'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Hot-to-cold contraction factor</span>
               </div>
