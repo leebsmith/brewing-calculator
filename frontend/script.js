@@ -492,6 +492,23 @@ document.addEventListener('alpine:init', () => {
       this.runBoilSolver();
     },
 
+    // Unit-aware field binding helpers (automatically convert between metric base storage and selected display unit)
+    volDisplay(baseVal) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('volume', baseVal) : baseVal;
+    },
+    setVolDisplay(obj, prop, displayVal) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('volume', parseFloat(displayVal)) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+      this.runBoilSolver();
+    },
+    massDisplay(baseVal) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('mass', baseVal) : baseVal;
+    },
+    setMassDisplay(obj, prop, displayVal) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('mass', parseFloat(displayVal)) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+    },
+
     onBatchMetaChange() {
       this.runBoilSolver();
     },

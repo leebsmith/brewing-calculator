@@ -284,56 +284,56 @@
               <!-- Max Kettle Volume -->
               <div class="form-group">
                 <label class="form-label">Max Kettle Volume (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
-                <input type="number" step="0.5" min="1" x-model.number="manifest.equipment.max_kettle_volume_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_kettle_volume_l)" @input="setVolDisplay(manifest.equipment, 'max_kettle_volume_l', $event.target.value); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Boil kettle brim capacity</span>
               </div>
 
               <!-- Max Mash Tun Volume -->
               <div class="form-group">
                 <label class="form-label">Max Mash Tun Volume (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
-                <input type="number" step="0.5" min="1" x-model.number="manifest.equipment.max_mash_tun_volume_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_mash_tun_volume_l)" @input="setVolDisplay(manifest.equipment, 'max_mash_tun_volume_l', $event.target.value); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Mash vessel overflow limit</span>
               </div>
 
               <!-- Max HLT Volume -->
               <div class="form-group">
                 <label class="form-label">Max HLT Volume (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
-                <input type="number" step="0.5" min="0" x-model.number="manifest.equipment.max_hlt_volume_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.max_hlt_volume_l)" @input="setVolDisplay(manifest.equipment, 'max_hlt_volume_l', $event.target.value); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Hot Liquor Tank initial fill capacity</span>
               </div>
 
               <!-- HLT Min Coil Floor -->
               <div class="form-group">
                 <label class="form-label">HLT Min Coil Floor (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
-                <input type="number" step="0.5" min="0" x-model.number="manifest.equipment.hlt_min_volume_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.hlt_min_volume_l)" @input="setVolDisplay(manifest.equipment, 'hlt_min_volume_l', $event.target.value); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">HERMS coil submersion floor</span>
               </div>
 
               <!-- Mash Dead Space -->
               <div class="form-group">
                 <label class="form-label">Mash Dead Space (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
-                <input type="number" step="0.1" min="0" x-model.number="manifest.equipment.mash_dead_space_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.mash_dead_space_l)" @input="setVolDisplay(manifest.equipment, 'mash_dead_space_l', $event.target.value); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Unrecoverable mash plumbing loss</span>
               </div>
 
               <!-- Trub Loss -->
               <div class="form-group">
                 <label class="form-label">Trub Loss (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
-                <input type="number" step="0.1" min="0" x-model.number="manifest.equipment.trub_loss_l" @input="onEquipmentChange" class="form-input tabular-nums" />
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.trub_loss_l)" @input="setVolDisplay(manifest.equipment, 'trub_loss_l', $event.target.value); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Kettle bottom sediment loss</span>
               </div>
 
               <!-- Boil-Off Rate -->
               <div class="form-group">
                 <label class="form-label">Boil-Off Rate (<span x-text="$store.units.preferences.volume.unit"></span>/hr)</label>
-                <input type="number" step="0.1" min="0.1" x-model.number="manifest.equipment.boil_off_rate_l_per_hr" @input="onEquipmentChange" class="form-input tabular-nums" />
+                <input type="number" step="0.1" min="0.1" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr)" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Evaporation rate per hour</span>
               </div>
 
               <!-- Grain Absorption Factor -->
               <div class="form-group">
                 <label class="form-label">Grain Absorption Factor (<span x-text="$store.units.preferences.volume.unit"></span>/<span x-text="$store.units.preferences.mass.unit"></span>)</label>
-                <input type="number" step="0.01" min="0.5" max="2.0" x-model.number="manifest.equipment.grain_absorption_factor_l_per_kg" @input="onEquipmentChange" class="form-input tabular-nums" />
+                <input type="number" step="0.01" min="0.5" max="2.0" :value="volDisplay(manifest.equipment.grain_absorption_factor_l_per_kg)" @input="setVolDisplay(manifest.equipment, 'grain_absorption_factor_l_per_kg', $event.target.value); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Wort retained per unit mass of dry malt</span>
               </div>
 
@@ -465,7 +465,7 @@
                 <!-- Pre-Boil Volume -->
                 <div class="form-group">
                   <label class="form-label">Pre-Boil Volume (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
-                  <input type="number" step="0.5" min="1" x-model.number="manifest.preboil_volume_l" @input="onBatchMetaChange" class="form-input tabular-nums" required />
+                  <input type="number" step="0.5" min="1" :value="volDisplay(manifest.preboil_volume_l)" @input="setVolDisplay(manifest, 'preboil_volume_l', $event.target.value)" class="form-input tabular-nums" required />
                   <span class="form-hint">Total wort collected in kettle prior to boil</span>
                 </div>
 
@@ -486,21 +486,21 @@
                 <!-- Boil-Off Rate -->
                 <div class="form-group">
                   <label class="form-label">Boil-Off Rate (<span x-text="$store.units.preferences.volume.unit"></span>/hr)</label>
-                  <input type="number" step="0.1" min="0.1" max="15" x-model.number="manifest.equipment.boil_off_rate_l_per_hr" @input="onBatchMetaChange" :disabled="manifest.boil_solver_mode === 'option_a'" class="form-input tabular-nums" :class="{ 'bg-slate-100 dark:bg-slate-800 opacity-80': manifest.boil_solver_mode === 'option_a' }" required />
+                  <input type="number" step="0.1" min="0.1" max="15" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr)" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value)" :disabled="manifest.boil_solver_mode === 'option_a'" class="form-input tabular-nums" :class="{ 'bg-slate-100 dark:bg-slate-800 opacity-80': manifest.boil_solver_mode === 'option_a' }" required />
                   <span class="form-hint" x-text="manifest.boil_solver_mode === 'option_a' ? 'Solved automatically from pre/post volumes' : 'Evaporation rate per hour (PID duty cycle)'"></span>
                 </div>
 
                 <!-- Post-Boil Volume -->
                 <div class="form-group">
                   <label class="form-label">Post-Boil Volume (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
-                  <input type="number" step="0.5" min="1" x-model.number="manifest.postboil_volume_l" @input="onBatchMetaChange" :disabled="manifest.boil_solver_mode === 'option_b'" class="form-input tabular-nums" :class="{ 'bg-slate-100 dark:bg-slate-800 opacity-80': manifest.boil_solver_mode === 'option_b' }" required />
+                  <input type="number" step="0.5" min="1" :value="volDisplay(manifest.postboil_volume_l)" @input="setVolDisplay(manifest, 'postboil_volume_l', $event.target.value)" :disabled="manifest.boil_solver_mode === 'option_b'" class="form-input tabular-nums" :class="{ 'bg-slate-100 dark:bg-slate-800 opacity-80': manifest.boil_solver_mode === 'option_b' }" required />
                   <span class="form-hint" x-text="manifest.boil_solver_mode === 'option_b' ? 'Derived from pre-boil volume minus boil-off' : 'Hot wort volume at flameout'"></span>
                 </div>
 
                 <!-- Target Packaged Volume (Result) -->
                 <div class="form-group">
                   <label class="form-label">Target Packaged Volume (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
-                  <input type="number" step="0.5" min="1" x-model.number="manifest.target_volume_l" readonly class="form-input tabular-nums bg-slate-100 dark:bg-slate-800 opacity-90 cursor-not-allowed" />
+                  <input type="number" step="0.5" min="1" :value="volDisplay(manifest.target_volume_l)" readonly class="form-input tabular-nums bg-slate-100 dark:bg-slate-800 opacity-90 cursor-not-allowed" />
                   <span class="form-hint">Derived: Post-boil minus trub loss & cooling shrinkage</span>
                 </div>
               </div>
