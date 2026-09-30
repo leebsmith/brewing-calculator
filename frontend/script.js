@@ -461,6 +461,11 @@ document.addEventListener('alpine:init', () => {
       target_volume_l: BREW_CONSTANTS.DEFAULT_TARGET_VOLUME_L,
       target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
       boil_time_min: BREW_CONSTANTS.DEFAULT_BOIL_TIME_MIN,
+      boil_solver_mode: 'option_b', // 'option_b' (solve post-boil/OG) or 'option_a' (solve boil-off rate)
+      preboil_volume_l: 26.0,
+      preboil_gravity: 1.045,
+      postboil_volume_l: 22.5,
+      postboil_gravity: 1.052,
       grain_bill: [],
       late_additions: [],
       mash_profile: [],
@@ -476,8 +481,67 @@ document.addEventListener('alpine:init', () => {
       this.$watch('$store.equipment.profiles', (profiles) => {
         if (profiles && profiles.length > 0 && !this.manifest.equipment_profile_id) {
           this.selectProfile(profiles[0].id);
+          this.runBoilSolver();
         }
       });
+      this.runBoilSolver();
+    },
+
+    setBoilSolverMode(mode) {
+      this.manifest.boil_solver_mode = mode;
+      this.runBoilSolver();
+    },
+
+    onBatchMetaChange() {
+      this.runBoilSolver();
+    },
+
+    runBoilSolver() {
+      const m = this.manifest;
+      const eq = m.equipment;
+      const boilTimeHrs = (parseFloat(m.boil_time_min) || 60) / 60.0;
+      const trubLoss = parseFloat(eq.trub_loss_l) || 0;
+      const shrinkage = parseFloat(eq.shrinkage_pct) || 0.04;
+
+      if (m.boil_solver_mode === 'option_a') {
+        // Option A: Pre-boil vol/gravity & Post-boil vol fixed -> solve Boil-Off Rate & Post-Boil OG
+        const vPre = parseFloat(m.preboil_volume_l) || 26.0;
+        const sgPre = parseFloat(m.preboil_gravity) || 1.045;
+        const vPost = parseFloat(m.postboil_volume_l) || 22.5;
+
+        if (boilTimeHrs > 0 && vPre > vPost) {
+          const totalBoilOff = vPre - vPost;
+          eq.boil_off_rate_l_per_hr = Number((totalBoilOff / boilTimeHrs).toFixed(2));
+        }
+
+        const extractPointsTotal = vPre * (sgPre - 1.0);
+        const sgPost = vPost > 0 ? 1.0 + (extractPointsTotal / vPost) : 1.050;
+        m.postboil_gravity = Number(sgPost.toFixed(3));
+
+        const vTarget = Math.max(0, (vPost - trubLoss) * (1.0 - shrinkage));
+        m.target_volume_l = Number(vTarget.toFixed(1));
+        const targetOg = vTarget > 0 ? 1.0 + (extractPointsTotal / vTarget) : sgPost;
+        m.target_og = Number(targetOg.toFixed(3));
+
+      } else {
+        // Option B (Default): Pre-boil vol/gravity, boil time & boil-off rate fixed -> solve Post-Boil Vol, Post-Boil Gravity, Packaged Volume & Target OG
+        const vPre = parseFloat(m.preboil_volume_l) || 26.0;
+        const sgPre = parseFloat(m.preboil_gravity) || 1.045;
+        const rate = parseFloat(eq.boil_off_rate_l_per_hr) || 3.5;
+
+        const totalBoilOff = rate * boilTimeHrs;
+        const vPost = Math.max(0, vPre - totalBoilOff);
+        m.postboil_volume_l = Number(vPost.toFixed(1));
+
+        const extractPointsTotal = vPre * (sgPre - 1.0);
+        const sgPost = vPost > 0 ? 1.0 + (extractPointsTotal / vPost) : 1.050;
+        m.postboil_gravity = Number(sgPost.toFixed(3));
+
+        const vTarget = Math.max(0, (vPost - trubLoss) * (1.0 - shrinkage));
+        m.target_volume_l = Number(vTarget.toFixed(1));
+        const targetOg = vTarget > 0 ? 1.0 + (extractPointsTotal / vTarget) : sgPost;
+        m.target_og = Number(targetOg.toFixed(3));
+      }
     },
 
     // Step 1 Synthesized Outputs
