@@ -91,19 +91,37 @@ const UNIT_REGISTRY = {
       SG:    { label: 'SG',    to_base: (v) => v, from_base: (v) => v, precision: 3 },
       Plato: { label: '°P',    to_base: (p) => 1 + (p / (258.6 - (p/258.2) * 227.1)), from_base: (sg) => (-1 * 616.868) + (1111.14 * sg) - (630.272 * Math.pow(sg, 2)) + (135.997 * Math.pow(sg, 3)), precision: 1 }
     }
+  },
+  compound: {
+    base_unit: 'L/kg',
+    units: {
+      'L/kg':  { label: 'L/kg',  to_base: (v) => v, from_base: (v) => v, precision: 2 },
+      'qt/lb': { label: 'qt/lb', to_base: (v) => v * 2.08635, from_base: (v) => v / 2.08635, precision: 2 }
+    }
   }
 };
 
 document.addEventListener('alpine:init', () => {
-  // Global Units Store with Option C toggle support
+  // Global Units Store with Option C toggle support & per-field overrides
   Alpine.store('units', {
     activePreset: 'metric', // 'metric' | 'imperial' | 'custom'
+    domainDefaults: {
+      volume: 'L',
+      mass: 'kg',
+      hopMass: 'g',
+      temperature: 'C',
+      gravity: 'SG'
+    },
     preferences: {
+      // domain-level fallbacks
       volume: { unit: 'L', is_customized: false },
       mass: { unit: 'kg', is_customized: false },
       hopMass: { unit: 'g', is_customized: false },
       temperature: { unit: 'C', is_customized: false },
       gravity: { unit: 'SG', is_customized: false }
+    },
+    fieldPreferences: {
+      // fieldKey -> { unit, is_customized }
     },
     promptModalOpen: false,
     pendingPreset: null,
@@ -116,6 +134,7 @@ document.addEventListener('alpine:init', () => {
           const parsed = JSON.parse(saved);
           if (parsed.activePreset) this.activePreset = parsed.activePreset;
           if (parsed.preferences) this.preferences = { ...this.preferences, ...parsed.preferences };
+          if (parsed.fieldPreferences) this.fieldPreferences = parsed.fieldPreferences;
         }
       } catch (err) {
         console.warn('Failed to load unit preferences from localStorage:', err);
@@ -126,7 +145,8 @@ document.addEventListener('alpine:init', () => {
       try {
         localStorage.setItem('brew_unit_preferences', JSON.stringify({
           activePreset: this.activePreset,
-          preferences: this.preferences
+          preferences: this.preferences,
+          fieldPreferences: this.fieldPreferences
         }));
       } catch (err) {
         console.warn('Failed to save unit preferences to localStorage:', err);
@@ -134,8 +154,8 @@ document.addEventListener('alpine:init', () => {
     },
 
     setPreset(presetName) {
-      // Check for active custom overrides (Option C)
-      const hasCustomOverrides = Object.values(this.preferences).some(p => p.is_customized);
+      const hasCustomOverrides = Object.values(this.preferences).some(p => p.is_customized) ||
+        Object.values(this.fieldPreferences).some(p => p.is_customized);
       if (hasCustomOverrides && presetName !== this.activePreset) {
         this.pendingPreset = presetName;
         this.promptModalOpen = true;
@@ -157,30 +177,54 @@ document.addEventListener('alpine:init', () => {
           this.preferences[domain] = { unit, is_customized: false };
         }
       }
+
+      if (overwriteAll) {
+        this.fieldPreferences = {};
+      } else {
+        // Remove non-customized fields, keep customized ones
+        for (const [fieldKey, pref] of Object.entries(this.fieldPreferences)) {
+          if (!pref.is_customized) {
+            delete this.fieldPreferences[fieldKey];
+          }
+        }
+      }
       this.saveToStorage();
     },
 
-    setFieldUnit(domain, unit) {
+    getFieldUnit(domain, fieldKey) {
+      if (fieldKey && this.fieldPreferences[fieldKey]) {
+        return this.fieldPreferences[fieldKey].unit;
+      }
+      return this.preferences[domain]?.unit || this.domainDefaults[domain] || 'L';
+    },
+
+    isFieldCustomized(fieldKey) {
+      return !!this.fieldPreferences[fieldKey]?.is_customized;
+    },
+
+    toggleCompound(fieldKey) {
+      const current = this.getFieldUnit('compound', fieldKey);
+      const next = current === 'L/kg' ? 'qt/lb' : 'L/kg';
+      const isCustom = next !== 'L/kg';
       this.activePreset = 'custom';
-      const defaultUnit = this.activePreset === 'imperial' ? (domain === 'mass' || domain === 'hopMass' ? 'lb' : 'gal') : (domain === 'mass' || domain === 'hopMass' ? 'kg' : 'L');
-      const isCustom = unit !== defaultUnit;
-      this.preferences[domain] = { unit, is_customized: isCustom };
+      if (isCustom) {
+        this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
+      } else {
+        delete this.fieldPreferences[fieldKey];
+      }
       this.saveToStorage();
     },
 
-    toDisplay(domain, baseValue) {
+    toDisplay(domain, baseValue, fieldKey) {
       if (baseValue == null || isNaN(baseValue)) return 0;
       const domainDef = UNIT_REGISTRY[domain];
       if (!domainDef) return baseValue;
-      const pref = this.preferences[domain]?.unit || domainDef.base_unit;
+      const pref = this.getFieldUnit(domain, fieldKey);
       const unitDef = domainDef.units[pref];
       if (!unitDef) return baseValue;
 
       let converted = 0;
       if (unitDef.to_base) {
-        // Temperature or Gravity
-        // Note: unitDef.to_base converts display -> base, so from_base converts base -> display
-        // Wait, for temperature: C is base. to_base(F) = C. from_base(C) = F.
         converted = unitDef.from_base ? unitDef.from_base(baseValue) : baseValue;
       } else {
         converted = baseValue / unitDef.factor;
@@ -188,11 +232,11 @@ document.addEventListener('alpine:init', () => {
       return Number(converted.toFixed(unitDef.precision || 2));
     },
 
-    toBase(domain, displayValue) {
+    toBase(domain, displayValue, fieldKey) {
       if (displayValue == null || isNaN(displayValue)) return 0;
       const domainDef = UNIT_REGISTRY[domain];
       if (!domainDef) return displayValue;
-      const pref = this.preferences[domain]?.unit || domainDef.base_unit;
+      const pref = this.getFieldUnit(domain, fieldKey);
       const unitDef = domainDef.units[pref];
       if (!unitDef) return displayValue;
 
@@ -493,19 +537,26 @@ document.addEventListener('alpine:init', () => {
     },
 
     // Unit-aware field binding helpers (automatically convert between metric base storage and selected display unit)
-    volDisplay(baseVal) {
-      return Alpine.store('units') ? Alpine.store('units').toDisplay('volume', baseVal) : baseVal;
+    volDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('volume', baseVal, fieldKey) : baseVal;
     },
-    setVolDisplay(obj, prop, displayVal) {
-      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('volume', parseFloat(displayVal)) : parseFloat(displayVal);
+    setVolDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('volume', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
       obj[prop] = isNaN(baseVal) ? 0 : baseVal;
       this.runBoilSolver();
     },
-    massDisplay(baseVal) {
-      return Alpine.store('units') ? Alpine.store('units').toDisplay('mass', baseVal) : baseVal;
+    massDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('mass', baseVal, fieldKey) : baseVal;
     },
-    setMassDisplay(obj, prop, displayVal) {
-      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('mass', parseFloat(displayVal)) : parseFloat(displayVal);
+    setMassDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('mass', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+    },
+    compoundDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('compound', baseVal, fieldKey) : baseVal;
+    },
+    setCompoundDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('compound', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
       obj[prop] = isNaN(baseVal) ? 0 : baseVal;
     },
 
