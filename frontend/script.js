@@ -500,6 +500,24 @@ document.addEventListener('alpine:init', () => {
       return (parseFloat(this.manifest.equipment.hlt_min_volume_l) || 0).toFixed(1);
     },
 
+    // Step 2 Synthesized Outputs
+    get targetVolumeDisplay() {
+      return (parseFloat(this.manifest.target_volume_l) || 0).toFixed(1);
+    },
+
+    get targetOgPoints() {
+      const og = parseFloat(this.manifest.target_og) || 1.000;
+      const points = Math.max(0, (og - 1.0) * 1000);
+      return points.toFixed(1);
+    },
+
+    get targetKettleExtract() {
+      const vol = parseFloat(this.manifest.target_volume_l) || 0;
+      const og = parseFloat(this.manifest.target_og) || 1.000;
+      const points = Math.max(0, (og - 1.0) * 1000);
+      return (vol * points).toFixed(1);
+    },
+
     get isCustomModified() {
       const selectedId = this.manifest.equipment_profile_id;
       if (!selectedId) return true;
@@ -547,6 +565,10 @@ document.addEventListener('alpine:init', () => {
       this.invalidateDownstream(1);
     },
 
+    onBatchMetaChange() {
+      this.invalidateDownstream(2);
+    },
+
     setActiveStep(stepNumber) {
       if (stepNumber <= this.highWaterMark || this.expansionMode === 'concurrent') {
         this.activeStep = stepNumber;
@@ -563,6 +585,22 @@ document.addEventListener('alpine:init', () => {
         }
         if (!eq.boil_off_rate_l_per_hr || eq.boil_off_rate_l_per_hr <= 0) {
           Alpine.store('ui').add(BREW_CONSTANTS.MSG_BOIL_OFF_REQUIRED, 'error');
+          return;
+        }
+      }
+
+      // Validate Step 2
+      if (stepNumber === 2) {
+        if (!this.manifest.name || this.manifest.name.trim() === '') {
+          Alpine.store('ui').add('Batch name is required.', 'error');
+          return;
+        }
+        if (!this.manifest.target_volume_l || this.manifest.target_volume_l <= 0) {
+          Alpine.store('ui').add('Target packaged volume must be greater than zero.', 'error');
+          return;
+        }
+        if (!this.manifest.target_og || this.manifest.target_og < 1.010 || this.manifest.target_og > 1.200) {
+          Alpine.store('ui').add('Target original gravity must be between 1.010 and 1.200.', 'error');
           return;
         }
       }

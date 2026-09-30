@@ -368,6 +368,108 @@
           </div>
         </div>
 
+        <!-- Step 2: Batch Metadata Accordion Card -->
+        <div class="step-card" :class="{ 'is-active': activeStep === 2, 'is-completed': completedSteps.includes(2) }">
+          <div class="accordion-header">
+            <button
+              type="button"
+              class="accordion-trigger"
+              :aria-expanded="activeStep === 2"
+              aria-controls="step-panel-2"
+              id="step-trigger-2"
+              @click="setActiveStep(2)"
+            >
+              <div class="accordion-title-wrap">
+                <span class="accordion-step-num">2</span>
+                <div>
+                  <span class="accordion-title">Batch Metadata & Targets</span>
+                  <span class="accordion-subtitle">Recipe name, target volume, original gravity & boil duration</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="accordion-status-pill" :class="{
+                  'accordion-status-active': activeStep === 2,
+                  'accordion-status-complete': completedSteps.includes(2)
+                }" x-text="completedSteps.includes(2) ? 'Configured' : (activeStep === 2 ? 'Active' : 'Locked')"></span>
+                <span class="text-xs text-slate-400" x-text="activeStep === 2 ? '▲' : '▼'"></span>
+              </div>
+            </button>
+          </div>
+
+          <div
+            id="step-panel-2"
+            role="region"
+            aria-labelledby="step-trigger-2"
+            x-show="activeStep === 2"
+            x-collapse
+            class="step-card-body space-y-6"
+          >
+            <!-- 4 Batch Metadata Fields Grid -->
+            <div class="step-grid-2col grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Batch Name -->
+              <div class="form-group md:col-span-2">
+                <label class="form-label">Batch Name</label>
+                <input type="text" x-model="manifest.name" @input="onBatchMetaChange" class="form-input" placeholder="e.g. West Coast IPA 2026" required />
+                <span class="form-hint">Unique identifier for this brewing recipe</span>
+              </div>
+
+              <!-- Target Volume -->
+              <div class="form-group">
+                <label class="form-label">Target Packaged Volume (<span x-text="$store.units.preferences.volume.unit"></span>)</label>
+                <input type="number" step="0.5" min="1" x-model.number="manifest.target_volume_l" @input="onBatchMetaChange" class="form-input tabular-nums" required />
+                <span class="form-hint">Cold wort volume transferred to fermenter</span>
+              </div>
+
+              <!-- Target OG -->
+              <div class="form-group">
+                <label class="form-label">Target Original Gravity (<span x-text="$store.units.preferences.gravity.unit"></span>)</label>
+                <input type="number" step="0.001" min="1.020" max="1.150" x-model.number="manifest.target_og" @input="onBatchMetaChange" class="form-input tabular-nums" required />
+                <span class="form-hint">Target starting gravity prior to fermentation (e.g. 1.055)</span>
+              </div>
+
+              <!-- Boil Time -->
+              <div class="form-group md:col-span-2">
+                <label class="form-label">Boil Time (min)</label>
+                <input type="number" step="5" min="0" max="180" x-model.number="manifest.boil_time_min" @input="onBatchMetaChange" class="form-input tabular-nums" required />
+                <span class="form-hint">Duration of boil in minutes (default 60 min)</span>
+              </div>
+            </div>
+
+            <!-- Synthesized Output Summary Card -->
+            <div class="synthesized-card p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Synthesized Target Kettle Extract ($S_{\text{kettle}}$)</span>
+                <span class="status-badge status-badge-success text-xs">Recipe Targets Validated</span>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span class="text-xs text-slate-400 block">Target Packaged Vol</span>
+                  <span class="font-mono font-bold tabular-nums" x-text="targetVolumeDisplay + ' ' + $store.units.preferences.volume.unit"></span>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-400 block">Target OG Points</span>
+                  <span class="font-mono font-bold tabular-nums" x-text="targetOgPoints"></span>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-400 block">Target Total Extract</span>
+                  <span class="font-mono font-bold tabular-nums" x-text="targetKettleExtract + ' pts·L'"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step Action Button -->
+            <div class="flex justify-end pt-2">
+              <button
+                type="button"
+                @click="markStepComplete(2)"
+                class="btn btn-primary"
+              >
+                Next: Grain Bill →
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Slide-Over CRUD Drawer for Equipment Profiles -->
         <div
           x-show="showProfileDrawer"
