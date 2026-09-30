@@ -251,16 +251,23 @@ The primary calculation workspace is a progressive 12-step accordion that functi
   * `shrinkage_pct` (Percentage, default $4\%$) — Cooling contraction factor.
 * **Synthesized Output:** Visual diagram/summary card showing vessel capacities (Kettle, Mash Tun, HLT, Coil floor) and fixed system loss totals.
 
-#### Step 2: Batch Metadata
-* **Purpose:** Establishes the core recipe targets.
+#### Step 2: Batch Metadata & Boil Solver
+* **Purpose:** Establishes core recipe targets, pre-boil/post-boil checkpoints, boil duration, boil-off rate, and equipment loss bridges.
 * **DAG Preconditions:** Step 1 valid.
 * **Inputs & Controls:**
   * Batch Name (Text input).
-  * `target_volume` (`UnitInput`, volume) — Cold packaged volume into fermenter.
-  * `target_og` (`UnitInput`, gravity, e.g., $1.065$).
-  * `boil_time` (Minutes, default $60$).
-* **Synthesized Output:** Target Total Kettle Extract:
-  $$S_{\text{kettle}} = (\text{Target OG Points} \times V_{\text{target, cold}})$$
+  * **Solver Mode Toggle:**
+    * *Option A (Solve Boil-Off Rate):* Pre-boil volume/gravity and post-boil volume/gravity are fixed, yielding the required boil-off rate.
+    * *Option B (Solve Post-Boil Volume & Gravity):* Pre-boil volume/gravity, boil-off rate, and boil time are fixed, yielding post-boil volume and Target OG.
+  * Pre-Boil Checkpoint: `preboil_volume` (`UnitInput`), `preboil_gravity` (`UnitInput` / SG).
+  * Post-Boil & Fermenter Checkpoint: `postboil_volume` (`UnitInput`), `target_og` (`UnitInput`), `boil_time` (minutes), `boil_off_rate` (`UnitInput`, L/hr).
+  * Inherited Equipment Losses: Trub Loss (from Step 1) and Cooling Shrinkage (`shrinkage_pct`, e.g. 4%).
+* **Mathematical Invariants & Physics Engine:**
+  * **Mass Conservation (Boil):** $V_{\text{pre}} \times SG_{\text{pre}} = V_{\text{post}} \times SG_{\text{post}}$
+  * **Evaporation:** $V_{\text{pre}} - V_{\text{post}} = \text{Boil-Off Rate} \times \left(\frac{\text{Boil Time}}{60}\right)$
+  * **Thermal Contraction (Chilling):** $V_{\text{target}} = (V_{\text{post}} - \text{Trub Loss}) \times (1 - \text{shrinkage\_pct})$
+  * **Concentration Adjustment:** Total extract points are conserved across chilling ($V_{\text{post}} \times (SG_{\text{post}} - 1.0) = V_{\text{target}} \times (OG - 1.0)$), ensuring $OG > SG_{\text{post}}$ due to thermal contraction.
+* **Synthesized Output:** Target Total Kettle Extract ($S_{\text{kettle}}$ in $\text{L}\cdot\degree$), Pre-boil to post-boil summary cascade, and solver status badge.
 
 #### Step 3: Grain Bill (Proportional %)
 * **Purpose:** Defines proportional malt bill ratios and extract potentials.
