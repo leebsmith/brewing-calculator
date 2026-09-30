@@ -5,6 +5,7 @@ from app.database import get_db
 from app.service import logic
 from app.auth import get_current_user
 from app.schemas.models import PingResponse, AuthenticatedUser, FermentablesCatalogResponse
+from app.core.constants import ERR_CANNOT_DELETE_PRESET
 from app.schemas.templates import EquipmentProfile, EquipmentProfilesResponse
 
 app = FastAPI(title="Batch Brewing Calculator")
@@ -83,7 +84,7 @@ def delete_equipment_profile_endpoint(
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete profile: profile not found or is a protected canonical preset.",
+            detail=ERR_CANNOT_DELETE_PRESET,
         )
     return {"success": True, "deleted_id": profile_id}
 

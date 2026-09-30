@@ -280,23 +280,23 @@ document.addEventListener('alpine:init', () => {
       id: '',
       name: '',
       description: '',
-      max_kettle_volume_l: 35.0,
-      max_mash_tun_volume_l: 35.0,
-      max_hlt_volume_l: 35.0,
-      mash_dead_space_l: 0.0,
-      trub_loss_l: 1.5,
-      boil_off_rate_l_per_hr: 3.0,
-      grain_absorption_factor_l_per_kg: 0.90,
-      conversion_efficiency: 0.90,
-      shrinkage_pct: 0.04,
-      hlt_min_volume_l: 0.0,
+      max_kettle_volume_l: BREW_CONSTANTS.DEFAULT_MAX_KETTLE_VOLUME_L,
+      max_mash_tun_volume_l: BREW_CONSTANTS.DEFAULT_MAX_MASH_TUN_VOLUME_L,
+      max_hlt_volume_l: BREW_CONSTANTS.DEFAULT_MAX_HLT_VOLUME_L,
+      mash_dead_space_l: BREW_CONSTANTS.DEFAULT_MASH_DEAD_SPACE_L,
+      trub_loss_l: BREW_CONSTANTS.DEFAULT_TRUB_LOSS_L,
+      boil_off_rate_l_per_hr: BREW_CONSTANTS.DEFAULT_BOIL_OFF_RATE_L_PER_HR,
+      grain_absorption_factor_l_per_kg: BREW_CONSTANTS.DEFAULT_GRAIN_ABSORPTION_L_PER_KG,
+      conversion_efficiency: BREW_CONSTANTS.DEFAULT_CONVERSION_EFFICIENCY,
+      shrinkage_pct: BREW_CONSTANTS.DEFAULT_SHRINKAGE_PCT,
+      hlt_min_volume_l: BREW_CONSTANTS.DEFAULT_HLT_MIN_VOLUME_L,
     },
     drawerError: null,
 
     // Working Recipe Manifest
     manifest: {
-      name: 'Untitled Batch',
-      equipment_profile_id: 'herms-30l',
+      name: BREW_CONSTANTS.DEFAULT_BATCH_NAME,
+      equipment_profile_id: BREW_CONSTANTS.DEFAULT_EQUIPMENT_PROFILE_ID,
       equipment: {
         max_kettle_volume_l: 38.0,
         max_mash_tun_volume_l: 38.0,
@@ -305,13 +305,13 @@ document.addEventListener('alpine:init', () => {
         trub_loss_l: 2.0,
         boil_off_rate_l_per_hr: 3.5,
         grain_absorption_factor_l_per_kg: 0.96,
-        conversion_efficiency: 0.95,
+        conversion_efficiency: 0.90,
         shrinkage_pct: 0.04,
         hlt_min_volume_l: 12.0,
       },
-      target_volume_l: 20.0,
-      target_og: 1.055,
-      boil_time_min: 60,
+      target_volume_l: BREW_CONSTANTS.DEFAULT_TARGET_VOLUME_L,
+      target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
+      boil_time_min: BREW_CONSTANTS.DEFAULT_BOIL_TIME_MIN,
       grain_bill: [],
       late_additions: [],
       mash_profile: [],
@@ -409,11 +409,11 @@ document.addEventListener('alpine:init', () => {
       if (stepNumber === 1) {
         const eq = this.manifest.equipment;
         if (!eq.max_kettle_volume_l || eq.max_kettle_volume_l <= 0) {
-          Alpine.store('ui').add('Maximum kettle volume must be greater than zero.', 'error');
+          Alpine.store('ui').add(BREW_CONSTANTS.MSG_KETTLE_VOLUME_REQUIRED, 'error');
           return;
         }
         if (!eq.boil_off_rate_l_per_hr || eq.boil_off_rate_l_per_hr <= 0) {
-          Alpine.store('ui').add('Boil-off rate must be greater than zero.', 'error');
+          Alpine.store('ui').add(BREW_CONSTANTS.MSG_BOIL_OFF_REQUIRED, 'error');
           return;
         }
       }
@@ -423,7 +423,7 @@ document.addEventListener('alpine:init', () => {
       }
       this.highWaterMark = Math.max(this.highWaterMark, stepNumber + 1);
       this.activeStep = stepNumber + 1;
-      Alpine.store('ui').add(`Step ${stepNumber} configured.`, 'success');
+      Alpine.store('ui').add(BREW_CONSTANTS.MSG_STEP_CONFIGURED_TEMPLATE(stepNumber), 'success');
     },
 
     invalidateDownstream(fromStepNumber) {
@@ -459,7 +459,7 @@ document.addEventListener('alpine:init', () => {
         trub_loss_l: current.trub_loss_l || 1.5,
         boil_off_rate_l_per_hr: current.boil_off_rate_l_per_hr || 3.0,
         grain_absorption_factor_l_per_kg: current.grain_absorption_factor_l_per_kg || 0.96,
-        conversion_efficiency: current.conversion_efficiency || 0.95,
+        conversion_efficiency: current.conversion_efficiency || 0.90,
         shrinkage_pct: current.shrinkage_pct || 0.04,
         hlt_min_volume_l: current.hlt_min_volume_l || 0.0,
       };
