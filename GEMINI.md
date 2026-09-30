@@ -57,6 +57,7 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
 * **Frontend UI Single Source of Truth:** `plans/master-frontend-ui-requirements.md` is the definitive, globally authoritative, and exhaustive single source of truth for the entire frontend UI/UX architecture, design token system, responsive table implementations, 12-step FSM sequence, unit normalization engine, and accessibility standards.
   * Historical foundational documents in `docs/` (such as `calculator-design-spec.pdf`, `SPA Wizard UI Design Plan - Google Docs.md`, and `docs/design_requirements/*`) are strictly supplemental background context.
   * Treat `plans/master-frontend-ui-requirements.md` as exhaustive. If an edge case or detail is unspecified or conflicts with older historical files, DO NOT assume the historical documentation overrides the master plan; stop and ask the user for clarification.
+* **Documentation Synchronization Mandate:** Any code modifications that introduce, modify, or remove wizard steps, field names, domain parameters, or calculation formulas MUST be kept strictly in sync by updating `plans/master-frontend-ui-requirements.md` in the same work cycle.
 
 ## 8. Constants & Configuration Conventions
 * **No Magic Numbers or Strings:** Hardcoded domain strings, error messages, and physical calculation defaults (e.g., default conversion efficiency, grain absorption, shrinkage) MUST be centralized in `backend/app/core/constants.py` and `frontend/constants.js`.
