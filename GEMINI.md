@@ -64,3 +64,11 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
 * **No Magic Numbers or Strings:** Hardcoded domain strings, error messages, and physical calculation defaults (e.g., default conversion efficiency, grain absorption, shrinkage) MUST be centralized in `backend/app/core/constants.py` and `frontend/constants.js`.
 * **Profile-Specific Data Exception:** Equipment-specific profile capacities and vessel measurements (e.g., preset kettle volumes, mash tun sizes, HLT minimums for 30L/50L HERMS or BIAB) belong strictly in equipment profile seed/storage files (e.g., `equipment_profiles.json`), not in general constants.
 
+## 9. Frontend Hydration & Persistence Architecture (Coordinator Pattern)
+* **Mandatory Store Design:** All current and future Alpine.js stores (`Alpine.store(...)`) MUST implement the **Bi-directional Hydration Coordinator** pattern detailed in `docs/bi-directional-hydration-spec.md`.
+* **Core Requirements:**
+  * **Atomic State Commit:** Inbound data retrieval (`hydrate()`) must stage payloads out-of-band, sanitize them against declared schemas, and commit them in a single synchronous execution tick.
+  * **Non-Destructive Failure:** Persistence or network errors must be caught safely (`error.message`), discarding invalid payloads without altering existing reactive state or locking out form interactions.
+  * **Adapter Decoupling:** Persistence mechanisms (`localStorage`, REST endpoints, Firestore) must be encapsulated behind agnostic asynchronous provider and writer adapter functions.
+  * **Perimeter Interactivity Gating:** Form containers must wrap inputs in native `<fieldset :disabled="!$store.<domain>.isReady || $store.<domain>.isSaving">` blocks.
+
