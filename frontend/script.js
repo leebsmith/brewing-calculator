@@ -399,6 +399,190 @@ document.addEventListener('alpine:init', () => {
     }
   });
 
+  // Two-Tier Grist Grain Bill & Hamilton Proportional Allocation Engine
+  Alpine.store('maltGrid', {
+    majorMalts: [
+      {
+        row_id: 'row_default_1',
+        catalog_id: 'malt_2row',
+        is_custom: false,
+        name: 'Briess 2-Row Pale',
+        category: 'BASE',
+        parts: 10.0,
+        pct: 100.0,
+        potential_fraction: 0.80,
+        color_srm: 1.8,
+        moisture_pct: 0.04,
+        di_ph: 5.75,
+        buffer_index: 45.0,
+        notes: 'Standard American 2-row base malt.'
+      }
+    ],
+    traceMalts: [],
+
+    modalOpen: false,
+    draftMajorMalts: [],
+    draftTraceMalts: [],
+
+    drawerMode: null,
+    activeRowId: null,
+
+    get totalPct() {
+      return this.modalOpen
+        ? this.draftMajorMalts.reduce((sum, r) => sum + (r.pct || 0), 0)
+        : this.majorMalts.reduce((sum, r) => sum + (r.pct || 0), 0);
+    },
+
+    get validationStatus() {
+      const total = Number(this.totalPct.toFixed(1));
+      if (total === 100.0) return { type: 'balanced', label: '100.0% Balanced', class: 'badge-success' };
+      if (total === 0.0) return { type: 'unconfigured', label: 'Unconfigured', class: 'badge-muted' };
+      if (total < 100.0) {
+        const remaining = (100.0 - total).toFixed(1);
+        return { type: 'deficit', label: `${total.toFixed(1)}% (Remaining: ${remaining}%)`, class: 'badge-amber' };
+      }
+      const excess = (total - 100.0).toFixed(1);
+      return { type: 'surplus', label: `${total.toFixed(1)}% (Excess: +${excess}%)`, class: 'badge-danger' };
+    },
+
+    openModal() {
+      this.draftMajorMalts = JSON.parse(JSON.stringify(this.majorMalts));
+      this.draftTraceMalts = JSON.parse(JSON.stringify(this.traceMalts));
+      this.drawerMode = null;
+      this.activeRowId = null;
+      this.modalOpen = true;
+      this.normalizeDraft();
+    },
+
+    saveModal() {
+      this.majorMalts = JSON.parse(JSON.stringify(this.draftMajorMalts));
+      this.traceMalts = JSON.parse(JSON.stringify(this.draftTraceMalts));
+      this.modalOpen = false;
+      this.drawerMode = null;
+      this.activeRowId = null;
+    },
+
+    cancelModal() {
+      this.modalOpen = false;
+      this.drawerMode = null;
+      this.activeRowId = null;
+    },
+
+    normalizeDraft() {
+      const rows = this.draftMajorMalts;
+      if (!rows || rows.length === 0) return;
+
+      const totalParts = rows.reduce((sum, r) => sum + Math.max(0, parseFloat(r.parts) || 0), 0);
+      if (totalParts === 0) {
+        rows.forEach(r => { r.pct = 0.0; });
+        return;
+      }
+
+      const scaled = rows.map((r, idx) => {
+        const parts = Math.max(0, parseFloat(r.parts) || 0);
+        const rawScaled = (parts / totalParts) * 1000;
+        const floored = Math.floor(rawScaled);
+        const remainder = rawScaled - floored;
+        return { index: idx, parts, floored, remainder };
+      });
+
+      const currentSum = scaled.reduce((sum, item) => sum + item.floored, 0);
+      const deficit = 1000 - currentSum;
+
+      scaled.sort((a, b) => {
+        if (Math.abs(b.remainder - a.remainder) > 1e-9) {
+          return b.remainder - a.remainder;
+        }
+        if (b.parts !== a.parts) {
+          return b.parts - a.parts;
+        }
+        return a.index - b.index;
+      });
+
+      const finalScaled = new Array(rows.length);
+      scaled.forEach((item, rank) => {
+        let val = item.floored;
+        if (rank < deficit) {
+          val += 1;
+        }
+        finalScaled[item.index] = val;
+      });
+
+      rows.forEach((r, idx) => {
+        r.pct = finalScaled[idx] / 10.0;
+      });
+    },
+
+    updateParts(rowId, val) {
+      const row = this.draftMajorMalts.find(r => r.row_id === rowId);
+      if (row) {
+        const parsed = parseFloat(val);
+        row.parts = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+        this.normalizeDraft();
+      }
+    },
+
+    isTrace(pct) {
+      return pct < 2.0;
+    },
+
+    addMajorMalt(catalogItem) {
+      const newRow = {
+        row_id: 'row_' + Math.random().toString(36).substring(2, 11),
+        catalog_id: catalogItem.id || null,
+        is_custom: false,
+        name: catalogItem.name,
+        category: catalogItem.category || 'BASE',
+        parts: 10.0,
+        pct: 0.0,
+        potential_fraction: catalogItem.potential_fraction ?? (catalogItem.potential_sg ? (catalogItem.potential_sg - 1.0) / 0.046 : 0.75),
+        color_srm: catalogItem.color_srm || 2.0,
+        moisture_pct: catalogItem.moisture_pct || 0.04,
+        di_ph: catalogItem.di_ph || 5.75,
+        buffer_index: catalogItem.buffer_index || 45.0,
+        notes: catalogItem.notes || ''
+      };
+      this.draftMajorMalts.push(newRow);
+      this.normalizeDraft();
+    },
+
+    removeMajorMalt(rowId) {
+      this.draftMajorMalts = this.draftMajorMalts.filter(r => r.row_id !== rowId);
+      if (this.activeRowId === rowId) {
+        this.activeRowId = null;
+        if (this.drawerMode === 'inspect') this.drawerMode = null;
+      }
+      this.normalizeDraft();
+    },
+
+    cloneAndEdit(rowId) {
+      const row = this.draftMajorMalts.find(r => r.row_id === rowId);
+      if (!row) return;
+      const clone = JSON.parse(JSON.stringify(row));
+      clone.row_id = 'row_' + Math.random().toString(36).substring(2, 11);
+      clone.is_custom = true;
+      clone.name = `${clone.name} (Custom)`;
+      this.draftMajorMalts.push(clone);
+      this.normalizeDraft();
+      this.inspectRow(clone.row_id);
+    },
+
+    inspectRow(rowId) {
+      this.activeRowId = rowId;
+      this.drawerMode = 'inspect';
+    },
+
+    openSearchDrawer() {
+      this.drawerMode = 'search';
+      this.activeRowId = null;
+    },
+
+    closeDrawer() {
+      this.drawerMode = null;
+      this.activeRowId = null;
+    }
+  });
+
   // Global Authentication Store
   Alpine.store('auth', {
     user: null,
