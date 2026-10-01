@@ -64,16 +64,18 @@ The mono-repo is organized to separate frontend static assets, backend applicati
 
 ## Local Development
 
-Local development relies on the Firebase Local Emulator Suite. You do not need Google Cloud credentials to run this stack locally.
+Local development relies on the Firebase Local Emulator Suite paired with the FastAPI backend. You do not need Google Cloud credentials to run this stack locally.
 
 ### 1. Start the Emulators (Terminal 1 - Repository Root)
 
-From the root of the repository, start the Firestore, Auth, and Hosting emulators in demo mode:
+From the root of the repository, start the Firestore, Auth, and Hosting emulators with data import and export persistence enabled:
 
-    firebase emulators:start
+    firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data
 
-* **Emulator UI:** http://127.0.0.1:4000
+*Note:* On your initial run, the Firebase CLI will skip importing if `./emulator-data` does not yet exist. When you shut down the emulators with `Ctrl+C`, it will automatically export and populate the directory for subsequent sessions.
+
 * **Frontend:** http://127.0.0.1:5000
+* **Emulator UI Dashboard:** http://127.0.0.1:4000
 * **Auth Emulator:** http://127.0.0.1:9099
 * **Firestore Emulator:** http://127.0.0.1:8080
 
@@ -85,6 +87,7 @@ Navigate to the backend directory and start FastAPI. The injected environment va
     FIRESTORE_EMULATOR_HOST="127.0.0.1:8080" FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099" uv run fastapi dev app/main.py
 
 * **API Docs (Swagger UI):** http://127.0.0.1:8000/docs
+* **Direct Backend API:** http://127.0.0.1:8000
 
 ---
 

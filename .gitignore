@@ -6,6 +6,7 @@ __pycache__/
 
 # Firebase Emulators
 firebase-export/
+emulator-data/
 firestore-debug.log
 ui-debug.log
 firebase-debug.log
