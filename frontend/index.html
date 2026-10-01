@@ -599,6 +599,357 @@
           </div>
         </div>
 
+        <!-- Step 3: Fermentables (Grain Bill & Hamilton Proportional Allocator) -->
+        <div class="step-card" :class="{ 'is-active': activeStep === 3, 'is-completed': completedSteps.includes(3) }">
+          <div class="accordion-header">
+            <button
+              type="button"
+              class="accordion-trigger"
+              :aria-expanded="activeStep === 3"
+              aria-controls="step-panel-3"
+              id="step-trigger-3"
+              @click="setActiveStep(3)"
+            >
+              <div class="accordion-title-wrap">
+                <span class="accordion-step-num">3</span>
+                <div>
+                  <span class="accordion-title">Fermentables & Grist Bill</span>
+                  <span class="accordion-subtitle">Major structural malts (proportional parts) & trace additions</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="status-badge text-xs" :class="$store.maltGrid.validationStatus.class" x-text="$store.maltGrid.validationStatus.label"></span>
+                <span class="accordion-status-pill" :class="{
+                  'accordion-status-active': activeStep === 3,
+                  'accordion-status-complete': completedSteps.includes(3)
+                }" x-text="completedSteps.includes(3) ? 'Configured' : (activeStep === 3 ? 'Active' : 'Locked')"></span>
+                <span class="text-xs text-slate-400" x-text="activeStep === 3 ? '▲' : '▼'"></span>
+              </div>
+            </button>
+          </div>
+
+          <div
+            id="step-panel-3"
+            role="region"
+            aria-labelledby="step-trigger-3"
+            x-show="activeStep === 3"
+            x-collapse
+            class="step-card-body space-y-6"
+          >
+            <!-- Collapsed Static Card Summary Table -->
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Major Grist Contributors</h3>
+                  <p class="text-xs text-slate-500">Normalized via Hamilton Largest Remainder algorithm (summing to 100.0%)</p>
+                </div>
+                <button
+                  type="button"
+                  @click="$store.maltGrid.openModal()"
+                  class="btn btn-primary text-xs flex items-center gap-1.5"
+                >
+                  <span>Configure Malts</span>
+                  <span>⚙</span>
+                </button>
+              </div>
+
+              <!-- Summary Table -->
+              <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                <table class="w-full text-left text-sm">
+                  <thead class="bg-slate-50 dark:bg-slate-900 text-xs text-slate-500 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th class="p-3">Malt Name</th>
+                      <th class="p-3">Category</th>
+                      <th class="p-3 text-right">Parts</th>
+                      <th class="p-3 text-right">Malt %</th>
+                      <th class="p-3 text-right">SRM</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-mono text-xs">
+                    <template x-for="row in $store.maltGrid.majorMalts" :key="row.row_id">
+                      <tr>
+                        <td class="p-3 font-sans font-medium text-slate-900 dark:text-white" x-text="row.name"></td>
+                        <td class="p-3 font-sans text-slate-500 text-[11px]" x-text="row.category"></td>
+                        <td class="p-3 text-right tabular-nums" x-text="row.parts"></td>
+                        <td class="p-3 text-right tabular-nums font-bold" :class="$store.maltGrid.isTrace(row.pct) ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'" x-text="row.pct.toFixed(1) + '%'"></td>
+                        <td class="p-3 text-right tabular-nums text-slate-600 dark:text-slate-300" x-text="row.color_srm"></td>
+                      </tr>
+                    </template>
+                    <template x-if="$store.maltGrid.majorMalts.length === 0">
+                      <tr>
+                        <td colspan="5" class="p-6 text-center text-slate-400 font-sans italic">
+                          No malts added yet. Click 'Configure Malts' to build your grain bill.
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Step Action Button -->
+            <div class="flex justify-end pt-2">
+              <button
+                type="button"
+                @click="markStepComplete(3)"
+                class="btn btn-primary"
+                :disabled="$store.maltGrid.validationStatus.type !== 'balanced'"
+                :class="{ 'opacity-50 cursor-not-allowed': $store.maltGrid.validationStatus.type !== 'balanced' }"
+              >
+                Next: Mash Profile →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Editor Workspace (Popped Out) -->
+        <div
+          x-show="$store.maltGrid.modalOpen"
+          x-transition.opacity.duration.200ms
+          class="modal-backdrop"
+          style="display: none;"
+          @keydown.escape.window="$store.maltGrid.cancelModal()"
+        >
+          <div
+            @click.outside=""
+            class="modal-dialog max-w-5xl w-full h-[85vh] flex flex-col p-0 overflow-hidden"
+          >
+            <!-- Modal Header -->
+            <div class="modal-header px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
+              <div class="flex items-center gap-3">
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white">Grain Bill Editor (Major Contributors)</h2>
+                <span class="status-badge text-xs" :class="$store.maltGrid.validationStatus.class" x-text="$store.maltGrid.validationStatus.label"></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  @click="$store.maltGrid.cancelModal()"
+                  class="btn btn-secondary text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  @click="$store.maltGrid.saveModal()"
+                  class="btn btn-primary text-xs"
+                  :disabled="$store.maltGrid.validationStatus.type !== 'balanced'"
+                  :class="{ 'opacity-50 cursor-not-allowed': $store.maltGrid.validationStatus.type !== 'balanced' }"
+                >
+                  Save & Apply
+                </button>
+              </div>
+            </div>
+
+            <!-- Modal Body (2-Zone Spatial Layout) -->
+            <div class="flex-1 flex overflow-hidden relative">
+              <!-- Left/Center: Main Grid Workspace -->
+              <div class="flex-1 flex flex-col p-6 overflow-y-auto space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs text-slate-500">Enter relative proportional parts. Hamilton algorithm normalizes total to exactly 100.0%.</span>
+                  <button
+                    type="button"
+                    @click="$store.maltGrid.openSearchDrawer()"
+                    class="btn btn-primary text-xs flex items-center gap-1"
+                  >
+                    <span>+ Add Malt from Catalog</span>
+                  </button>
+                </div>
+
+                <!-- Fixed-Layout Data Grid (7 Columns) -->
+                <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                  <table class="w-full text-left text-sm table-fixed">
+                    <colgroup>
+                      <col style="width: 28%;">
+                      <col style="width: 14%;">
+                      <col style="width: 12%;">
+                      <col style="width: 12%;">
+                      <col style="width: 12%;">
+                      <col style="width: 12%;">
+                      <col style="width: 10%;">
+                    </colgroup>
+                    <thead class="bg-slate-50 dark:bg-slate-900 text-xs text-slate-500 uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
+                      <tr>
+                        <th class="p-3">Malt Name</th>
+                        <th class="p-3">Category</th>
+                        <th class="p-3 text-right">SRM</th>
+                        <th class="p-3 text-right">Potential</th>
+                        <th class="p-3 text-right">Parts</th>
+                        <th class="p-3 text-right">Malt %</th>
+                        <th class="p-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-mono text-xs">
+                      <template x-for="row in $store.maltGrid.draftMajorMalts" :key="row.row_id">
+                        <tr :class="{ 'bg-amber-50/50 dark:bg-amber-950/20': $store.maltGrid.activeRowId === row.row_id }">
+                          <td class="p-3 font-sans font-medium text-slate-900 dark:text-white truncate">
+                            <span x-text="row.name"></span>
+                            <template x-if="row.is_custom">
+                              <span class="ml-1.5 status-badge status-badge-info text-[9px] px-1 py-0.5">Custom</span>
+                            </template>
+                          </td>
+                          <td class="p-3 font-sans text-slate-500 text-[11px] truncate" x-text="row.category"></td>
+                          <td class="p-3 text-right tabular-nums text-slate-600 dark:text-slate-300" x-text="row.color_srm"></td>
+                          <td class="p-3 text-right tabular-nums text-slate-600 dark:text-slate-300" x-text="row.potential_fraction.toFixed(3)"></td>
+                          <td class="p-3 text-right">
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              :value="row.parts"
+                              @input="$store.maltGrid.updateParts(row.row_id, $event.target.value)"
+                              class="form-input w-20 py-1 px-2 text-right font-mono tabular-nums text-xs ml-auto"
+                            />
+                          </td>
+                          <td class="p-3 text-right">
+                            <div class="flex flex-col items-end">
+                              <span
+                                class="font-bold tabular-nums"
+                                :class="$store.maltGrid.isTrace(row.pct) ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'"
+                                x-text="row.pct.toFixed(1) + '%'"
+                              ></span>
+                              <template x-if="$store.maltGrid.isTrace(row.pct)">
+                                <span class="text-[9px] text-red-500 font-sans flex items-center gap-0.5"><span>✗</span> <span class="hidden sm:inline">Trace (&lt;2%)</span></span>
+                              </template>
+                              <template x-if="!$store.maltGrid.isTrace(row.pct)">
+                                <span class="text-[9px] text-emerald-600 font-sans flex items-center gap-0.5"><span>✓</span></span>
+                              </template>
+                            </div>
+                          </td>
+                          <td class="p-3 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                @click="$store.maltGrid.cloneAndEdit(row.row_id)"
+                                class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                title="Clone & Edit"
+                              >
+                                <span>📋</span>
+                              </button>
+                              <button
+                                type="button"
+                                @click="$store.maltGrid.removeMajorMalt(row.row_id)"
+                                class="p-1 rounded hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400"
+                                title="Remove Malt"
+                              >
+                                <span>🗑</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </template>
+                      <template x-if="$store.maltGrid.draftMajorMalts.length === 0">
+                        <tr>
+                          <td colspan="7" class="p-8 text-center text-slate-400 font-sans italic">
+                            No malts in grain bill draft. Click '+ Add Malt from Catalog' to begin.
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Right: Contextual Slide-Out Utility Drawer -->
+              <div
+                x-show="$store.maltGrid.drawerMode !== null"
+                x-transition:enter="transition transform ease-out duration-200"
+                x-transition:enter-start="translate-x-full"
+                x-transition:enter-end="translate-x-0"
+                x-transition:leave="transition transform ease-in duration-150"
+                x-transition:leave-start="translate-x-0"
+                x-transition:leave-end="translate-x-full"
+                class="w-80 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col z-10 shadow-xl"
+                style="display: none;"
+                @keydown.escape.window="$store.maltGrid.closeDrawer()"
+              >
+                <!-- Drawer Header -->
+                <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
+                  <h3 class="text-sm font-bold text-slate-900 dark:text-white" x-text="$store.maltGrid.drawerMode === 'search' ? 'Malt Catalog Browser' : 'Row Inspector'"></h3>
+                  <button type="button" @click="$store.maltGrid.closeDrawer()" class="btn-close text-xs">✕</button>
+                </div>
+
+                <!-- Drawer Body -->
+                <div class="flex-1 p-4 overflow-y-auto space-y-4">
+                  <!-- Search / Catalog Mode -->
+                  <template x-if="$store.maltGrid.drawerMode === 'search'">
+                    <div class="space-y-3">
+                      <span class="text-xs text-slate-500">Select a malt from the catalog cache to add to your grist.</span>
+                      <div class="space-y-2">
+                        <template x-for="item in ($store.catalog.malts || [])" :key="item.id">
+                          <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-indigo-500 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between transition-all">
+                            <div>
+                              <div class="text-xs font-semibold text-slate-900 dark:text-white" x-text="item.name"></div>
+                              <div class="text-[10px] text-slate-400" x-text="item.category + ' • SRM: ' + item.color_srm"></div>
+                            </div>
+                            <button
+                              type="button"
+                              @click="$store.maltGrid.addMajorMalt(item); $store.maltGrid.closeDrawer();"
+                              class="btn btn-primary text-[11px] py-1 px-2"
+                            >
+                              + Add
+                            </button>
+                          </div>
+                        </template>
+                        <template x-if="!$store.catalog.malts || $store.catalog.malts.length === 0">
+                          <div class="text-center py-6 text-xs text-slate-400 italic">
+                            Loading malt catalog...
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Row Inspector Mode -->
+                  <template x-if="$store.maltGrid.drawerMode === 'inspect'">
+                    <div class="space-y-4">
+                      <template x-if="$store.maltGrid.draftMajorMalts.find(r => r.row_id === $store.maltGrid.activeRowId)">
+                        <div class="space-y-3" x-data="{ row: $store.maltGrid.draftMajorMalts.find(r => r.row_id === $store.maltGrid.activeRowId) }">
+                          <div class="form-group">
+                            <label class="form-label text-xs">Malt Name</label>
+                            <input type="text" x-model="row.name" class="form-input text-xs py-1 px-2" />
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label text-xs">Category</label>
+                            <select x-model="row.category" class="form-input text-xs py-1 px-2">
+                              <option value="BASE">BASE</option>
+                              <option value="CRYSTAL">CRYSTAL</option>
+                              <option value="ROASTED">ROASTED</option>
+                              <option value="SPECIALTY">SPECIALTY</option>
+                              <option value="ADJUNCT">ADJUNCT</option>
+                            </select>
+                          </div>
+                          <div class="grid grid-cols-2 gap-2">
+                            <div class="form-group">
+                              <label class="form-label text-xs">Extract Yield (%)</label>
+                              <input type="number" step="0.01" min="0.5" max="1.0" x-model.number="row.potential_fraction" class="form-input text-xs py-1 px-2 font-mono" />
+                            </div>
+                            <div class="form-group">
+                              <label class="form-label text-xs">Color (SRM)</label>
+                              <input type="number" step="0.1" min="0" x-model.number="row.color_srm" class="form-input text-xs py-1 px-2 font-mono" />
+                            </div>
+                            <div class="form-group">
+                              <label class="form-label text-xs">Moisture (%)</label>
+                              <input type="number" step="0.005" min="0" max="0.2" x-model.number="row.moisture_pct" class="form-input text-xs py-1 px-2 font-mono" />
+                            </div>
+                            <div class="form-group">
+                              <label class="form-label text-xs">Distilled pH</label>
+                              <input type="number" step="0.01" min="4.0" max="7.0" x-model.number="row.di_ph" class="form-input text-xs py-1 px-2 font-mono" />
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label text-xs">Notes / Supplier Info</label>
+                            <textarea x-model="row.notes" class="form-input text-xs py-1 px-2" rows="3"></textarea>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Slide-Over CRUD Drawer for Equipment Profiles -->
         <div
           x-show="showProfileDrawer"
