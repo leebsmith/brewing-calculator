@@ -273,24 +273,27 @@ The primary calculation workspace is a progressive 12-step accordion that functi
   * **Concentration Adjustment:** Total extract points are conserved across chilling ($V_{\text{post}} \times (SG_{\text{post}} - 1.0) = V_{\text{target}} \times (OG - 1.0)$), ensuring $OG > SG_{\text{post}}$ due to thermal contraction.
 * **Synthesized Output:** Target Total Kettle Extract ($S_{\text{kettle}}$ in $\text{L}\cdot\degree$), Pre-boil to post-boil summary cascade, and solver status badge.
 
-#### Step 3: Grain Bill (Proportional %)
-* **Purpose:** Defines proportional malt bill ratios and extract potentials.
+#### Step 3: Fermentables (Two-Tier Grist Architecture)
+* **Purpose:** Defines the fermentables bill segregated into major sugar contributors (proportional %) and trace additions (absolute mass), unified via a synthesized read-only summary table.
 * **DAG Preconditions:** Step 2 valid.
-* **Inputs & Controls:**
-  * Dynamic primitive table: Add Malt row from library cache.
-  * Columns: Malt Name, Category (Base, Crystal, Roasted, Acid), Potential SG, Color (SRM), Proportional Percentage (`%`).
-  * Real-time validator: Live tally tracking total percentage (must equal $100.0\%$).
-* **Synthesized Output:** Weighted Average Extract Potential ($P$) and Composite Grist Color.
+* **Two-Tier Table Structure:**
+  1. **Major Contributors Table:**
+     * Columns: Malt Primitive, Category, Potential SG, Color (SRM), Proportional Percentage (`%`).
+     * Real-time validator: Live tally tracking total percentage (must equal $100.0\%$).
+     * Determines weighted average extract potential and composite grist color.
+  2. **Trace Additions Table:**
+     * Columns: Malt / Sugar Primitive, Category, Potential SG, Color (SRM), Absolute Mass (`UnitInput`, e.g., $g$ or $oz$).
+     * Treated with *de minimis* impact on weighted potential, allowing the primary sugar solver to proceed smoothly.
+  3. **Synthesized Unified Read-Only Summary Table:**
+     * Automatically calculates and displays the combined grist inventory (scaling major contributors by total weight $\times$ percentage plus absolute trace masses).
+     * Feeds the composite mass, potential, and SRM directly into subsequent Mash and Hops calculation steps.
 
-#### Step 4: Late Additions (Scalar / Adjuncts)
-* **Purpose:** Accounts for kettle sugars (Dextrose, Candi Syrup, Honey) added post-mash.
+#### Step 4: Mash Profile
+* **Purpose:** Configures temperature rests, durations, mash thickness, and conversion efficiency.
 * **DAG Preconditions:** Step 3 valid.
 * **Inputs & Controls:**
-  * Table of Sugar primitives: Name, Extract Potential, Added Gravity Points (e.g., $10\text{ points}$).
-* **Synthesized Output & DAG Deduction:** 
-  Deducts late sugar points from Step 2 Target OG to produce the **Adjusted Target Mash Gravity**:
-  $$\text{Target OG}_{\text{mash}} = \text{Target OG}_{\text{batch}} - \text{Late Sugar Points}$$
-  This ensures mash extraction is not artificially inflated by kettle sugars.
+  * Infusion Step Table: Step Name (Protein Rest, Saccharification, Mash Out), Target Temp (`UnitInput`), Duration (min).
+* **Synthesized Output:** Mash Schedule timeline card and conversion efficiency metrics.
 
 #### Step 5: Mash Profile
 * **Purpose:** Configures temperature rests and durations (routed to brew day plan).
