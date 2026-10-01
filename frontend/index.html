@@ -38,27 +38,34 @@
       </div>
 
       <div class="header-actions">
-        <!-- Unit Selector Segmented Toggle -->
-        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
+        <!-- Tri-State Unit Pill Selector -->
+        <div class="tri-state-group">
           <button
             type="button"
             @click="$store.units.setPreset(BREW_CONSTANTS.UNIT_PRESET_METRIC)"
-            class="px-2 py-1 rounded font-medium transition-colors"
-            :class="$store.units.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            class="tri-state-pill"
+            :class="{
+              'tri-state-pill-solid': $store.units.isPureMetric(),
+              'tri-state-pill-tinted': $store.units.isMixedMetric(),
+              'tri-state-pill-ghost': !$store.units.isPureMetric() && !$store.units.isMixedMetric()
+            }"
+            :aria-pressed="$store.units.activePreset === 'metric'"
           >
             Metric (L)
           </button>
           <button
             type="button"
             @click="$store.units.setPreset(BREW_CONSTANTS.UNIT_PRESET_IMPERIAL)"
-            class="px-2 py-1 rounded font-medium transition-colors"
-            :class="$store.units.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            class="tri-state-pill"
+            :class="{
+              'tri-state-pill-solid': $store.units.isPureImperial(),
+              'tri-state-pill-tinted': $store.units.isMixedImperial(),
+              'tri-state-pill-ghost': !$store.units.isPureImperial() && !$store.units.isMixedImperial()
+            }"
+            :aria-pressed="$store.units.activePreset === 'imperial'"
           >
             Imperial (gal)
           </button>
-          <template x-if="$store.units.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM">
-            <span class="px-2 py-1 text-primary-600 dark:text-primary-400 font-bold">Custom</span>
-          </template>
         </div>
 
         <!-- Ephemeral UI Toggle: Architecture modal state -->
@@ -775,7 +782,7 @@
           >
             <div>
               <strong>Apply to All Fields</strong>
-              <span class="block text-xs font-normal opacity-90">Overwrites all custom unit choices with preset defaults.</span>
+              <span class="block text-xs font-normal opacity-90">Overwrites all custom unit choices with preset defaults. Warning: Previous custom overrides will be permanently lost.</span>
             </div>
           </button>
           <button

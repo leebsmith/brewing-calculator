@@ -261,6 +261,73 @@ pre {
 }
 
 /* ==========================================================================
+   Generic Reusable Tri-State Control Component
+   ========================================================================== */
+
+.tri-state-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tri-state-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0.75rem;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1;
+}
+
+.tri-state-pill:focus-visible {
+  outline: 2px solid var(--sys-border-focus);
+  outline-offset: 2px;
+}
+
+/* Pure State (Solid Fill) */
+.tri-state-pill-solid {
+  background-color: var(--sys-color-action-primary);
+  color: var(--sys-text-on-action);
+  border: 1px solid var(--sys-color-action-primary);
+  box-shadow: var(--sys-shadow-sm);
+}
+
+/* Mixed State (Tinted / Semi-Transparent Fill) */
+.tri-state-pill-tinted {
+  background-color: var(--sys-color-action-subtle);
+  color: var(--sys-color-action-subtle-text);
+  border: 1px solid var(--sys-border-focus);
+}
+
+.tri-state-pill-tinted::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--sys-color-warning-accent, #f59e0b);
+  margin-left: 0.375rem;
+  vertical-align: middle;
+}
+
+/* Ghost State (Inactive - clearly visible independent button) */
+.tri-state-pill-ghost {
+  background-color: var(--sys-surface-default);
+  color: var(--sys-text-secondary);
+  border: 1px solid var(--sys-border-subtle);
+}
+
+.tri-state-pill-ghost:hover {
+  color: var(--sys-text-primary);
+  background-color: var(--sys-surface-hover);
+  border-color: var(--sys-border-default);
+}
+
+/* ==========================================================================
    4. Form Controls
    ========================================================================== */
 

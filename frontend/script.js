@@ -146,6 +146,27 @@ document.addEventListener('alpine:init', () => {
     promptModalOpen: false,
     pendingPreset: null,
 
+    isPureMetric() {
+      const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
+      const isMetricBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'L');
+      return isMetricBase && !hasCustom;
+    },
+    isMixedMetric() {
+      const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
+      const isMetricBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'L');
+      return isMetricBase && hasCustom;
+    },
+    isPureImperial() {
+      const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
+      const isImperialBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'gal');
+      return isImperialBase && !hasCustom;
+    },
+    isMixedImperial() {
+      const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
+      const isImperialBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'gal');
+      return isImperialBase && hasCustom;
+    },
+
     init() {
       // Hydrate from localStorage if available
       try {
