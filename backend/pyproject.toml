@@ -8,6 +8,7 @@ dependencies = [
     "fastapi[standard]>=0.115.0",
     "firebase-admin>=6.5.0",
     "pydantic>=2.9.0",
+    "scipy>=1.14.0",
     "uvicorn>=0.30.0",
 ]
 
