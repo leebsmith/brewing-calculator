@@ -146,6 +146,61 @@ document.addEventListener('alpine:init', () => {
     promptModalOpen: false,
     pendingPreset: null,
 
+    // Bi-Directional Hydration Coordinator State
+    isReady: false,
+    isSaving: false,
+    error: { message: null },
+
+    sanitize(raw) {
+      if (!raw || typeof raw !== 'object') return {};
+      const sanitized = {};
+      if (raw.activePreset && typeof raw.activePreset === 'string') {
+        sanitized.activePreset = raw.activePreset;
+      }
+      if (raw.preferences && typeof raw.preferences === 'object') {
+        sanitized.preferences = raw.preferences;
+      }
+      if (raw.fieldPreferences && typeof raw.fieldPreferences === 'object') {
+        sanitized.fieldPreferences = raw.fieldPreferences;
+      }
+      return sanitized;
+    },
+
+    async hydrate(providerFn) {
+      this.isReady = false;
+      this.error.message = null;
+      try {
+        const raw = await providerFn();
+        const sanitized = this.sanitize(raw);
+        if (sanitized.activePreset) this.activePreset = sanitized.activePreset;
+        if (sanitized.preferences) this.preferences = { ...this.preferences, ...sanitized.preferences };
+        if (sanitized.fieldPreferences) this.fieldPreferences = { ...sanitized.fieldPreferences };
+      } catch (err) {
+        this.error.message = err.message || 'Failed to load unit preferences';
+        console.warn('Hydration coordinator error:', err);
+      } finally {
+        this.isReady = true;
+      }
+    },
+
+    async commit(payload, writerFn) {
+      this.isSaving = true;
+      this.error.message = null;
+      try {
+        const sanitized = this.sanitize(payload);
+        await writerFn(sanitized);
+      } catch (err) {
+        this.error.message = err.message || 'Failed to save unit preferences';
+        console.warn('Persistence coordinator error:', err);
+      } finally {
+        this.isSaving = false;
+      }
+    },
+
+    clearError() {
+      this.error.message = null;
+    },
+
     isPureMetric() {
       const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
       const isMetricBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'L');
@@ -168,30 +223,20 @@ document.addEventListener('alpine:init', () => {
     },
 
     init() {
-      // Hydrate from localStorage if available
-      try {
+      this.hydrate(async () => {
         const saved = localStorage.getItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.activePreset) this.activePreset = parsed.activePreset;
-          if (parsed.preferences) this.preferences = { ...this.preferences, ...parsed.preferences };
-          if (parsed.fieldPreferences) this.fieldPreferences = parsed.fieldPreferences;
-        }
-      } catch (err) {
-        console.warn('Failed to load unit preferences from localStorage:', err);
-      }
+        return saved ? JSON.parse(saved) : null;
+      });
     },
 
     saveToStorage() {
-      try {
-        localStorage.setItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES, JSON.stringify({
-          activePreset: this.activePreset,
-          preferences: this.preferences,
-          fieldPreferences: this.fieldPreferences
-        }));
-      } catch (err) {
-        console.warn('Failed to save unit preferences to localStorage:', err);
-      }
+      this.commit({
+        activePreset: this.activePreset,
+        preferences: this.preferences,
+        fieldPreferences: this.fieldPreferences
+      }, async (payload) => {
+        localStorage.setItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES, JSON.stringify(payload));
+      });
     },
 
     setPreset(presetName) {
