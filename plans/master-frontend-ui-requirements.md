@@ -200,13 +200,13 @@ The primary calculation workspace is a progressive 12-step accordion that functi
 [ Step 2: Batch Metadata (Target OG, Vol, Boil Time) ]
               │
               ▼
-[ Step 3: Grain Bill (%) & Conversion Efficiency ]
+[ Step 3: Fermentables (Grain Bill & Sugars) ]
               │
               ▼
-[ Step 4: Late Additions (Deduct raw sugar gravity points) ]
+[ Step 4: Mash Profile (Thickness, Strike Temp, Conversion Efficiency) ]
               │
               ▼
-[ Step 5: Mash Profile (Time & Temp schedules) ]
+[ Step 5: Yeast & Fermentation Profile (Strain Selection, Attenuation %, Predicted FG & ABV) ]
               │
               ▼
 [ Step 6: Master Solver (Root-finder: Total Grain Mass, V_strike, V1, V2) ] ◄── Critical Solver Node
@@ -215,19 +215,16 @@ The primary calculation workspace is a progressive 12-step accordion that functi
 [ Step 7: Water Chemistry (HERMS Treatment Volumes, Salts, Mash pH) ]
               │
               ▼
-[ Step 8: Wet Hops (Tinseth IBU via Pre-boil Vol & Gravity) ]
+[ Step 8: Hops & Boil Schedule (Tinseth IBU via Pre-boil Vol & Gravity) ]
               │
               ▼
-[ Step 9: Yeast Selection (Attenuation, Predicted FG & ABV) ]
+[ Step 9: Fermentation Schedule (Post-boil Time & Temp) ]
               │
               ▼
-[ Step 10: Fermentation Schedule (Post-boil Time & Temp) ]
+[ Step 10: Dry Hops (Mass via Target Volume, Bound to Phase) ]
               │
               ▼
-[ Step 11: Dry Hops (Mass via Target Volume, Bound to Phase) ]
-              │
-              ▼
-[ Step 12: Detailed Plan & Brew Day Ledger ] ──(Freeze to Vault)──► [Immutable Brew Log]
+[ Step 11: Detailed Plan & Brew Day Ledger ] ──(Freeze to Vault)──► [Immutable Brew Log]
 ```
 
 ### 4.1 Accordion State Model & Interaction Rules
