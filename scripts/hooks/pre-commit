@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STYLE_FILE="frontend/style.css"
+AUDIT_SCRIPT="scripts/audit-tokens.sh"
+
+if git diff --cached --name-only | grep -qx "$STYLE_FILE"; then
+  # Gate 1: Require explicit approval bypass
+  if [ "${CSS_APPROVED:-0}" != "1" ]; then
+    echo "" >&2
+    echo "ERROR: Staged modifications to $STYLE_FILE require advance approval." >&2
+    echo "Refer to GEMINI.md Section 10 (CSS Architecture & Styling Governance)." >&2
+    echo "" >&2
+    echo "To commit authorized modifications, re-run with:" >&2
+    echo "  CSS_APPROVED=1 git commit" >&2
+    echo "" >&2
+    exit 1
+  fi
+
+  # Gate 2: Ensure executable permissions and run token audit
+  if [ ! -x "$AUDIT_SCRIPT" ]; then
+    chmod +x "$AUDIT_SCRIPT" 2>/dev/null || true
+  fi
+
+  echo "==> Authorization verified (CSS_APPROVED=1)."
+  echo "Running token audit on staged $STYLE_FILE..."
+  ./"$AUDIT_SCRIPT" "$STYLE_FILE"
+fi
