@@ -1884,3 +1884,4 @@ pre {
     height: min(88vh, 960px);
   }
 }
+.test-violation { color: #ff0000; }
