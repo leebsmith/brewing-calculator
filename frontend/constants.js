@@ -1,10 +1,9 @@
-/* eslint-disable no-redeclare */
 /**
  * Centralized physical constants, default equipment profile parameters, and UI domain strings
  * for the brewing calculator frontend.
  */
 
-const BREW_CONSTANTS = {
+export const BREW_CONSTANTS = {
   // Physical & Equipment Defaults
   DEFAULT_CONVERSION_EFFICIENCY: 0.90,
   DEFAULT_GRAIN_ABSORPTION_L_PER_KG: 0.96,
@@ -49,12 +48,12 @@ const BREW_CONSTANTS = {
   // UI Messages & Labels
   MSG_KETTLE_VOLUME_REQUIRED: 'Maximum kettle volume must be greater than zero.',
   MSG_BOIL_OFF_REQUIRED: 'Boil-off rate must be greater than zero.',
+  MSG_BATCH_NAME_REQUIRED: 'Batch name is required.',
+  MSG_TARGET_VOLUME_REQUIRED: 'Target packaged volume must be greater than zero.',
+  MSG_TARGET_OG_REQUIRED: 'Target original gravity must be between 1.010 and 1.200.',
+  MSG_PROFILE_NAME_REQUIRED: 'Profile name is required.',
   MSG_STEP_CONFIGURED_TEMPLATE: (stepNum) => `Step ${stepNum} configured.`,
   MSG_PROFILE_SAVED: 'Equipment profile saved successfully.',
   MSG_PROFILE_DELETED: 'Equipment profile deleted.',
   MSG_CANNOT_DELETE_PRESET: 'Cannot delete built-in canonical equipment preset.',
 };
-
-if (typeof window !== 'undefined') {
-  window.BREW_CONSTANTS = BREW_CONSTANTS;
-}

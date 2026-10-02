@@ -3,6 +3,8 @@
  * Registers Alpine.js global auth store and components for API interactions.
  */
 
+import { BREW_CONSTANTS } from './constants.js';
+
 // Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBBuDb_MHITk-wNTvwbiklhrRxFGEi04P4",
@@ -18,7 +20,7 @@ const firebaseApp = typeof firebase !== 'undefined' ? firebase.initializeApp(fir
 const auth = firebaseApp ? firebase.auth() : null;
 
 // Connect to local Auth emulator if running on localhost or 127.0.0.1
-if (auth && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')) {
+if (auth && typeof window !== 'undefined' && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')) {
   auth.useEmulator('http://127.0.0.1:9099');
 }
 
@@ -29,6 +31,7 @@ if (auth && (window.location.hostname === '127.0.0.1' || window.location.hostnam
  */
 async function apiFetch(path, options = {}) {
   const isLocalEmulator =
+    typeof window !== 'undefined' &&
     (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') &&
     window.location.port === '5000';
 
@@ -130,8 +133,375 @@ const UNIT_REGISTRY = {
   }
 };
 
-document.addEventListener('alpine:init', () => {
-  // Global Units Store with Option C toggle support & per-field overrides
+/**
+ * Isolated Thermodynamic Domain Logic
+ * Pure physical and mathematical calculations for boil dynamics,
+ * evaporation, extract conservation, and packaging volumes.
+ */
+export class ThermodynamicSolver {
+  /**
+   * Calculates post-boil hot volume after evaporation.
+   * V_post = max(0, V_pre - (rate * time))
+   */
+  static calculatePostBoil(preVolume, boilOffRate, timeHours) {
+    const vPre = parseFloat(preVolume) || 0;
+    const rate = parseFloat(boilOffRate) || 0;
+    const hrs = parseFloat(timeHours) || 0;
+    return Math.max(0, vPre - (rate * hrs));
+  }
+
+  /**
+   * Calculates evaporation rate per hour from pre- and post-boil volumes.
+   * Rate = (V_pre - V_post) / time
+   */
+  static calculateBoilOffRate(preVolume, postVolume, timeHours) {
+    const vPre = parseFloat(preVolume) || 0;
+    const vPost = parseFloat(postVolume) || 0;
+    const hrs = parseFloat(timeHours) || 0;
+    if (hrs <= 0 || vPre <= vPost) return 0;
+    return Number(((vPre - vPost) / hrs).toFixed(2));
+  }
+
+  /**
+   * Calculates post-boil specific gravity conserving total extract points.
+   * Extract points = V_pre * (SG_pre - 1.0)
+   * SG_post = 1.0 + (Extract points / V_post)
+   */
+  static calculatePostBoilGravity(preVolume, preGravity, postVolume) {
+    const vPre = parseFloat(preVolume) || 0;
+    const sgPre = parseFloat(preGravity) || 1.0;
+    const vPost = parseFloat(postVolume) || 0;
+    const extractPointsTotal = vPre * (sgPre - 1.0);
+    return vPost > 0 ? Number((1.0 + (extractPointsTotal / vPost)).toFixed(3)) : 1.050;
+  }
+
+  /**
+   * Calculates packaged batch volume after trub loss and thermal contraction.
+   * V_target = max(0, (V_post - Loss_trub) * (1.0 - shrinkage))
+   */
+  static calculatePackagedVolume(postVolume, trubLoss, shrinkagePct) {
+    const vPost = parseFloat(postVolume) || 0;
+    const trub = parseFloat(trubLoss) || 0;
+    const shrinkage = parseFloat(shrinkagePct) || 0.04;
+    return Number(Math.max(0, (vPost - trub) * (1.0 - shrinkage)).toFixed(1));
+  }
+
+  /**
+   * Calculates target original gravity in packaging vessel.
+   * Target OG = 1.0 + (Extract points / V_target)
+   */
+  static calculateTargetOg(extractPointsTotal, targetVolume, fallbackOg = 1.050) {
+    const points = parseFloat(extractPointsTotal) || 0;
+    const vTarget = parseFloat(targetVolume) || 0;
+    return vTarget > 0 ? Number((1.0 + (points / vTarget)).toFixed(3)) : fallbackOg;
+  }
+
+  /**
+   * Calculates fixed system liquid loss (mash dead space + kettle trub loss).
+   */
+  static calculateFixedLoss(mashDeadSpace, trubLoss) {
+    const deadSpace = parseFloat(mashDeadSpace) || 0;
+    const trub = parseFloat(trubLoss) || 0;
+    return (deadSpace + trub).toFixed(2);
+  }
+
+  /**
+   * Extracts gravity points from specific gravity (e.g. 1.055 -> 55.0).
+   */
+  static calculateOgPoints(og) {
+    const sg = parseFloat(og) || 1.000;
+    return Math.max(0, (sg - 1.0) * 1000).toFixed(1);
+  }
+
+  /**
+   * Calculates total kettle extract points (volume * gravity points).
+   */
+  static calculateKettleExtract(volume, og) {
+    const vol = parseFloat(volume) || 0;
+    const sg = parseFloat(og) || 1.000;
+    const points = Math.max(0, (sg - 1.0) * 1000);
+    return (vol * points).toFixed(1);
+  }
+
+  /**
+   * Executes complete boil thermodynamics solver across Option A or Option B.
+   */
+  static solveBoil(manifest) {
+    const m = manifest;
+    const eq = m.equipment || {};
+    const boilTimeHrs = (parseFloat(m.boil_time_min) || 60) / 60.0;
+    const trubLoss = parseFloat(eq.trub_loss_l) || 0;
+    const shrinkage = parseFloat(eq.shrinkage_pct) || 0.04;
+    const vPre = parseFloat(m.preboil_volume_l) || 26.0;
+    const sgPre = parseFloat(m.preboil_gravity) || 1.045;
+
+    if (m.boil_solver_mode === 'option_a') {
+      const vPost = parseFloat(m.postboil_volume_l) || 22.5;
+      const solvedRate = this.calculateBoilOffRate(vPre, vPost, boilTimeHrs);
+      if (solvedRate > 0) {
+        eq.boil_off_rate_l_per_hr = solvedRate;
+      }
+      const sgPost = this.calculatePostBoilGravity(vPre, sgPre, vPost);
+      m.postboil_gravity = sgPost;
+
+      const vTarget = this.calculatePackagedVolume(vPost, trubLoss, shrinkage);
+      m.target_volume_l = vTarget;
+
+      const extractPointsTotal = vPre * (sgPre - 1.0);
+      m.target_og = this.calculateTargetOg(extractPointsTotal, vTarget, sgPost);
+    } else {
+      const rate = parseFloat(eq.boil_off_rate_l_per_hr) || 3.5;
+      const vPost = Number(this.calculatePostBoil(vPre, rate, boilTimeHrs).toFixed(1));
+      m.postboil_volume_l = vPost;
+
+      const sgPost = this.calculatePostBoilGravity(vPre, sgPre, vPost);
+      m.postboil_gravity = sgPost;
+
+      const vTarget = this.calculatePackagedVolume(vPost, trubLoss, shrinkage);
+      m.target_volume_l = vTarget;
+
+      const extractPointsTotal = vPre * (sgPre - 1.0);
+      m.target_og = this.calculateTargetOg(extractPointsTotal, vTarget, sgPost);
+    }
+
+    return m;
+  }
+}
+
+/**
+ * Isolated Wizard Navigation FSM
+ * Handles 12-step sequential progression, high-water mark gates, and step status evaluation.
+ */
+export function createWizardNavigation() {
+  return {
+    activeStep: 1,
+    completedSteps: [],
+    highWaterMark: 1,
+    dirtySteps: [],
+    expansionMode: 'exclusive',
+
+    setActiveStep(stepNumber) {
+      if (stepNumber <= this.highWaterMark || this.expansionMode === 'concurrent') {
+        this.activeStep = stepNumber;
+      }
+    },
+
+    markStepComplete(stepNumber) {
+      if (!this.completedSteps.includes(stepNumber)) {
+        this.completedSteps.push(stepNumber);
+      }
+      this.highWaterMark = Math.max(this.highWaterMark, stepNumber + 1);
+      this.activeStep = stepNumber + 1;
+      Alpine.store('ui').add(BREW_CONSTANTS.MSG_STEP_CONFIGURED_TEMPLATE(stepNumber), 'success');
+    },
+
+    invalidateDownstream(fromStepNumber) {
+      this.dirtySteps = [6, 7, 8, 9, 11, 12].filter(step => step > fromStepNumber);
+    },
+
+    toggleExpansionMode() {
+      this.expansionMode = this.expansionMode === 'exclusive' ? 'concurrent' : 'exclusive';
+    },
+
+    getStepStatusLabel(stepNum) {
+      if (this.completedSteps.includes(stepNum)) return 'Configured';
+      if (this.activeStep === stepNum) return 'Active';
+      return 'Locked';
+    },
+
+    getStepStatusClass(stepNum) {
+      if (this.completedSteps.includes(stepNum)) return 'accordion-status-complete';
+      if (this.activeStep === stepNum) return 'accordion-status-active';
+      return 'accordion-status-locked';
+    }
+  };
+}
+
+/**
+ * Isolated Equipment Manager
+ * Manages profile drawer CRUD, preset loading, and equipment change event dispatching.
+ */
+export function createEquipmentManager() {
+  return {
+    showProfileDrawer: false,
+    drawerMode: 'list', // 'list' | 'create' | 'edit'
+    drawerForm: {
+      id: '',
+      name: '',
+      description: '',
+      max_kettle_volume_l: BREW_CONSTANTS.DEFAULT_MAX_KETTLE_VOLUME_L,
+      max_mash_tun_volume_l: BREW_CONSTANTS.DEFAULT_MAX_MASH_TUN_VOLUME_L,
+      max_hlt_volume_l: BREW_CONSTANTS.DEFAULT_MAX_HLT_VOLUME_L,
+      mash_dead_space_l: BREW_CONSTANTS.DEFAULT_MASH_DEAD_SPACE_L,
+      trub_loss_l: BREW_CONSTANTS.DEFAULT_TRUB_LOSS_L,
+      boil_off_rate_l_per_hr: BREW_CONSTANTS.DEFAULT_BOIL_OFF_RATE_L_PER_HR,
+      grain_absorption_factor_l_per_kg: BREW_CONSTANTS.DEFAULT_GRAIN_ABSORPTION_L_PER_KG,
+      conversion_efficiency: BREW_CONSTANTS.DEFAULT_CONVERSION_EFFICIENCY,
+      shrinkage_pct: BREW_CONSTANTS.DEFAULT_SHRINKAGE_PCT,
+      hlt_min_volume_l: BREW_CONSTANTS.DEFAULT_HLT_MIN_VOLUME_L,
+    },
+    drawerError: null,
+
+    openProfileDrawer() {
+      this.showProfileDrawer = true;
+      this.drawerMode = 'list';
+      this.drawerError = null;
+    },
+
+    closeProfileDrawer() {
+      this.showProfileDrawer = false;
+      this.drawerError = null;
+    },
+
+    startCreateProfile() {
+      this.drawerMode = 'create';
+      this.drawerError = null;
+      const current = (this.manifest && this.manifest.equipment) ? this.manifest.equipment : {};
+      this.drawerForm = {
+        id: `custom-${Date.now()}`,
+        name: 'My Custom Profile',
+        description: '',
+        max_kettle_volume_l: current.max_kettle_volume_l || 35.0,
+        max_mash_tun_volume_l: current.max_mash_tun_volume_l || 35.0,
+        max_hlt_volume_l: current.max_hlt_volume_l || 35.0,
+        mash_dead_space_l: current.mash_dead_space_l || 0.0,
+        trub_loss_l: current.trub_loss_l || 1.5,
+        boil_off_rate_l_per_hr: current.boil_off_rate_l_per_hr || 3.0,
+        grain_absorption_factor_l_per_kg: current.grain_absorption_factor_l_per_kg || 0.96,
+        conversion_efficiency: current.conversion_efficiency || 0.90,
+        shrinkage_pct: current.shrinkage_pct || 0.04,
+        hlt_min_volume_l: current.hlt_min_volume_l || 0.0,
+      };
+    },
+
+    editProfile(profile) {
+      this.drawerMode = 'edit';
+      this.drawerError = null;
+      this.drawerForm = {
+        id: profile.id,
+        name: profile.name,
+        description: profile.description || '',
+        max_kettle_volume_l: profile.max_kettle_volume_l,
+        max_mash_tun_volume_l: profile.max_mash_tun_volume_l,
+        max_hlt_volume_l: profile.max_hlt_volume_l,
+        mash_dead_space_l: profile.mash_dead_space_l,
+        trub_loss_l: profile.trub_loss_l,
+        boil_off_rate_l_per_hr: profile.boil_off_rate_l_per_hr,
+        grain_absorption_factor_l_per_kg: profile.grain_absorption_factor_l_per_kg,
+        conversion_efficiency: profile.conversion_efficiency,
+        shrinkage_pct: profile.shrinkage_pct,
+        hlt_min_volume_l: profile.hlt_min_volume_l,
+      };
+    },
+
+    async submitDrawerProfile() {
+      this.drawerError = null;
+      try {
+        if (!this.drawerForm.name.trim()) {
+          throw new Error(BREW_CONSTANTS.MSG_PROFILE_NAME_REQUIRED);
+        }
+        if (Number(this.drawerForm.max_kettle_volume_l) <= 0) {
+          throw new Error(BREW_CONSTANTS.MSG_KETTLE_VOLUME_REQUIRED);
+        }
+        if (Number(this.drawerForm.boil_off_rate_l_per_hr) <= 0) {
+          throw new Error(BREW_CONSTANTS.MSG_BOIL_OFF_REQUIRED);
+        }
+
+        const payload = {
+          ...this.drawerForm,
+          max_kettle_volume_l: Number(this.drawerForm.max_kettle_volume_l),
+          max_mash_tun_volume_l: Number(this.drawerForm.max_mash_tun_volume_l),
+          max_hlt_volume_l: Number(this.drawerForm.max_hlt_volume_l),
+          mash_dead_space_l: Number(this.drawerForm.mash_dead_space_l),
+          trub_loss_l: Number(this.drawerForm.trub_loss_l),
+          boil_off_rate_l_per_hr: Number(this.drawerForm.boil_off_rate_l_per_hr),
+          grain_absorption_factor_l_per_kg: Number(this.drawerForm.grain_absorption_factor_l_per_kg),
+          conversion_efficiency: Number(this.drawerForm.conversion_efficiency),
+          shrinkage_pct: Number(this.drawerForm.shrinkage_pct),
+          hlt_min_volume_l: Number(this.drawerForm.hlt_min_volume_l),
+        };
+
+        const saved = await Alpine.store('equipment').saveProfile(payload);
+        this.selectProfile(saved.id);
+        this.drawerMode = 'list';
+      } catch (err) {
+        this.drawerError = err.message;
+      }
+    },
+
+    async removeCustomProfile(profileId) {
+      if (!confirm('Are you sure you want to delete this custom profile?')) return;
+      try {
+        await Alpine.store('equipment').deleteProfile(profileId);
+        if (this.manifest && this.manifest.equipment_profile_id === profileId) {
+          const first = Alpine.store('equipment').profiles[0];
+          if (first) this.selectProfile(first.id);
+        }
+      } catch {
+        // error handled in store
+      }
+    },
+
+    selectProfile(profileId) {
+      if (!this.manifest) return;
+      this.manifest.equipment_profile_id = profileId;
+      if (!profileId) return;
+
+      const preset = Alpine.store('equipment').getProfileById(profileId);
+      if (preset) {
+        this.manifest.equipment = {
+          max_kettle_volume_l: preset.max_kettle_volume_l,
+          max_mash_tun_volume_l: preset.max_mash_tun_volume_l,
+          max_hlt_volume_l: preset.max_hlt_volume_l,
+          mash_dead_space_l: preset.mash_dead_space_l,
+          trub_loss_l: preset.trub_loss_l,
+          boil_off_rate_l_per_hr: preset.boil_off_rate_l_per_hr,
+          grain_absorption_factor_l_per_kg: preset.grain_absorption_factor_l_per_kg,
+          conversion_efficiency: preset.conversion_efficiency,
+          shrinkage_pct: preset.shrinkage_pct,
+          hlt_min_volume_l: preset.hlt_min_volume_l,
+        };
+        this.onEquipmentChange();
+      }
+    },
+
+    onEquipmentChange() {
+      if (this.$dispatch) {
+        this.$dispatch('recipe:recalculate', { payload: this.manifest });
+        this.$dispatch('wizard:invalidate', { step: 1 });
+      } else {
+        window.dispatchEvent(new CustomEvent('recipe:recalculate', { detail: { payload: this.manifest } }));
+        window.dispatchEvent(new CustomEvent('wizard:invalidate', { detail: { step: 1 } }));
+      }
+    },
+
+    get isCustomModified() {
+      if (!this.manifest) return false;
+      const selectedId = this.manifest.equipment_profile_id;
+      if (!selectedId) return true;
+      const preset = Alpine.store('equipment').getProfileById(selectedId);
+      if (!preset) return true;
+
+      const eq = this.manifest.equipment;
+      return (
+        Number(eq.max_kettle_volume_l) !== Number(preset.max_kettle_volume_l) ||
+        Number(eq.max_mash_tun_volume_l) !== Number(preset.max_mash_tun_volume_l) ||
+        Number(eq.max_hlt_volume_l) !== Number(preset.max_hlt_volume_l) ||
+        Number(eq.mash_dead_space_l) !== Number(preset.mash_dead_space_l) ||
+        Number(eq.trub_loss_l) !== Number(preset.trub_loss_l) ||
+        Number(eq.boil_off_rate_l_per_hr) !== Number(preset.boil_off_rate_l_per_hr) ||
+        Number(eq.grain_absorption_factor_l_per_kg) !== Number(preset.grain_absorption_factor_l_per_kg) ||
+        Number(eq.conversion_efficiency) !== Number(preset.conversion_efficiency) ||
+        Number(eq.shrinkage_pct) !== Number(preset.shrinkage_pct) ||
+        Number(eq.hlt_min_volume_l) !== Number(preset.hlt_min_volume_l)
+      );
+    }
+  };
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('alpine:init', () => {
+    // Global Units Store with Option C toggle support & per-field overrides
   Alpine.store('units', {
     activePreset: BREW_CONSTANTS.UNIT_PRESET_METRIC, // 'metric' | 'imperial' | 'custom'
     domainDefaults: {
@@ -927,413 +1297,203 @@ document.addEventListener('alpine:init', () => {
     }
   });
 
-  // Progressive 12-Step Wizard State Machine
-  Alpine.data('wizard', () => ({
-    // Presentation FSM State
-    activeStep: 1,
-    completedSteps: [],
-    highWaterMark: 1,
-    dirtySteps: [],
-    expansionMode: 'exclusive',
+  // Decoupled Presentation FSM: Wizard Navigation Component
+  Alpine.data('wizardNavigation', () => createWizardNavigation());
 
-    // Profile Management Drawer State
-    showProfileDrawer: false,
-    drawerMode: 'list', // 'list' | 'create' | 'edit'
-    drawerForm: {
-      id: '',
-      name: '',
-      description: '',
-      max_kettle_volume_l: BREW_CONSTANTS.DEFAULT_MAX_KETTLE_VOLUME_L,
-      max_mash_tun_volume_l: BREW_CONSTANTS.DEFAULT_MAX_MASH_TUN_VOLUME_L,
-      max_hlt_volume_l: BREW_CONSTANTS.DEFAULT_MAX_HLT_VOLUME_L,
-      mash_dead_space_l: BREW_CONSTANTS.DEFAULT_MASH_DEAD_SPACE_L,
-      trub_loss_l: BREW_CONSTANTS.DEFAULT_TRUB_LOSS_L,
-      boil_off_rate_l_per_hr: BREW_CONSTANTS.DEFAULT_BOIL_OFF_RATE_L_PER_HR,
-      grain_absorption_factor_l_per_kg: BREW_CONSTANTS.DEFAULT_GRAIN_ABSORPTION_L_PER_KG,
-      conversion_efficiency: BREW_CONSTANTS.DEFAULT_CONVERSION_EFFICIENCY,
-      shrinkage_pct: BREW_CONSTANTS.DEFAULT_SHRINKAGE_PCT,
-      hlt_min_volume_l: BREW_CONSTANTS.DEFAULT_HLT_MIN_VOLUME_L,
-    },
-    drawerError: null,
+  // Decoupled Presentation State: Equipment Manager Component
+  Alpine.data('equipmentManager', () => createEquipmentManager());
 
-    // Working Recipe Manifest
-    manifest: {
-      name: BREW_CONSTANTS.DEFAULT_BATCH_NAME,
-      equipment_profile_id: BREW_CONSTANTS.DEFAULT_EQUIPMENT_PROFILE_ID,
-      equipment: {
-        max_kettle_volume_l: 38.0,
-        max_mash_tun_volume_l: 38.0,
-        max_hlt_volume_l: 38.0,
-        mash_dead_space_l: 1.5,
-        trub_loss_l: 2.0,
-        boil_off_rate_l_per_hr: 3.5,
-        grain_absorption_factor_l_per_kg: 0.96,
-        conversion_efficiency: 0.90,
-        shrinkage_pct: 0.04,
-        hlt_min_volume_l: 12.0,
+  // Progressive 12-Step Wizard State Machine (Decoupled Orchestrator)
+  Alpine.data('wizard', () => {
+    const nav = createWizardNavigation();
+    const eqMgr = createEquipmentManager();
+
+    return {
+      ...nav,
+      ...eqMgr,
+
+      // Working Recipe Manifest
+      manifest: {
+        name: BREW_CONSTANTS.DEFAULT_BATCH_NAME,
+        equipment_profile_id: BREW_CONSTANTS.DEFAULT_EQUIPMENT_PROFILE_ID,
+        equipment: {
+          max_kettle_volume_l: 38.0,
+          max_mash_tun_volume_l: 38.0,
+          max_hlt_volume_l: 38.0,
+          mash_dead_space_l: 1.5,
+          trub_loss_l: 2.0,
+          boil_off_rate_l_per_hr: 3.5,
+          grain_absorption_factor_l_per_kg: 0.96,
+          conversion_efficiency: 0.90,
+          shrinkage_pct: 0.04,
+          hlt_min_volume_l: 12.0,
+        },
+        target_volume_l: BREW_CONSTANTS.DEFAULT_TARGET_VOLUME_L,
+        target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
+        boil_time_min: BREW_CONSTANTS.DEFAULT_BOIL_TIME_MIN,
+        boil_solver_mode: 'option_b', // 'option_b' (solve post-boil/OG) or 'option_a' (solve boil-off rate)
+        preboil_volume_l: 26.0,
+        preboil_gravity: 1.045,
+        postboil_volume_l: 22.5,
+        postboil_gravity: 1.052,
+        grain_bill: [],
+        late_additions: [],
+        mash_profile: [],
+        water_profile_id: null,
+        hop_schedule: [],
+        yeast_id: null,
+        fermentation_schedule: [],
+        dry_hops: []
       },
-      target_volume_l: BREW_CONSTANTS.DEFAULT_TARGET_VOLUME_L,
-      target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
-      boil_time_min: BREW_CONSTANTS.DEFAULT_BOIL_TIME_MIN,
-      boil_solver_mode: 'option_b', // 'option_b' (solve post-boil/OG) or 'option_a' (solve boil-off rate)
-      preboil_volume_l: 26.0,
-      preboil_gravity: 1.045,
-      postboil_volume_l: 22.5,
-      postboil_gravity: 1.052,
-      grain_bill: [],
-      late_additions: [],
-      mash_profile: [],
-      water_profile_id: null,
-      hop_schedule: [],
-      yeast_id: null,
-      fermentation_schedule: [],
-      dry_hops: []
-    },
 
-    init() {
-      // Auto-load matching preset once equipment profiles are available
-      this.$watch('$store.equipment.profiles', (profiles) => {
-        if (profiles && profiles.length > 0 && !this.manifest.equipment_profile_id) {
-          this.selectProfile(profiles[0].id);
+      init() {
+        // Event bus listener for recipe recalculation & step invalidation
+        window.addEventListener('recipe:recalculate', () => {
+          this.runBoilSolver();
+        });
+        window.addEventListener('wizard:invalidate', (e) => {
+          if (e.detail && e.detail.step) {
+            this.invalidateDownstream(e.detail.step);
+          }
+        });
+
+        // Auto-load matching preset once equipment profiles are available
+        this.$watch('$store.equipment.profiles', (profiles) => {
+          if (profiles && profiles.length > 0 && !this.manifest.equipment_profile_id) {
+            this.selectProfile(profiles[0].id);
+            this.runBoilSolver();
+          }
+        });
+        this.runBoilSolver();
+      },
+
+      setBoilSolverMode(mode) {
+        this.manifest.boil_solver_mode = mode;
+        this.runBoilSolver();
+      },
+
+      // Unit-aware field binding helpers (automatically convert between metric base storage and selected display unit)
+      volDisplay(baseVal, fieldKey) {
+        return Alpine.store('units') ? Alpine.store('units').toDisplay('volume', baseVal, fieldKey) : baseVal;
+      },
+      setVolDisplay(obj, prop, displayVal, fieldKey) {
+        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('volume', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+        obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+        if (this.$dispatch) {
+          this.$dispatch('recipe:recalculate');
+        } else {
           this.runBoilSolver();
         }
-      });
-      this.runBoilSolver();
-    },
-
-    setBoilSolverMode(mode) {
-      this.manifest.boil_solver_mode = mode;
-      this.runBoilSolver();
-    },
-
-    // Unit-aware field binding helpers (automatically convert between metric base storage and selected display unit)
-    volDisplay(baseVal, fieldKey) {
-      return Alpine.store('units') ? Alpine.store('units').toDisplay('volume', baseVal, fieldKey) : baseVal;
-    },
-    setVolDisplay(obj, prop, displayVal, fieldKey) {
-      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('volume', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
-      this.runBoilSolver();
-    },
-    massDisplay(baseVal, fieldKey) {
-      return Alpine.store('units') ? Alpine.store('units').toDisplay('mass', baseVal, fieldKey) : baseVal;
-    },
-    setMassDisplay(obj, prop, displayVal, fieldKey) {
-      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('mass', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
-    },
-    compoundDisplay(baseVal, fieldKey) {
-      return Alpine.store('units') ? Alpine.store('units').toDisplay('compound', baseVal, fieldKey) : baseVal;
-    },
-    setCompoundDisplay(obj, prop, displayVal, fieldKey) {
-      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('compound', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
-    },
-    percentageDisplay(baseVal, fieldKey) {
-      return Alpine.store('units') ? Alpine.store('units').toDisplay('percentage', baseVal, fieldKey) : baseVal;
-    },
-    setPercentageDisplay(obj, prop, displayVal, fieldKey) {
-      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('percentage', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
-    },
-    gravityDisplay(baseVal, fieldKey) {
-      return Alpine.store('units') ? Alpine.store('units').toDisplay('gravity', baseVal, fieldKey) : baseVal;
-    },
-    setGravityDisplay(obj, prop, displayVal, fieldKey) {
-      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('gravity', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-      obj[prop] = isNaN(baseVal) ? 1.0 : baseVal;
-      this.runBoilSolver();
-    },
-
-    onBatchMetaChange() {
-      this.runBoilSolver();
-      this.invalidateDownstream(2);
-    },
-
-    runBoilSolver() {
-      const m = this.manifest;
-      const eq = m.equipment;
-      const boilTimeHrs = (parseFloat(m.boil_time_min) || 60) / 60.0;
-      const trubLoss = parseFloat(eq.trub_loss_l) || 0;
-      const shrinkage = parseFloat(eq.shrinkage_pct) || 0.04;
-
-      if (m.boil_solver_mode === 'option_a') {
-        // Option A: Pre-boil vol/gravity & Post-boil vol fixed -> solve Boil-Off Rate & Post-Boil OG
-        const vPre = parseFloat(m.preboil_volume_l) || 26.0;
-        const sgPre = parseFloat(m.preboil_gravity) || 1.045;
-        const vPost = parseFloat(m.postboil_volume_l) || 22.5;
-
-        if (boilTimeHrs > 0 && vPre > vPost) {
-          const totalBoilOff = vPre - vPost;
-          eq.boil_off_rate_l_per_hr = Number((totalBoilOff / boilTimeHrs).toFixed(2));
+      },
+      massDisplay(baseVal, fieldKey) {
+        return Alpine.store('units') ? Alpine.store('units').toDisplay('mass', baseVal, fieldKey) : baseVal;
+      },
+      setMassDisplay(obj, prop, displayVal, fieldKey) {
+        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('mass', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+        obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+      },
+      compoundDisplay(baseVal, fieldKey) {
+        return Alpine.store('units') ? Alpine.store('units').toDisplay('compound', baseVal, fieldKey) : baseVal;
+      },
+      setCompoundDisplay(obj, prop, displayVal, fieldKey) {
+        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('compound', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+        obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+      },
+      percentageDisplay(baseVal, fieldKey) {
+        return Alpine.store('units') ? Alpine.store('units').toDisplay('percentage', baseVal, fieldKey) : baseVal;
+      },
+      setPercentageDisplay(obj, prop, displayVal, fieldKey) {
+        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('percentage', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+        obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+      },
+      gravityDisplay(baseVal, fieldKey) {
+        return Alpine.store('units') ? Alpine.store('units').toDisplay('gravity', baseVal, fieldKey) : baseVal;
+      },
+      setGravityDisplay(obj, prop, displayVal, fieldKey) {
+        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('gravity', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+        obj[prop] = isNaN(baseVal) ? 1.0 : baseVal;
+        if (this.$dispatch) {
+          this.$dispatch('recipe:recalculate');
+        } else {
+          this.runBoilSolver();
         }
+      },
 
-        const extractPointsTotal = vPre * (sgPre - 1.0);
-        const sgPost = vPost > 0 ? 1.0 + (extractPointsTotal / vPost) : 1.050;
-        m.postboil_gravity = Number(sgPost.toFixed(3));
+      onBatchMetaChange() {
+        this.runBoilSolver();
+        this.invalidateDownstream(2);
+      },
 
-        const vTarget = Math.max(0, (vPost - trubLoss) * (1.0 - shrinkage));
-        m.target_volume_l = Number(vTarget.toFixed(1));
-        const targetOg = vTarget > 0 ? 1.0 + (extractPointsTotal / vTarget) : sgPost;
-        m.target_og = Number(targetOg.toFixed(3));
+      runBoilSolver() {
+        ThermodynamicSolver.solveBoil(this.manifest);
+      },
 
-      } else {
-        // Option B (Default): Pre-boil vol/gravity, boil time & boil-off rate fixed -> solve Post-Boil Vol, Post-Boil Gravity, Packaged Volume & Target OG
-        const vPre = parseFloat(m.preboil_volume_l) || 26.0;
-        const sgPre = parseFloat(m.preboil_gravity) || 1.045;
-        const rate = parseFloat(eq.boil_off_rate_l_per_hr) || 3.5;
-
-        const totalBoilOff = rate * boilTimeHrs;
-        const vPost = Math.max(0, vPre - totalBoilOff);
-        m.postboil_volume_l = Number(vPost.toFixed(1));
-
-        const extractPointsTotal = vPre * (sgPre - 1.0);
-        const sgPost = vPost > 0 ? 1.0 + (extractPointsTotal / vPost) : 1.050;
-        m.postboil_gravity = Number(sgPost.toFixed(3));
-
-        const vTarget = Math.max(0, (vPost - trubLoss) * (1.0 - shrinkage));
-        m.target_volume_l = Number(vTarget.toFixed(1));
-        const targetOg = vTarget > 0 ? 1.0 + (extractPointsTotal / vTarget) : sgPost;
-        m.target_og = Number(targetOg.toFixed(3));
-      }
-    },
-
-    // Step 1 Synthesized Outputs
-    get fixedSystemLoss() {
-      const eq = this.manifest.equipment;
-      const deadSpace = parseFloat(eq.mash_dead_space_l) || 0;
-      const trub = parseFloat(eq.trub_loss_l) || 0;
-      return (deadSpace + trub).toFixed(2);
-    },
-
-    get hourlyEvaporation() {
-      return (parseFloat(this.manifest.equipment.boil_off_rate_l_per_hr) || 0).toFixed(2);
-    },
-
-    get kettleCapacity() {
-      return (parseFloat(this.manifest.equipment.max_kettle_volume_l) || 0).toFixed(1);
-    },
-
-    get hltCoilFloor() {
-      return (parseFloat(this.manifest.equipment.hlt_min_volume_l) || 0).toFixed(1);
-    },
-
-    // Step 2 Synthesized Outputs
-    get targetVolumeDisplay() {
-      return (parseFloat(this.manifest.target_volume_l) || 0).toFixed(1);
-    },
-
-    get targetOgPoints() {
-      const og = parseFloat(this.manifest.target_og) || 1.000;
-      const points = Math.max(0, (og - 1.0) * 1000);
-      return points.toFixed(1);
-    },
-
-    get targetKettleExtract() {
-      const vol = parseFloat(this.manifest.target_volume_l) || 0;
-      const og = parseFloat(this.manifest.target_og) || 1.000;
-      const points = Math.max(0, (og - 1.0) * 1000);
-      return (vol * points).toFixed(1);
-    },
-
-    get isCustomModified() {
-      const selectedId = this.manifest.equipment_profile_id;
-      if (!selectedId) return true;
-      const preset = Alpine.store('equipment').getProfileById(selectedId);
-      if (!preset) return true;
-
-      const eq = this.manifest.equipment;
-      return (
-        Number(eq.max_kettle_volume_l) !== Number(preset.max_kettle_volume_l) ||
-        Number(eq.max_mash_tun_volume_l) !== Number(preset.max_mash_tun_volume_l) ||
-        Number(eq.max_hlt_volume_l) !== Number(preset.max_hlt_volume_l) ||
-        Number(eq.mash_dead_space_l) !== Number(preset.mash_dead_space_l) ||
-        Number(eq.trub_loss_l) !== Number(preset.trub_loss_l) ||
-        Number(eq.boil_off_rate_l_per_hr) !== Number(preset.boil_off_rate_l_per_hr) ||
-        Number(eq.grain_absorption_factor_l_per_kg) !== Number(preset.grain_absorption_factor_l_per_kg) ||
-        Number(eq.conversion_efficiency) !== Number(preset.conversion_efficiency) ||
-        Number(eq.shrinkage_pct) !== Number(preset.shrinkage_pct) ||
-        Number(eq.hlt_min_volume_l) !== Number(preset.hlt_min_volume_l)
-      );
-    },
-
-    selectProfile(profileId) {
-      this.manifest.equipment_profile_id = profileId;
-      if (!profileId) return;
-
-      const preset = Alpine.store('equipment').getProfileById(profileId);
-      if (preset) {
-        this.manifest.equipment = {
-          max_kettle_volume_l: preset.max_kettle_volume_l,
-          max_mash_tun_volume_l: preset.max_mash_tun_volume_l,
-          max_hlt_volume_l: preset.max_hlt_volume_l,
-          mash_dead_space_l: preset.mash_dead_space_l,
-          trub_loss_l: preset.trub_loss_l,
-          boil_off_rate_l_per_hr: preset.boil_off_rate_l_per_hr,
-          grain_absorption_factor_l_per_kg: preset.grain_absorption_factor_l_per_kg,
-          conversion_efficiency: preset.conversion_efficiency,
-          shrinkage_pct: preset.shrinkage_pct,
-          hlt_min_volume_l: preset.hlt_min_volume_l,
-        };
-        this.invalidateDownstream(1);
-      }
-    },
-
-    onEquipmentChange() {
-      this.invalidateDownstream(1);
-    },
-
-    setActiveStep(stepNumber) {
-      if (stepNumber <= this.highWaterMark || this.expansionMode === 'concurrent') {
-        this.activeStep = stepNumber;
-      }
-    },
-
-    markStepComplete(stepNumber) {
-      // Validate Step 1
-      if (stepNumber === 1) {
+      // Step 1 Synthesized Outputs (delegated to ThermodynamicSolver)
+      get fixedSystemLoss() {
         const eq = this.manifest.equipment;
-        if (!eq.max_kettle_volume_l || eq.max_kettle_volume_l <= 0) {
-          Alpine.store('ui').add(BREW_CONSTANTS.MSG_KETTLE_VOLUME_REQUIRED, 'error');
-          return;
+        return ThermodynamicSolver.calculateFixedLoss(eq.mash_dead_space_l, eq.trub_loss_l);
+      },
+
+      get hourlyEvaporation() {
+        return (parseFloat(this.manifest.equipment.boil_off_rate_l_per_hr) || 0).toFixed(2);
+      },
+
+      get kettleCapacity() {
+        return (parseFloat(this.manifest.equipment.max_kettle_volume_l) || 0).toFixed(1);
+      },
+
+      get hltCoilFloor() {
+        return (parseFloat(this.manifest.equipment.hlt_min_volume_l) || 0).toFixed(1);
+      },
+
+      // Step 2 Synthesized Outputs (delegated to ThermodynamicSolver)
+      get targetVolumeDisplay() {
+        return (parseFloat(this.manifest.target_volume_l) || 0).toFixed(1);
+      },
+
+      get targetOgPoints() {
+        return ThermodynamicSolver.calculateOgPoints(this.manifest.target_og);
+      },
+
+      get targetKettleExtract() {
+        return ThermodynamicSolver.calculateKettleExtract(this.manifest.target_volume_l, this.manifest.target_og);
+      },
+
+      // Step Validation Override for Wizard Workflow
+      markStepComplete(stepNumber) {
+        // Validate Step 1
+        if (stepNumber === 1) {
+          const eq = this.manifest.equipment;
+          if (!eq.max_kettle_volume_l || eq.max_kettle_volume_l <= 0) {
+            Alpine.store('ui').add(BREW_CONSTANTS.MSG_KETTLE_VOLUME_REQUIRED, 'error');
+            return;
+          }
+          if (!eq.boil_off_rate_l_per_hr || eq.boil_off_rate_l_per_hr <= 0) {
+            Alpine.store('ui').add(BREW_CONSTANTS.MSG_BOIL_OFF_REQUIRED, 'error');
+            return;
+          }
         }
-        if (!eq.boil_off_rate_l_per_hr || eq.boil_off_rate_l_per_hr <= 0) {
-          Alpine.store('ui').add(BREW_CONSTANTS.MSG_BOIL_OFF_REQUIRED, 'error');
-          return;
+
+        // Validate Step 2
+        if (stepNumber === 2) {
+          if (!this.manifest.name || this.manifest.name.trim() === '') {
+            Alpine.store('ui').add(BREW_CONSTANTS.MSG_BATCH_NAME_REQUIRED, 'error');
+            return;
+          }
+          if (!this.manifest.target_volume_l || this.manifest.target_volume_l <= 0) {
+            Alpine.store('ui').add(BREW_CONSTANTS.MSG_TARGET_VOLUME_REQUIRED, 'error');
+            return;
+          }
+          if (!this.manifest.target_og || this.manifest.target_og < 1.010 || this.manifest.target_og > 1.200) {
+            Alpine.store('ui').add(BREW_CONSTANTS.MSG_TARGET_OG_REQUIRED, 'error');
+            return;
+          }
         }
+
+        nav.markStepComplete.call(this, stepNumber);
       }
-
-      // Validate Step 2
-      if (stepNumber === 2) {
-        if (!this.manifest.name || this.manifest.name.trim() === '') {
-          Alpine.store('ui').add('Batch name is required.', 'error');
-          return;
-        }
-        if (!this.manifest.target_volume_l || this.manifest.target_volume_l <= 0) {
-          Alpine.store('ui').add('Target packaged volume must be greater than zero.', 'error');
-          return;
-        }
-        if (!this.manifest.target_og || this.manifest.target_og < 1.010 || this.manifest.target_og > 1.200) {
-          Alpine.store('ui').add('Target original gravity must be between 1.010 and 1.200.', 'error');
-          return;
-        }
-      }
-
-      if (!this.completedSteps.includes(stepNumber)) {
-        this.completedSteps.push(stepNumber);
-      }
-      this.highWaterMark = Math.max(this.highWaterMark, stepNumber + 1);
-      this.activeStep = stepNumber + 1;
-      Alpine.store('ui').add(BREW_CONSTANTS.MSG_STEP_CONFIGURED_TEMPLATE(stepNumber), 'success');
-    },
-
-    invalidateDownstream(fromStepNumber) {
-      // Mark downstream solved steps dirty
-      this.dirtySteps = [6, 7, 8, 9, 11, 12].filter(step => step > fromStepNumber);
-    },
-
-    // Drawer CRUD helpers
-    openProfileDrawer() {
-      this.showProfileDrawer = true;
-      this.drawerMode = 'list';
-      this.drawerError = null;
-    },
-
-    closeProfileDrawer() {
-      this.showProfileDrawer = false;
-      this.drawerError = null;
-    },
-
-    startCreateProfile() {
-      this.drawerMode = 'create';
-      this.drawerError = null;
-      // Copy current working values as a starting template
-      const current = this.manifest.equipment;
-      this.drawerForm = {
-        id: `custom-${Date.now()}`,
-        name: 'My Custom Profile',
-        description: '',
-        max_kettle_volume_l: current.max_kettle_volume_l || 35.0,
-        max_mash_tun_volume_l: current.max_mash_tun_volume_l || 35.0,
-        max_hlt_volume_l: current.max_hlt_volume_l || 35.0,
-        mash_dead_space_l: current.mash_dead_space_l || 0.0,
-        trub_loss_l: current.trub_loss_l || 1.5,
-        boil_off_rate_l_per_hr: current.boil_off_rate_l_per_hr || 3.0,
-        grain_absorption_factor_l_per_kg: current.grain_absorption_factor_l_per_kg || 0.96,
-        conversion_efficiency: current.conversion_efficiency || 0.90,
-        shrinkage_pct: current.shrinkage_pct || 0.04,
-        hlt_min_volume_l: current.hlt_min_volume_l || 0.0,
-      };
-    },
-
-    editProfile(profile) {
-      this.drawerMode = 'edit';
-      this.drawerError = null;
-      this.drawerForm = {
-        id: profile.id,
-        name: profile.name,
-        description: profile.description || '',
-        max_kettle_volume_l: profile.max_kettle_volume_l,
-        max_mash_tun_volume_l: profile.max_mash_tun_volume_l,
-        max_hlt_volume_l: profile.max_hlt_volume_l,
-        mash_dead_space_l: profile.mash_dead_space_l,
-        trub_loss_l: profile.trub_loss_l,
-        boil_off_rate_l_per_hr: profile.boil_off_rate_l_per_hr,
-        grain_absorption_factor_l_per_kg: profile.grain_absorption_factor_l_per_kg,
-        conversion_efficiency: profile.conversion_efficiency,
-        shrinkage_pct: profile.shrinkage_pct,
-        hlt_min_volume_l: profile.hlt_min_volume_l,
-      };
-    },
-
-    async submitDrawerProfile() {
-      this.drawerError = null;
-      try {
-        if (!this.drawerForm.name.trim()) {
-          throw new Error('Profile name is required.');
-        }
-        if (Number(this.drawerForm.max_kettle_volume_l) <= 0) {
-          throw new Error('Kettle volume must be greater than zero.');
-        }
-        if (Number(this.drawerForm.boil_off_rate_l_per_hr) <= 0) {
-          throw new Error('Boil-off rate must be greater than zero.');
-        }
-
-        const payload = {
-          ...this.drawerForm,
-          max_kettle_volume_l: Number(this.drawerForm.max_kettle_volume_l),
-          max_mash_tun_volume_l: Number(this.drawerForm.max_mash_tun_volume_l),
-          max_hlt_volume_l: Number(this.drawerForm.max_hlt_volume_l),
-          mash_dead_space_l: Number(this.drawerForm.mash_dead_space_l),
-          trub_loss_l: Number(this.drawerForm.trub_loss_l),
-          boil_off_rate_l_per_hr: Number(this.drawerForm.boil_off_rate_l_per_hr),
-          grain_absorption_factor_l_per_kg: Number(this.drawerForm.grain_absorption_factor_l_per_kg),
-          conversion_efficiency: Number(this.drawerForm.conversion_efficiency),
-          shrinkage_pct: Number(this.drawerForm.shrinkage_pct),
-          hlt_min_volume_l: Number(this.drawerForm.hlt_min_volume_l),
-        };
-
-        const saved = await Alpine.store('equipment').saveProfile(payload);
-        this.selectProfile(saved.id);
-        this.drawerMode = 'list';
-      } catch (err) {
-        this.drawerError = err.message;
-      }
-    },
-
-    async removeCustomProfile(profileId) {
-      if (!confirm('Are you sure you want to delete this custom profile?')) return;
-      try {
-        await Alpine.store('equipment').deleteProfile(profileId);
-        if (this.manifest.equipment_profile_id === profileId) {
-          const first = Alpine.store('equipment').profiles[0];
-          if (first) this.selectProfile(first.id);
-        }
-      } catch {
-        // error handled in store
-      }
-    }
-  }));
+    };
+  });
 
   // Main Page Interactive Component
   Alpine.data('app', () => ({
@@ -1378,4 +1538,5 @@ document.addEventListener('alpine:init', () => {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     },
   }));
-});
+  });
+}

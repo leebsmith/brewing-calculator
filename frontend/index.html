@@ -18,11 +18,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 
-  <!-- Centralized Constants -->
-  <script src="constants.js"></script>
-
-  <!-- Application logic defining Alpine.store and Alpine.data (registers alpine:init listener) -->
-  <script src="script.js"></script>
+  <!-- Application logic and constants loaded as ES modules -->
+  <script type="module" src="script.js"></script>
 
   <!-- Alpine.js Collapse Plugin & Core (deferred so they initialize after listeners are registered) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
@@ -42,7 +39,7 @@
         <div class="tri-state-group">
           <button
             type="button"
-            @click="$store.units.setPreset(BREW_CONSTANTS.UNIT_PRESET_METRIC)"
+            @click="$store.units.setPreset('metric')"
             class="tri-state-pill"
             :class="{
               'tri-state-pill-solid': $store.units.isPureMetric(),
@@ -55,7 +52,7 @@
           </button>
           <button
             type="button"
-            @click="$store.units.setPreset(BREW_CONSTANTS.UNIT_PRESET_IMPERIAL)"
+            @click="$store.units.setPreset('imperial')"
             class="tri-state-pill"
             :class="{
               'tri-state-pill-solid': $store.units.isPureImperial(),

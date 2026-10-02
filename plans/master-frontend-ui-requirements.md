@@ -466,19 +466,45 @@ Clicking "Ingredients & Profiles" opens an elevated full-height slide-over drawe
 
 ## 7. State Management & Alpine.js Reactive Contracts
 
-### 7.1 Root Wizard Component State Schema
-The wizard FSM is initialized at the root of `frontend/index.html` via `Alpine.data('wizard', ...)`:
+### 7.1 Decoupled Wizard State Architecture
+To avoid monolithic "God Object" coupling, the wizard state machine is deconstructed into three specialized layers orchestrating across an event bus:
+
+1. **Domain Logic (`ThermodynamicSolver`):** Pure mathematical functions (boil-off, evaporation, extract conservation, packaged volume) isolated from UI state.
+2. **Presentation FSM (`createWizardNavigation` / `wizardNavigation`):** Manages 12-step navigation, high-water mark gates, step invalidation, and declarative status getters (`getStepStatusLabel`, `getStepStatusClass`).
+3. **Equipment Profile Manager (`createEquipmentManager` / `equipmentManager`):** Manages hardware drawer CRUD, custom profile modifications, and dispatches `recipe:recalculate` and `wizard:invalidate` events.
+4. **Root Wizard Orchestrator (`wizard`):** Initialized at the root of `frontend/index.html` via `Alpine.data('wizard', ...)`, composing navigation, equipment management, the recipe manifest, and delegating physics calculations to `ThermodynamicSolver`.
 
 ```javascript
 {
-  // Presentation FSM State
+  // 1. Presentation FSM State (from createWizardNavigation)
   activeStep: 1,
   completedSteps: [],
   highWaterMark: 1,
   dirtySteps: [],
   expansionMode: 'exclusive', // 'exclusive' | 'concurrent'
-  
-  // Working Recipe Manifest (Pointers & Targets)
+  setActiveStep(stepNumber) {},
+  markStepComplete(stepNumber) {},
+  invalidateDownstream(fromStepNumber) {},
+  toggleExpansionMode() {},
+  getStepStatusLabel(stepNum) {},
+  getStepStatusClass(stepNum) {},
+
+  // 2. Equipment Management State (from createEquipmentManager)
+  showProfileDrawer: false,
+  drawerMode: 'list', // 'list' | 'create' | 'edit'
+  drawerForm: { /* ... */ },
+  drawerError: null,
+  openProfileDrawer() {},
+  closeProfileDrawer() {},
+  startCreateProfile() {},
+  editProfile(profile) {},
+  submitDrawerProfile() {},
+  removeCustomProfile(profileId) {},
+  selectProfile(profileId) {},
+  onEquipmentChange() {}, // dispatches 'recipe:recalculate' & 'wizard:invalidate'
+  isCustomModified: false,
+
+  // 3. Working Recipe Manifest (Pointers & Targets)
   manifest: {
     name: 'Untitled Batch',
     equipment_profile_id: null,
@@ -495,30 +521,15 @@ The wizard FSM is initialized at the root of `frontend/index.html` via `Alpine.d
     dry_hops: []
   },
   
-  // Solved Output State (Populated by Solvers)
-  solved: {
-    adjusted_target_og: 1.055,
-    grain_mass_kg: 0.0,
-    grain_weights: {},       // malt_id -> kg
-    v_strike_l: 0.0,
-    v1_l: 0.0,
-    v2_l: 0.0,
-    v_pre_boil_l: 0.0,
-    pre_boil_gravity: 1.000,
-    water_prescription: null,
-    predicted_fg: 1.010,
-    predicted_abv: 0.0,
-    calculated_srm: 0.0
-  },
-  
-  // FSM Action Methods
-  setActiveStep(stepNumber) {},
-  markStepComplete(stepNumber) {},
-  invalidateDownstream(fromStepNumber) {},
-  toggleExpansionMode() {},
-  async runMasterSolver() {},
-  async runWaterSolver() {},
-  freezeToVault() {}
+  // 4. Thermodynamic Solver Delegations (ThermodynamicSolver)
+  runBoilSolver() { ThermodynamicSolver.solveBoil(this.manifest); },
+  get fixedSystemLoss() {},
+  get hourlyEvaporation() {},
+  get kettleCapacity() {},
+  get hltCoilFloor() {},
+  get targetVolumeDisplay() {},
+  get targetOgPoints() {},
+  get targetKettleExtract() {}
 }
 ```
 

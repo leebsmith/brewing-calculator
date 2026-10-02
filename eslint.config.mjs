@@ -15,13 +15,12 @@ export default [
     ignores: ["node_modules/**", "purgecss-linter.js"],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: "script",
+      sourceType: "module",
       globals: {
         ...globals.browser,
         ...globals.es2021,
         Alpine: "readonly",
-        firebase: "readonly",
-        BREW_CONSTANTS: "readonly"
+        firebase: "readonly"
       }
     },
     rules: {
