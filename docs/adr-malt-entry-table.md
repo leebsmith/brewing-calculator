@@ -201,7 +201,21 @@ The Actions column contains two operational icon buttons per row:
 ### 2.6 Contextual Slide-Out Utility Drawer
 
 A single right-hand drawer operating as a mutually exclusive state machine:
+
 * `drawer_mode: null | 'search' | 'inspect'`
 * `active_row_id: null | string`
 
 Pressing `Esc` while the drawer is open dismisses the drawer (`drawer_mode = null`) without closing the parent recipe modal.
+
+#### A. Catalog Search Drawer (`drawer_mode === 'search'`)
+The catalog search drawer allows discovery and insertion of grain primitives into the active grist:
+
+* **Real-Time Full-Text Search:** Text search input indexing both malt `name` and sensory `notes` (case-insensitive). Includes an inline `✕` clear action button when text is entered.
+* **Category Screening (Binary Toggle Pills):** Category filters for `BASE`, `CRYSTAL`, `ROASTED`, and `ACID` implemented as binary toggle buttons (`.filter-pill` with `.is-active` / `aria-pressed="true | false"`). Multiple active selections operate under additive OR logic; all toggled off yields zero results. All categories default to active upon opening the drawer.
+* **Grist Deduplication / Exclusion:** Ingredients currently present in the active recipe grist (`draftMajorMalts`) are excluded from the catalog search results in real time. Removing a row from the grist immediately re-enables it for selection in the drawer.
+* **Live Result Counter:** An explicit counter directly below the filter controls (e.g., `Showing X available malts`) updating reactively as queries or pills change.
+* **Keyboard Semantics:** The `Esc` key is strictly dedicated to dismissing the drawer (`drawer_mode = null`), never hijacked for text field clearing.
+
+#### B. Row Inspector Drawer (`drawer_mode === 'inspect'`)
+Permits deep inspection and editing of specialized physical attributes (DI pH, buffer index, moisture content, notes) for the row matching `active_row_id`.
+

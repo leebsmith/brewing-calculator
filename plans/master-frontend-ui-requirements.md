@@ -287,6 +287,14 @@ The primary calculation workspace is a progressive 12-step accordion that functi
   3. **Synthesized Unified Read-Only Summary Table:**
      * Automatically calculates and displays the combined grist inventory (scaling major contributors by total weight $\times$ percentage plus absolute trace masses).
      * Feeds the composite mass, potential, and SRM directly into subsequent Mash and Hops calculation steps.
+* **Modal Editor & Contextual Catalog Drawer:**
+  * **2-Zone Spatial Layout:** Main Grid Workspace (left) paired with an anchored Contextual Slide-Out Utility Drawer (right, `drawer_mode: null | 'search' | 'inspect'`).
+  * **Catalog Search Drawer (`drawer_mode === 'search'`):**
+    * *Real-Time Full-Text Search:* Case-insensitive query filtering across malt `name` and descriptive `notes`, equipped with an inline clear action button (`✕`).
+    * *Category Screening (Binary Toggle Pills):* Four binary toggle buttons (`BASE`, `CRYSTAL`, `ROASTED`, `ACID`) styled as `.filter-pill` with `.is-active` / `aria-pressed="true | false"`. Additive OR logic; all toggled off yields zero results. All categories initialize to active on drawer open.
+    * *Grist Deduplication / Exclusion:* Catalog items matching any active grist item (`draftMajorMalts`) are excluded from results in real time.
+    * *Live Result Counter:* Dedicated accessible count indicator (`aria-live="polite"`, e.g., `"Showing 14 available malts"`).
+    * *Keyboard Semantics:* The `Esc` key is strictly dedicated to dismissing the drawer without closing the parent recipe modal.
 
 #### Step 4: Mash Profile
 * **Purpose:** Configures temperature rests, durations, mash thickness, and conversion efficiency.
@@ -521,6 +529,7 @@ The state machine dynamically binds semantic classes to step card containers:
 * `.is-completed`: Applied to steps in `completedSteps`. Renders a condensed summary bar displaying configured primitives when collapsed.
 * `.is-locked`: Applied to steps $> \text{highWaterMark}$. Sets `opacity: 0.5`, `pointer-events: none`, and hides internal controls.
 * `.is-dirty`: Applied to downstream solved cards when upstream inputs mutate. Renders an amber border highlight and prompts the user to re-solve.
+* `.is-active` (Component Controls): Applied to interactive toggle elements such as `.filter-pill.is-active` and `.segmented-control-item.is-active` to denote asserted selection state.
 
 ---
 

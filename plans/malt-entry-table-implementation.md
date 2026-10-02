@@ -25,6 +25,10 @@ Implement the complete **Malt Entry Table UI & Proportional Allocation Engine** 
   * Divide by 10 to yield exact 100.0% percentages.
 * Implement row validation logic enforcing the **2.0% trace floor** (flagging rows $< 2.0\%$ for relocation to trace additions).
 * Implement row mutation actions (Add, Clone & Edit, Remove with confirmation).
+* Implement catalog drawer filtering pipeline:
+  * Reactive state: `catalogSearchQuery: ''`, `selectedCategories: ['BASE', 'CRYSTAL', 'ROASTED', 'ACID']`.
+  * Computed getter pipeline: excludes malts present in active grist (`draftMajorMalts`), filters by category union, and executes case-insensitive match on `name` and `notes`.
+  * Reset lifecycle: `openSearchDrawer()` resets query string and restores all four categories to active.
 
 ### Phase 2: UI Templates & Modal Workspace (`frontend/index.html`)
 * **Collapsed Wizard Card:**
@@ -35,11 +39,17 @@ Implement the complete **Malt Entry Table UI & Proportional Allocation Engine** 
   * 2-zone spatial layout (Main Grid Workspace + Contextual Utility Drawer).
   * Fixed-layout table (`table-layout: fixed`) adhering to the 7-column budget (Name, Category, SRM, Potential, Parts, Malt %, Actions).
 * **Contextual Utility Drawer:**
-  * Search/Catalog browser mode and Row Inspector mode (`drawer_mode: null | 'search' | 'inspect'`).
-  * Escape key listener to dismiss drawer without closing the modal.
+  * **Search/Catalog Browser Mode:**
+    * Full-width search input with inline clear action button (`✕`).
+    * Category binary toggle pills (`BASE`, `CRYSTAL`, `ROASTED`, `ACID`) using `.filter-pill` and `aria-pressed`.
+    * Dedicated live result counter (`aria-live="polite"`, e.g., `"Showing X available malts"`).
+    * Filtered item card list with descriptive empty-state messaging.
+  * **Row Inspector Mode:** Specialized physical and chemistry attribute editor for active row.
+  * Escape key listener dedicated to dismissing the drawer without closing the parent modal.
 
 ### Phase 3: Modular CSS Styling (`frontend/style.css`)
 * Styling rules for fixed-layout tables, validation badges, color swatches, trace-floor warnings (red styling, cross icon, helper text), and slide-out drawer transitions.
+* New `.filter-pill` component styles with `.is-active` / `[aria-pressed="true"]` state variants, adhering strictly to design tokens and verified via `scripts/audit-tokens.sh`.
 
 ---
 
@@ -48,3 +58,7 @@ Implement the complete **Malt Entry Table UI & Proportional Allocation Engine** 
 2. Verify row allocations $< 2.0\%$ correctly trigger trace-floor warnings and block downstream progression.
 3. Verify modal state isolation (canceling discards draft edits; saving commits to master state).
 4. Verify unit formatting responds correctly to global `$store.units` changes.
+5. Verify catalog drawer search input filters across both malt `name` and sensory `notes` in real time, with the inline `✕` clearing the query.
+6. Verify category toggle pills screen malts via additive OR logic, with all categories unselected producing an empty list and live counter updating accurately.
+7. Verify catalog items already in `draftMajorMalts` are excluded from search results and re-enabled upon row deletion.
+8. Verify pressing `Esc` dismisses the drawer while preserving parent modal state.
