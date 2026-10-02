@@ -78,19 +78,21 @@
      2. Spacing Scale
      ======================================================================== */
   --space-0: 0;
-  --space-0-5: 0.125rem;  /* 2px */
-  --space-1: 0.25rem;     /* 4px */
-  --space-1-5: 0.375rem;  /* 6px */
-  --space-2: 0.5rem;      /* 8px */
-  --space-2-5: 0.625rem;  /* 10px */
-  --space-3: 0.75rem;     /* 12px */
-  --space-3-5: 0.875rem;  /* 14px */
-  --space-4: 1rem;        /* 16px */
-  --space-5: 1.25rem;     /* 20px */
-  --space-6: 1.5rem;      /* 24px */
-  --space-8: 2rem;        /* 32px */
-  --space-10: 2.5rem;     /* 40px */
-  --space-12: 3rem;       /* 48px */
+  --space-0-25: 0.0625rem;  /* 1px */
+  --space-0-5: 0.125rem;    /* 2px */
+  --space-1: 0.25rem;       /* 4px */
+  --space-1-5: 0.375rem;    /* 6px */
+  --space-2: 0.5rem;        /* 8px */
+  --space-2-5: 0.625rem;    /* 10px */
+  --space-3: 0.75rem;       /* 12px */
+  --space-3-5: 0.875rem;    /* 14px */
+  --space-4: 1rem;          /* 16px */
+  --space-5: 1.25rem;       /* 20px */
+  --space-6: 1.5rem;        /* 24px */
+  --space-8: 2rem;          /* 32px */
+  --space-10: 2.5rem;       /* 40px */
+  --space-12: 3rem;         /* 48px */
+  --space-unit-badge-x: 0.35rem;
 
   /* ========================================================================
      3. Typography Tokens
@@ -133,6 +135,8 @@
   --container-drawer-workspace: 22rem;
   --container-toast: 24rem;
   --container-drawer-panel: 30rem;
+  --size-indicator-sm: 1.75rem;
+  --width-ledger-label: 5.5rem;
 
   /* ========================================================================
      5. Border Radii
@@ -174,6 +178,10 @@
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-drawer: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* Backdrop Blur Filters */
+  --sys-backdrop-blur-subtle: blur(2px);
+  --sys-backdrop-blur: blur(4px);
+
   /* ========================================================================
      9. Semantic Light Mode Tokens (Default)
      ======================================================================== */
@@ -184,6 +192,7 @@
   --sys-surface-elevated: #ffffff;
   --sys-surface-subtle: var(--color-slate-100);
   --sys-surface-hover: var(--color-slate-100);
+  --sys-surface-selected: var(--color-indigo-50);
   --sys-surface-overlay: rgba(15, 23, 42, 0.5);
   --sys-surface-scrim: rgba(15, 23, 42, 0.4);
   --sys-surface-drawer-scrim: rgba(15, 23, 42, 0.55);
@@ -200,6 +209,7 @@
   --sys-border-default: var(--color-slate-300);
   --sys-border-strong: var(--color-slate-400);
   --sys-border-focus: var(--color-indigo-500);
+  --sys-border-selected: var(--sys-color-action-primary);
 
   /* Actions & Brand */
   --sys-color-action-primary: var(--color-indigo-600);
@@ -234,6 +244,10 @@
   --sys-color-info-accent: var(--color-indigo-600);
   --sys-color-info-subtle: rgba(79, 70, 229, 0.1);
 
+  --sys-color-neutral-surface: var(--color-slate-100);
+  --sys-color-neutral-border: var(--color-slate-200);
+  --sys-color-neutral-text: var(--color-slate-500);
+
   /* Accessibility Targets (WCAG 2.5.8 & 2.5.5 AAA) */
   --target-min-micro: 24px;
   --target-min-macro: 44px;
@@ -250,6 +264,7 @@
     --sys-surface-elevated: #293548;
     --sys-surface-subtle: #172033;
     --sys-surface-hover: #2d3d56;
+    --sys-surface-selected: var(--sys-color-action-subtle);
     --sys-surface-overlay: rgba(2, 6, 23, 0.75);
     --sys-surface-scrim: rgba(2, 6, 23, 0.65);
     --sys-surface-drawer-scrim: rgba(2, 6, 23, 0.8);
@@ -266,6 +281,7 @@
     --sys-border-default: #3d4f6e;
     --sys-border-strong: #64748b;
     --sys-border-focus: #818cf8;
+    --sys-border-selected: var(--sys-color-action-primary);
 
     /* Actions & Brand */
     --sys-color-action-primary: #6366f1;
@@ -299,6 +315,10 @@
     --sys-color-info-text: #c7d2fe;
     --sys-color-info-accent: #818cf8;
     --sys-color-info-subtle: rgba(99, 102, 241, 0.2);
+
+    --sys-color-neutral-surface: rgba(148, 163, 184, 0.15);
+    --sys-color-neutral-border: rgba(148, 163, 184, 0.25);
+    --sys-color-neutral-text: var(--color-slate-400);
 
     /* Elevation & Focus */
     --sys-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);

@@ -302,7 +302,7 @@ pre {
   font-weight: var(--font-weight-medium);
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
   line-height: var(--line-height-none);
 }
 
@@ -373,7 +373,7 @@ pre {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 0.05rem 0.35rem;
+  padding: var(--space-0-5) var(--space-unit-badge-x);
   border-radius: var(--radius-sm);
   background-color: var(--sys-surface-subtle);
   border: 1px solid var(--sys-border-subtle);
@@ -381,7 +381,7 @@ pre {
   font-size: var(--text-micro);
   color: var(--sys-text-primary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
   user-select: none;
 }
 
@@ -398,7 +398,7 @@ pre {
   height: 5px;
   border-radius: var(--radius-circle);
   background-color: var(--sys-color-warning-accent);
-  margin-left: 0.1rem;
+  margin-left: var(--space-0-25);
 }
 
 .form-input {
@@ -622,7 +622,7 @@ pre {
 
 .ledger-label {
   color: var(--sys-text-muted);
-  width: 5.5rem;
+  width: var(--width-ledger-label);
   flex-shrink: 0;
 }
 
@@ -673,16 +673,16 @@ pre {
 }
 
 .user-avatar {
-  height: 1.75rem;
-  width: 1.75rem;
+  width: var(--size-indicator-sm);
+  height: var(--size-indicator-sm);
   border-radius: var(--radius-full);
   border: 1px solid var(--sys-border-subtle);
   object-fit: cover;
 }
 
 .user-avatar-placeholder {
-  height: 1.75rem;
-  width: 1.75rem;
+  width: var(--size-indicator-sm);
+  height: var(--size-indicator-sm);
   border-radius: var(--radius-full);
   background-color: var(--sys-color-action-subtle);
   color: var(--sys-color-action-subtle-text);
@@ -723,7 +723,7 @@ pre {
   justify-content: center;
   padding: var(--space-4);
   background-color: var(--sys-surface-overlay);
-  backdrop-filter: blur(4px);
+  backdrop-filter: var(--sys-backdrop-blur);
 }
 
 .modal-dialog {
@@ -839,7 +839,7 @@ pre {
   position: absolute;
   inset: 0;
   background-color: var(--sys-surface-scrim);
-  backdrop-filter: blur(1px);
+  backdrop-filter: var(--sys-backdrop-blur-subtle);
   z-index: var(--z-scrim);
   cursor: pointer;
 }
@@ -979,7 +979,7 @@ pre {
 }
 
 .data-table tr.is-selected {
-  background-color: var(--color-indigo-50);
+  background-color: var(--sys-surface-selected);
 }
 
 /* --- Validation & Status Badges --- */
@@ -1018,9 +1018,9 @@ pre {
 }
 
 .badge-muted {
-  background-color: var(--sys-surface-subtle);
-  color: var(--sys-text-muted);
-  border: 1px solid var(--sys-border-subtle);
+  background-color: var(--sys-color-neutral-surface);
+  color: var(--sys-color-neutral-text);
+  border: 1px solid var(--sys-color-neutral-border);
   border-radius: var(--radius-full);
   padding: var(--space-0-5) var(--space-2);
 }
@@ -1258,11 +1258,7 @@ pre {
 }
 
 .text-right,
-.align-right,
-.data-table th.text-right,
-.data-table td.text-right,
-.data-table th.align-right,
-.data-table td.align-right {
+.align-right {
   text-align: right;
 }
 
@@ -1363,7 +1359,7 @@ pre {
   background-color: var(--color-transparent);
   color: var(--sys-text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -1488,8 +1484,8 @@ pre {
 }
 
 .accordion-step-num {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: var(--size-indicator-sm);
+  height: var(--size-indicator-sm);
   border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
@@ -1536,18 +1532,18 @@ pre {
 }
 
 .accordion-status-active {
-  background-color: var(--color-indigo-50);
-  color: var(--color-indigo-700);
+  background-color: var(--sys-color-action-subtle);
+  color: var(--sys-color-action-subtle-text);
 }
 
 .accordion-status-complete {
-  background-color: var(--color-emerald-50);
-  color: var(--color-emerald-700);
+  background-color: var(--sys-color-success-surface);
+  color: var(--sys-color-success-text);
 }
 
 .accordion-status-locked {
-  background-color: var(--color-slate-100);
-  color: var(--color-slate-500);
+  background-color: var(--sys-color-neutral-surface);
+  color: var(--sys-color-neutral-text);
 }
 
 .step-card-body {
@@ -1668,7 +1664,7 @@ pre {
   position: fixed;
   inset: 0;
   background-color: var(--sys-surface-drawer-scrim);
-  backdrop-filter: blur(2px);
+  backdrop-filter: var(--sys-backdrop-blur-subtle);
   z-index: var(--z-modal-backdrop);
   display: flex;
   justify-content: flex-end;
@@ -1742,8 +1738,8 @@ pre {
 }
 
 .profile-card-item.is-selected {
-  border-color: var(--sys-color-action-primary);
-  background-color: var(--color-indigo-50);
+  border-color: var(--sys-border-selected);
+  background-color: var(--sys-surface-selected);
 }
 
 .profile-card-header {
@@ -1822,30 +1818,5 @@ pre {
 @media (min-width: 768px) {
   .modal-dialog-workspace {
     height: min(88vh, 960px);
-  }
-}
-
-/* ==========================================================================
-   20. Theme Overrides: Dark Mode (prefers-color-scheme: dark)
-   ========================================================================== */
-@media (prefers-color-scheme: dark) {
-  .data-table tr.is-selected,
-  .profile-card-item.is-selected {
-    background-color: var(--sys-color-action-subtle);
-  }
-
-  .accordion-status-active {
-    background-color: var(--sys-color-action-subtle);
-    color: var(--color-indigo-300);
-  }
-
-  .accordion-status-complete {
-    background-color: var(--sys-color-success-surface);
-    color: var(--color-emerald-300);
-  }
-
-  .accordion-status-locked {
-    background-color: rgba(148, 163, 184, 0.2);
-    color: var(--color-slate-400);
   }
 }
