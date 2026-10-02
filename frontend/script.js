@@ -313,6 +313,12 @@ export function createWizardNavigation() {
       if (this.completedSteps.includes(stepNum)) return 'accordion-status-complete';
       if (this.activeStep === stepNum) return 'accordion-status-active';
       return 'accordion-status-locked';
+    },
+
+    getStepStatusClass(stepNum) {
+      if (this.completedSteps.includes(stepNum)) return 'accordion-status-complete';
+      if (this.activeStep === stepNum) return 'accordion-status-active';
+      return 'accordion-status-locked';
     }
   };
 }

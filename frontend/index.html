@@ -610,10 +610,7 @@
               </div>
               <div class="accordion-controls">
                 <span class="status-badge text-xs" :class="$store.maltGrid.validationStatus.class" x-text="$store.maltGrid.validationStatus.label"></span>
-                <span class="accordion-status-pill" :class="{
-                  'accordion-status-active': activeStep === 3,
-                  'accordion-status-complete': completedSteps.includes(3)
-                }" x-text="completedSteps.includes(3) ? 'Configured' : (activeStep === 3 ? 'Active' : 'Locked')"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(1)" x-text="getStepStatusLabel(1)"></span>
                 <span class="accordion-chevron" x-text="activeStep === 3 ? '▲' : '▼'"></span>
               </div>
             </button>
