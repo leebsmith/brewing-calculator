@@ -1,23 +1,33 @@
-## Git Hooks & CSS Styling Governance
+# Git Hooks & CSS Styling Governance
 
-This repository enforces styling governance and token consistency through version-controlled Git hooks located in `scripts/hooks/`.
+This repository enforces comprehensive static analysis, code quality, and styling governance through a CLI-native zero-build linting stack orchestrated by version-controlled Git hooks located in `scripts/hooks/`.
 
-### Local Setup
+## Local Setup
 
-Configure Git to read repository hooks from `scripts/hooks` instead of the default unversioned `.git/hooks/` directory:
+Configure Git to read repository hooks from `scripts/hooks`:
 
 ```bash
 git config core.hooksPath scripts/hooks
 ```
 
-### Pre-Commit Commit Gate
+## Zero-Build Pre-Commit Linting Pipeline
 
-Direct modifications to `frontend/style.css` are gated to prevent unapproved style drift and protect established design tokens. The `pre-commit` hook validates staged files using a two-stage verification process:
+The pre-commit hook automatically intercepts the Git commit lifecycle, inspecting staged files and executing a rigorous multi-stage static analysis pipeline:
 
-1. **Authorization Perimeter (Gate 1):** Commits containing staged modifications to `frontend/style.css` are rejected by default. To commit authorized changes, include the `CSS_APPROVED` environment variable with your commit command:
+1. **CSS Authorization Gate (`CSS_APPROVED=1`)**:
+   - Staged modifications to `frontend/style.css` or `frontend/tokens.css` are gated by default to prevent unauthorized style drift.
+   - To commit authorized design changes, invoke commit with:
+     ```bash
+     CSS_APPROVED=1 git commit -m "style: description of approved change"
+     ```
 
-   ```bash
-   CSS_APPROVED=1 git commit -m "style: description of approved change"
-   ```
+2. **JavaScript & HTML Analysis (ESLint)**:
+   - Executes ESLint (`eslint.config.mjs`) across staged JS and HTML files.
+   - Enforces code quality, validates Alpine.js reactive directive constructs, and mathematically bans imperative DOM queries (`querySelector`, `getElementById`, `innerHTML`) via `no-restricted-syntax` AST rules to protect Alpine's reactivity model.
 
-2. **Token Audit Verification (Gate 2):** When `CSS_APPROVED=1` is provided, the hook automatically executes `scripts/audit-tokens.sh frontend/style.css`. The commit is blocked if any token taxonomy violations, direct primitive escapes, or unauthorized rules are detected.
+3. **Style Token Enforcement (Stylelint)**:
+   - Executes Stylelint (`.stylelintrc.json`) across staged stylesheets.
+   - Cross-references all custom property usages against `:root` definitions in `tokens.css` (`stylelint-value-no-unknown-custom-properties`) and enforces strict design token values (`stylelint-declaration-strict-value`).
+
+4. **Dead Code Elimination (PurgeCSS)**:
+   - Executes a programmatic PurgeCSS analysis script (`purgecss-linter.js`) to detect and report orphaned CSS selectors.

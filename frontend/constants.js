@@ -1,3 +1,4 @@
+/* eslint-disable no-redeclare */
 /**
  * Centralized physical constants, default equipment profile parameters, and UI domain strings
  * for the brewing calculator frontend.

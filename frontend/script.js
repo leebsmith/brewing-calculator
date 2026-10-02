@@ -1047,6 +1047,7 @@ document.addEventListener('alpine:init', () => {
 
     onBatchMetaChange() {
       this.runBoilSolver();
+      this.invalidateDownstream(2);
     },
 
     runBoilSolver() {
@@ -1180,10 +1181,6 @@ document.addEventListener('alpine:init', () => {
 
     onEquipmentChange() {
       this.invalidateDownstream(1);
-    },
-
-    onBatchMetaChange() {
-      this.invalidateDownstream(2);
     },
 
     setActiveStep(stepNumber) {
@@ -1332,7 +1329,7 @@ document.addEventListener('alpine:init', () => {
           const first = Alpine.store('equipment').profiles[0];
           if (first) this.selectProfile(first.id);
         }
-      } catch (err) {
+      } catch {
         // error handled in store
       }
     }
