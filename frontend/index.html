@@ -77,10 +77,10 @@
 
           <!-- Ephemeral Modal Backdrop & Panel -->
           <div
+            x-cloak
             x-show="showInfo"
             x-transition.opacity.duration.200ms
             class="modal-backdrop"
-            style="display: none;"
             @keydown.escape.window="showInfo = false"
           >
             <div
