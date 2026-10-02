@@ -235,10 +235,7 @@
                 </div>
               </div>
               <div class="accordion-controls">
-                <span class="accordion-status-pill" :class="{
-                  'accordion-status-active': activeStep === 1,
-                  'accordion-status-complete': completedSteps.includes(1)
-                }" x-text="completedSteps.includes(1) ? 'Configured' : (activeStep === 1 ? 'Active' : 'Locked')"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(1)" x-text="getStepStatusLabel(1)"></span>
                 <span class="accordion-chevron" x-text="activeStep === 1 ? '▲' : '▼'"></span>
               </div>
             </button>
@@ -445,10 +442,7 @@
                 </div>
               </div>
               <div class="accordion-controls">
-                <span class="accordion-status-pill" :class="{
-                  'accordion-status-active': activeStep === 2,
-                  'accordion-status-complete': completedSteps.includes(2)
-                }" x-text="completedSteps.includes(2) ? 'Configured' : (activeStep === 2 ? 'Active' : 'Locked')"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(2)" x-text="getStepStatusLabel(2)"></span>
                 <span class="accordion-chevron" x-text="activeStep === 2 ? '▲' : '▼'"></span>
               </div>
             </button>
