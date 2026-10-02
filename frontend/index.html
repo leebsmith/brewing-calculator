@@ -643,20 +643,13 @@
                   <h3 class="modal-drawer-title">Major Grist Contributors</h3>
                   <p class="table-header-meta">Normalized via Hamilton Largest Remainder algorithm (summing to 100.0%)</p>
                 </div>
-                <div style="display: flex; align-items: center; gap: var(--space-4);">
-                  <div class="text-xs text-secondary" style="display: flex; align-items: center; gap: var(--space-2);">
-                    <span>Weighted SRM: <strong class="tabular-nums" x-text="$store.maltGrid.weightedSrm.toFixed(1)"></strong></span>
-                    <span>•</span>
-                    <span>Est. Potential SG: <strong class="tabular-nums" x-text="$store.maltGrid.weightedPotential.toFixed(3)"></strong></span>
-                  </div>
-                  <button
-                    type="button"
-                    @click="$store.maltGrid.openModal()"
-                    class="btn btn-primary text-xs"
-                  >
-                    <span>Configure Malts ⚙</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  @click="$store.maltGrid.openModal()"
+                  class="btn btn-primary text-xs"
+                >
+                  <span>Configure Malts ⚙</span>
+                </button>
               </div>
 
               <!-- Summary Table -->
@@ -668,7 +661,6 @@
                       <th>Category</th>
                       <th class="align-right">Parts</th>
                       <th class="align-right">Malt %</th>
-                      <th class="align-right">SRM</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -683,18 +675,36 @@
                         <td x-text="row.category"></td>
                         <td class="align-right tabular-nums" x-text="row.parts"></td>
                         <td class="align-right tabular-nums font-bold" :class="$store.maltGrid.isTrace(row.pct) ? 'table-pct-value is-trace' : 'table-pct-value'" x-text="row.pct.toFixed(1) + '%'"></td>
-                        <td class="align-right tabular-nums" x-text="row.color_srm"></td>
                       </tr>
                     </template>
                     <template x-if="$store.maltGrid.majorMalts.length === 0">
                       <tr>
-                        <td colspan="5" class="table-empty-cell">
+                        <td colspan="4" class="table-empty-cell">
                           No malts added yet. Click 'Configure Malts' to build your grain bill.
                         </td>
                       </tr>
                     </template>
                   </tbody>
                 </table>
+              </div>
+
+              <!-- Bottom Summary Footer Card -->
+              <div class="card" style="margin-top: var(--space-4); padding: var(--space-4); background-color: var(--sys-surface-subtle);">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4);">
+                  <div style="display: flex; align-items: center; gap: var(--space-6);">
+                    <div>
+                      <span class="text-xs text-muted block">Weighted Grist Color</span>
+                      <span class="text-base font-bold tabular-nums" x-text="$store.maltGrid.weightedSrm.toFixed(1) + ' SRM'"></span>
+                    </div>
+                    <div>
+                      <span class="text-xs text-muted block">Est. Grist Extract Potential</span>
+                      <span class="text-base font-bold tabular-nums" x-text="$store.maltGrid.weightedPotential.toFixed(3) + ' SG'"></span>
+                    </div>
+                  </div>
+                  <div class="text-xs text-muted" style="max-width: 28rem; line-height: var(--line-height-snug);">
+                    * Subject to change with trace additions, mash efficiency, and extraction adjustments.
+                  </div>
+                </div>
               </div>
             </div>
 
