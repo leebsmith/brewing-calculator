@@ -472,11 +472,24 @@ document.addEventListener('alpine:init', () => {
 
     get weightedPotentialDisplay() {
       const sg = this.weightedPotential;
-      return Alpine.store('units') ? Alpine.store('units').toDisplay('gravity', sg, 'grist_potential') : sg;
+      const unitsStore = Alpine.store('units');
+      if (!unitsStore) return sg;
+      // If imperial/metric or extract_potential/gravity preference is Plato (°P), convert SG to Plato
+      const pref = unitsStore.getFieldUnit('extract_potential', 'grist_potential') || unitsStore.getFieldUnit('gravity', 'grist_potential');
+      if (pref === 'Plato' || pref === '°P') {
+        // Plato conversion from SG: -616.868 + (1111.14 * sg) - (630.272 * sg^2) + (135.997 * sg^3)
+        const plato = (-1 * 616.868) + (1111.14 * sg) - (630.272 * Math.pow(sg, 2)) + (135.997 * Math.pow(sg, 3));
+        return Number(plato.toFixed(1));
+      }
+      return unitsStore.toDisplay('gravity', sg, 'grist_potential');
     },
 
     get weightedPotentialUnit() {
-      return Alpine.store('units') ? Alpine.store('units').getFieldUnit('gravity', 'grist_potential') : 'SG';
+      const unitsStore = Alpine.store('units');
+      if (!unitsStore) return 'SG';
+      const pref = unitsStore.getFieldUnit('extract_potential', 'grist_potential') || unitsStore.getFieldUnit('gravity', 'grist_potential');
+      if (pref === 'Plato' || pref === '°P') return '°P';
+      return unitsStore.activePreset === 'imperial' ? 'gal·°/lb' : 'SG';
     },
 
     get validationStatus() {
