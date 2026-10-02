@@ -92,7 +92,6 @@
   --space-8: 2rem;          /* 32px */
   --space-10: 2.5rem;       /* 40px */
   --space-12: 3rem;         /* 48px */
-  --space-unit-badge-x: 0.35rem;
 
   /* ========================================================================
      3. Typography Tokens
@@ -137,6 +136,8 @@
   --container-drawer-panel: 30rem;
   --size-indicator-sm: 1.75rem;
   --width-ledger-label: 5.5rem;
+  --width-parts-input: 5rem;
+  --space-unit-badge-x: 0.35rem;
 
   /* ========================================================================
      5. Border Radii

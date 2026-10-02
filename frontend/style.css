@@ -1388,7 +1388,7 @@ pre {
 }
 
 .table-input-parts {
-  width: 5rem;
+  width: var(--width-parts-input);
   padding: var(--space-1) var(--space-2);
   text-align: right;
   font-family: var(--font-mono);
