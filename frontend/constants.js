@@ -23,6 +23,10 @@ const BREW_CONSTANTS = {
   DEFAULT_TARGET_OG: 1.055,
   DEFAULT_BOIL_TIME_MIN: 60,
 
+  // Extract Potential Reference Constants (Pure Sucrose / Grist Scaling)
+  SUCROSE_POTENTIAL_PPG: 46.21,
+  METRIC_POTENTIAL_SCALING_FACTOR: 386.4,
+
   // Drawer / Custom Profile Defaults
   DEFAULT_CUSTOM_PROFILE_NAME: 'My Custom Profile',
 

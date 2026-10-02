@@ -482,16 +482,12 @@ document.addEventListener('alpine:init', () => {
       const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal') : false;
 
       if (isImperial) {
-        // Imperial: points * gal / lb
-        // Max extract potential at 100% pure sucrose is ~46 ppg (points per pound per gallon)
-        // weightedFrac * 46 gives ppg (e.g. 0.80 * 46 = 36.8 pts·gal/lb)
-        const ppg = weightedFrac * 46.0;
+        // Imperial: points * gal / lb (using pure sucrose reference 46.21 PPG)
+        const ppg = weightedFrac * BREW_CONSTANTS.SUCROSE_POTENTIAL_PPG;
         return Number(ppg.toFixed(1));
       } else {
         // Metric: L·°/kg (Liter * Degrees / Kg, or LDK)
-        // Standard metric extract potential: fraction * 386.4 L·°/kg (or points * L/kg)
-        // At 80% fraction, 0.80 * 386.4 ≈ 309.1 L·°/kg
-        const ldk = weightedFrac * 386.4;
+        const ldk = weightedFrac * BREW_CONSTANTS.METRIC_POTENTIAL_SCALING_FACTOR;
         return Number(ldk.toFixed(1));
       }
     },
