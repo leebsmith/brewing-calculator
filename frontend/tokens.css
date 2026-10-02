@@ -8,7 +8,7 @@
   color-scheme: light dark;
 
   /* ========================================================================
-     1. Primitive Tokens (Absolute Raw Values)
+     1. Primitive Color Palette
      ======================================================================== */
 
   /* Neutral Scale (Slate) */
@@ -69,59 +69,129 @@
   --color-rose-700: #be123c;
   --color-rose-800: #9f1239;
 
-  /* Typography Stacks */
+  /* Static Primitives */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+
+  /* ========================================================================
+     2. Spacing Scale
+     ======================================================================== */
+  --space-0: 0;
+  --space-0-5: 0.125rem;  /* 2px */
+  --space-1: 0.25rem;     /* 4px */
+  --space-1-5: 0.375rem;  /* 6px */
+  --space-2: 0.5rem;      /* 8px */
+  --space-2-5: 0.625rem;  /* 10px */
+  --space-3: 0.75rem;     /* 12px */
+  --space-3-5: 0.875rem;  /* 14px */
+  --space-4: 1rem;        /* 16px */
+  --space-5: 1.25rem;     /* 20px */
+  --space-6: 1.5rem;      /* 24px */
+  --space-8: 2rem;        /* 32px */
+  --space-10: 2.5rem;     /* 40px */
+  --space-12: 3rem;       /* 48px */
+
+  /* ========================================================================
+     3. Typography Tokens
+     ======================================================================== */
+
+  /* Font Families */
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
-  /* Fluid Typography Scale */
-  --text-nano: 0.625rem;
-  --text-micro: 0.6875rem;
+  /* Fluid & Discrete Type Scale */
+  --text-pico: 0.5625rem;  /* 9px */
+  --text-nano: 0.625rem;   /* 10px */
+  --text-micro: 0.6875rem; /* 11px */
   --text-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);
   --text-sm: clamp(0.875rem, 0.84rem + 0.18vw, 0.9375rem);
   --text-base: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
   --text-lg: clamp(1.125rem, 1.05rem + 0.35vw, 1.25rem);
   --text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
 
-  /* Border Radii */
+  /* Line Heights */
+  --line-height-none: 1;
+  --line-height-tight: 1.2;
+  --line-height-snug-tight: 1.25;
+  --line-height-snug: 1.35;
+  --line-height-normal-snug: 1.4;
+  --line-height-normal: 1.5;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ========================================================================
+     4. Layout Dimensions & Sizing
+     ======================================================================== */
+  --container-content-stack: 36rem;
+  --container-modal-dialog: 42rem;
+  --container-modal-workspace: 72rem;
+  --container-drawer-workspace: 22rem;
+  --container-toast: 24rem;
+  --container-drawer-panel: 30rem;
+
+  /* ========================================================================
+     5. Border Radii
+     ======================================================================== */
   --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-full: 9999px;
+  --radius-circle: 50%;
 
-  /* Accessibility Target Sizing (WCAG 2.5.8 & 2.5.5 AAA) */
-  --target-min-micro: 24px;
-  --target-min-macro: 44px;
+  /* ========================================================================
+     6. Elevation & Shadows (Light Mode Default)
+     ======================================================================== */
+  --sys-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --sys-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --sys-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --sys-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --sys-shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.2);
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* Z-Index Hierarchy */
+  /* ========================================================================
+     7. Z-Index Layering
+     ======================================================================== */
   --z-base: 0;
   --z-sticky: 10;
+  --z-scrim: 15;
   --z-dropdown: 20;
+  --z-drawer: 20;
   --z-toast: 50;
   --z-modal-backdrop: 90;
   --z-modal: 100;
 
   /* ========================================================================
-     2. Semantic Tokens — Light Mode (Default)
+     8. Transitions & Timing
+     ======================================================================== */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-drawer: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ========================================================================
+     9. Semantic Light Mode Tokens (Default)
      ======================================================================== */
 
-  /* Surfaces (60% background, 30% surfaces) */
+  /* Surfaces */
   --sys-surface-canvas: var(--color-slate-50);
   --sys-surface-default: #ffffff;
   --sys-surface-elevated: #ffffff;
   --sys-surface-subtle: var(--color-slate-100);
   --sys-surface-hover: var(--color-slate-100);
   --sys-surface-overlay: rgba(15, 23, 42, 0.5);
+  --sys-surface-scrim: rgba(15, 23, 42, 0.4);
+  --sys-surface-drawer-scrim: rgba(15, 23, 42, 0.55);
 
-  /* Text & Content */
+  /* Text & Hierarchy */
   --sys-text-primary: var(--color-slate-900);
   --sys-text-secondary: var(--color-slate-600);
+  --sys-text-tertiary: var(--color-slate-500);
   --sys-text-muted: var(--color-slate-400);
   --sys-text-on-action: #ffffff;
 
@@ -131,28 +201,26 @@
   --sys-border-strong: var(--color-slate-400);
   --sys-border-focus: var(--color-indigo-500);
 
-  /* Action / Brand (10% high-visibility accent) */
+  /* Actions & Brand */
   --sys-color-action-primary: var(--color-indigo-600);
   --sys-color-action-primary-hover: var(--color-indigo-700);
   --sys-color-action-subtle: var(--color-indigo-50);
   --sys-color-action-subtle-text: var(--color-indigo-700);
   --sys-color-action-subtle-hover: var(--color-indigo-100);
 
-  /* Status: Success */
+  /* Status Colors */
   --sys-color-success-surface: var(--color-emerald-50);
   --sys-color-success-border: var(--color-emerald-200);
   --sys-color-success-text: var(--color-emerald-800);
   --sys-color-success-accent: var(--color-emerald-500);
   --sys-color-success-subtle: rgba(16, 185, 129, 0.1);
 
-  /* Status: Warning */
   --sys-color-warning-surface: var(--color-amber-50);
   --sys-color-warning-border: var(--color-amber-200);
   --sys-color-warning-text: var(--color-amber-800);
   --sys-color-warning-accent: var(--color-amber-500);
   --sys-color-warning-subtle: rgba(245, 158, 11, 0.1);
 
-  /* Status: Danger / Error */
   --sys-color-danger-surface: var(--color-rose-50);
   --sys-color-danger-border: var(--color-rose-200);
   --sys-color-danger-text: var(--color-rose-700);
@@ -160,53 +228,53 @@
   --sys-color-danger-hover: var(--color-rose-700);
   --sys-color-danger-subtle: rgba(225, 29, 72, 0.08);
 
-  /* Status: Info */
   --sys-color-info-surface: var(--color-indigo-50);
   --sys-color-info-border: var(--color-indigo-200);
   --sys-color-info-text: var(--color-indigo-800);
   --sys-color-info-accent: var(--color-indigo-600);
   --sys-color-info-subtle: rgba(79, 70, 229, 0.1);
 
-  /* Elevation Shadows (Light Mode relies on shadow for depth) */
-  --sys-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --sys-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
-  --sys-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-  --sys-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  /* Accessibility Targets (WCAG 2.5.8 & 2.5.5 AAA) */
+  --target-min-micro: 24px;
+  --target-min-macro: 44px;
 }
 
 /* ========================================================================
-   3. Semantic Tokens — Dark Mode (prefers-color-scheme: dark)
+   Semantic Dark Mode Tokens (prefers-color-scheme: dark)
    ======================================================================== */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Elevation via lightness (progressive lightening as depth ascends) */
+    /* Surfaces */
     --sys-surface-canvas: #0b1120;
     --sys-surface-default: #1e293b;
     --sys-surface-elevated: #293548;
     --sys-surface-subtle: #172033;
     --sys-surface-hover: #2d3d56;
     --sys-surface-overlay: rgba(2, 6, 23, 0.75);
+    --sys-surface-scrim: rgba(2, 6, 23, 0.65);
+    --sys-surface-drawer-scrim: rgba(2, 6, 23, 0.8);
 
-    /* Glare-free text scaling */
+    /* Text & Hierarchy */
     --sys-text-primary: #f8fafc;
     --sys-text-secondary: #cbd5e1;
-    --sys-text-muted: #94a3b8;
+    --sys-text-tertiary: #94a3b8;
+    --sys-text-muted: #64748b;
     --sys-text-on-action: #ffffff;
 
-    /* Elevated Borders */
+    /* Borders */
     --sys-border-subtle: #2d3d56;
     --sys-border-default: #3d4f6e;
     --sys-border-strong: #64748b;
     --sys-border-focus: #818cf8;
 
-    /* Desaturated Primary Accent (prevents halation on dark surfaces) */
+    /* Actions & Brand */
     --sys-color-action-primary: #6366f1;
     --sys-color-action-primary-hover: #818cf8;
     --sys-color-action-subtle: rgba(99, 102, 241, 0.18);
     --sys-color-action-subtle-text: #c7d2fe;
     --sys-color-action-subtle-hover: rgba(99, 102, 241, 0.28);
 
-    /* Desaturated Status Accents */
+    /* Status Colors */
     --sys-color-success-surface: rgba(16, 185, 129, 0.14);
     --sys-color-success-border: rgba(52, 211, 153, 0.35);
     --sys-color-success-text: #6ee7b7;
@@ -232,10 +300,11 @@
     --sys-color-info-accent: #818cf8;
     --sys-color-info-subtle: rgba(99, 102, 241, 0.2);
 
-    /* Subtle Dark Shadows (dark mode relies on surface lightness for depth) */
+    /* Elevation & Focus */
     --sys-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
     --sys-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
     --sys-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
     --sys-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+    --sys-shadow-focus: 0 0 0 3px rgba(129, 140, 248, 0.35);
   }
 }

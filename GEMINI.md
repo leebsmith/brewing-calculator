@@ -80,3 +80,10 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
 - No Tailwind Directives: Do not generate `@tailwind`, `@apply`, `@layer`, or any Tailwind configuration files (`tailwind.config.js`).
 - Styling Approach: Use standard, semantic HTML with plain CSS / vanilla stylesheets. Write idiomatic CSS rules using meaningful, semantic class names (e.g., BEM or standard descriptive naming like `.site-header`, `.nav-item`).
 - Environment Assumption: Assume zero build-time CSS processors, zero utility frameworks, and zero pre-existing CSS frameworks exist unless explicitly present in the repository files.
+
+### CSS Architecture & Reuse-First Mandate
+
+* **Design Token Adherence:** All new styles and refactors MUST exclusively consume custom properties defined in `frontend/tokens.css` (`--space-*`, `--text-*`, `--sys-*`, `--radius-*`, `--sys-shadow-*`). Literal color codes (hex, rgb, hsl), raw spacing values (rem/px), and magic numbers are strictly prohibited.
+* **Reuse-First Hierarchy:** Always favor existing selectors, components, and semantic utilities in `frontend/style.css` (`.btn`, `.btn-*`, `.form-group`, `.form-input`, `.card`, `.badge-*`, `.data-table`, `.text-*`, `.font-*`) over introducing new classes or rules. New UI elements must compose existing component classes and layout wrappers wherever possible.
+* **Justification for Material Deviations:** Introducing a new CSS class, custom component, or layout wrapper requires an explicit technical justification demonstrating why existing classes and tokens cannot fulfill the structural, interactive, or accessibility requirements.
+* **Architectural Synchronization:** When a new pattern or modifier is justified, it must be added to `frontend/style.css` using semantic, non-utility naming consistent with existing conventions, and documented in `plans/master-frontend-ui-requirements.md` within the same turn.
