@@ -495,7 +495,7 @@ document.addEventListener('alpine:init', () => {
       const weightedFrac = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.potential_fraction) || 0.75)), 0) / totalPct;
       
       const unitsStore = Alpine.store('units');
-      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal') : false;
+      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
 
       const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
       const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
@@ -508,7 +508,7 @@ document.addEventListener('alpine:init', () => {
 
     get weightedPotentialUnit() {
       const unitsStore = Alpine.store('units');
-      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal') : false;
+      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
       const domainKey = isImperial ? 'extract_potential' : 'grist_potential_unit';
       return unitsStore ? unitsStore.getFieldUnit(domainKey) : (isImperial ? 'gal·°/lb' : 'L·°/kg');
     },
@@ -522,7 +522,7 @@ document.addEventListener('alpine:init', () => {
     maltPotentialDisplay(row) {
       const frac = parseFloat(row.potential_fraction) || 0.75;
       const unitsStore = Alpine.store('units');
-      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal') : false;
+      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
       const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
       const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
       const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
