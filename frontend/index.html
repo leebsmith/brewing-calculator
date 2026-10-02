@@ -807,8 +807,8 @@
                             </template>
                           </td>
                           <td class="font-sans text-secondary text-micro truncate" x-text="row.category"></td>
-                          <td class="text-right tabular-nums text-secondary" x-text="row.color_srm"></td>
-                          <td class="text-right tabular-nums text-secondary" x-text="row.potential_fraction.toFixed(3)"></td>
+                          <td class="text-right tabular-nums text-secondary" x-text="$store.maltGrid.maltColorDisplay(row)"></td>
+                          <td class="text-right tabular-nums text-secondary" x-text="$store.maltGrid.maltPotentialDisplay(row)"></td>
                           <td class="text-right">
                             <input
                               type="number"

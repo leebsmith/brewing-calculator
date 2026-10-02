@@ -502,6 +502,29 @@ document.addEventListener('alpine:init', () => {
       return isImperial ? 'pts·gal/lb' : 'L·°/kg';
     },
 
+    maltColorDisplay(row) {
+      const srm = parseFloat(row.color_srm) || 0;
+      if (this.isMetricUnits) {
+        return Number((srm * 1.97).toFixed(1));
+      }
+      return Number(srm.toFixed(1));
+    },
+
+    maltPotentialDisplay(row) {
+      const frac = parseFloat(row.potential_fraction) || 0.75;
+      const unitsStore = Alpine.store('units');
+      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal') : false;
+      const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
+      const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
+      const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
+
+      if (isImperial) {
+        return Number((frac * sucrosePpg).toFixed(1));
+      } else {
+        return Number((frac * metricScaling).toFixed(1));
+      }
+    },
+
     get validationStatus() {
       const total = Number(this.totalPct.toFixed(1));
       if (total === 100.0) return { type: 'balanced', label: '100.0% Balanced', class: 'badge-success' };
