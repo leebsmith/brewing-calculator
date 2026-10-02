@@ -447,11 +447,18 @@ document.addEventListener('alpine:init', () => {
       const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
       const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
       if (totalPct <= 0) return 1.000;
-      // potential_fraction is percentage of sugar yield (e.g. 0.80 -> 1.036 SG points or fraction)
       const weightedFrac = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.potential_fraction) || 0.75)), 0) / totalPct;
-      // Convert fraction to SG: 1.0 + (weightedFrac * 0.046)
       const sg = 1.0 + (weightedFrac * 0.046);
       return Number(sg.toFixed(3));
+    },
+
+    get weightedPotentialDisplay() {
+      const sg = this.weightedPotential;
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('gravity', sg, 'grist_potential') : sg;
+    },
+
+    get weightedPotentialUnit() {
+      return Alpine.store('units') ? Alpine.store('units').getFieldUnit('gravity', 'grist_potential') : 'SG';
     },
 
     get validationStatus() {
