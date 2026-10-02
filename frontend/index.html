@@ -643,13 +643,20 @@
                   <h3 class="modal-drawer-title">Major Grist Contributors</h3>
                   <p class="table-header-meta">Normalized via Hamilton Largest Remainder algorithm (summing to 100.0%)</p>
                 </div>
-                <button
-                  type="button"
-                  @click="$store.maltGrid.openModal()"
-                  class="btn btn-primary text-xs"
-                >
-                  <span>Configure Malts ⚙</span>
-                </button>
+                <div style="display: flex; align-items: center; gap: var(--space-4);">
+                  <div class="text-xs text-secondary" style="display: flex; align-items: center; gap: var(--space-2);">
+                    <span>Weighted SRM: <strong class="tabular-nums" x-text="$store.maltGrid.weightedSrm.toFixed(1)"></strong></span>
+                    <span>•</span>
+                    <span>Est. Potential SG: <strong class="tabular-nums" x-text="$store.maltGrid.weightedPotential.toFixed(3)"></strong></span>
+                  </div>
+                  <button
+                    type="button"
+                    @click="$store.maltGrid.openModal()"
+                    class="btn btn-primary text-xs"
+                  >
+                    <span>Configure Malts ⚙</span>
+                  </button>
+                </div>
               </div>
 
               <!-- Summary Table -->
