@@ -508,6 +508,8 @@ document.addEventListener('alpine:init', () => {
 
     get weightedPotentialUnit() {
       const unitsStore = Alpine.store('units');
+      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
+      if (isImperial) return 'gal·°/lb';
       return unitsStore ? unitsStore.getFieldUnit('extract_potential') : 'L·°/kg';
     },
 
