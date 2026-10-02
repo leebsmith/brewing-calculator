@@ -443,6 +443,24 @@ document.addEventListener('alpine:init', () => {
       return weightedSum / totalPct;
     },
 
+    get isMetricUnits() {
+      const unitsStore = Alpine.store('units');
+      if (!unitsStore) return false;
+      return unitsStore.activePreset === 'metric' || unitsStore.preferences?.volume?.unit === 'L';
+    },
+
+    get weightedColorDisplay() {
+      const srm = this.weightedSrm;
+      if (this.isMetricUnits) {
+        return Number((srm * 1.97).toFixed(1));
+      }
+      return Number(srm.toFixed(1));
+    },
+
+    get weightedColorUnit() {
+      return this.isMetricUnits ? 'ECB' : 'SRM';
+    },
+
     get weightedPotential() {
       const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
       const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
