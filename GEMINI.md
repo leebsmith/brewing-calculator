@@ -72,3 +72,11 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
   * **Adapter Decoupling:** Persistence mechanisms (`localStorage`, REST endpoints, Firestore) must be encapsulated behind agnostic asynchronous provider and writer adapter functions.
   * **Perimeter Interactivity Gating:** Form containers must wrap inputs in native `<fieldset :disabled="!$store.<domain>.isReady || $store.<domain>.isSaving">` blocks.
 
+### CSS & Styling Constraints
+
+- STRICT PROHIBITION: Do not use, reference, import, or assume Tailwind CSS under any circumstances.
+- No Tailwind Utilities: Never generate utility classes such as `flex`, `grid`, `p-*`, `m-*`, `text-*`, `bg-*`, `items-*`, `justify-*`, or arbitrary value syntax (e.g., `w-[100px]`).
+- No Component Libraries: Do not use or assume Tailwind-based component libraries or designs (e.g., Tailwind UI, DaisyUI, Flowbite, shadcn/ui).
+- No Tailwind Directives: Do not generate `@tailwind`, `@apply`, `@layer`, or any Tailwind configuration files (`tailwind.config.js`).
+- Styling Approach: Use standard, semantic HTML with plain CSS / vanilla stylesheets. Write idiomatic CSS rules using meaningful, semantic class names (e.g., BEM or standard descriptive naming like `.site-header`, `.nav-item`).
+- Environment Assumption: Assume zero build-time CSS processors, zero utility frameworks, and zero pre-existing CSS frameworks exist unless explicitly present in the repository files.
