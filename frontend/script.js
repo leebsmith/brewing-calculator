@@ -510,7 +510,7 @@ document.addEventListener('alpine:init', () => {
       const unitsStore = Alpine.store('units');
       const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal') : false;
       const domainKey = isImperial ? 'extract_potential' : 'grist_potential_unit';
-      return unitsStore ? unitsStore.getFieldUnit(domainKey) : (isImperial ? 'pts·gal/lb' : 'L·°/kg');
+      return unitsStore ? unitsStore.getFieldUnit(domainKey) : (isImperial ? 'gal·°/lb' : 'L·°/kg');
     },
 
     maltColorDisplay(row) {
