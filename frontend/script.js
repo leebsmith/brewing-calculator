@@ -426,6 +426,8 @@ document.addEventListener('alpine:init', () => {
 
     drawerMode: null,
     activeRowId: null,
+    catalogSearchQuery: '',
+    selectedCategories: ['BASE', 'CRYSTAL', 'ROASTED', 'ACID'],
 
     get totalPct() {
       return this.modalOpen
@@ -575,6 +577,45 @@ document.addEventListener('alpine:init', () => {
     openSearchDrawer() {
       this.drawerMode = 'search';
       this.activeRowId = null;
+      this.catalogSearchQuery = '';
+      this.selectedCategories = ['BASE', 'CRYSTAL', 'ROASTED', 'ACID'];
+    },
+
+    toggleCategory(cat) {
+      if (this.selectedCategories.includes(cat)) {
+        this.selectedCategories = this.selectedCategories.filter(c => c !== cat);
+      } else {
+        this.selectedCategories.push(cat);
+      }
+    },
+
+    isCategorySelected(cat) {
+      return this.selectedCategories.includes(cat);
+    },
+
+    clearSearchQuery() {
+      this.catalogSearchQuery = '';
+    },
+
+    get filteredCatalog() {
+      const allMalts = Alpine.store('catalog') ? Alpine.store('catalog').malts : [];
+      const activeCatalogIds = new Set(this.draftMajorMalts.map(r => r.catalog_id).filter(Boolean));
+      const q = (this.catalogSearchQuery || '').trim().toLowerCase();
+
+      return allMalts.filter(item => {
+        if (activeCatalogIds.has(item.id)) return false;
+        if (!this.selectedCategories.includes(item.category)) return false;
+        if (q) {
+          const matchName = item.name && item.name.toLowerCase().includes(q);
+          const matchNotes = item.notes && item.notes.toLowerCase().includes(q);
+          if (!matchName && !matchNotes) return false;
+        }
+        return true;
+      });
+    },
+
+    get catalogResultCount() {
+      return this.filteredCatalog.length;
     },
 
     closeDrawer() {

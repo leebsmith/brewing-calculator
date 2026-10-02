@@ -885,12 +885,76 @@
                   <template x-if="$store.maltGrid.drawerMode === 'search'">
                     <div class="catalog-drawer-list">
                       <span class="table-header-meta">Select a malt from the catalog cache to add to your grist.</span>
+                      
+                      <!-- Real-time Full-Text Search Input -->
+                      <div class="catalog-search-wrapper" style="position: relative; margin-top: var(--space-3); margin-bottom: var(--space-2);">
+                        <input
+                          type="text"
+                          x-model.debounce.50ms="$store.maltGrid.catalogSearchQuery"
+                          placeholder="Search malts by name or notes..."
+                          class="form-input text-xs"
+                          style="padding-right: var(--space-8);"
+                        />
+                        <button
+                          type="button"
+                          x-show="$store.maltGrid.catalogSearchQuery"
+                          @click="$store.maltGrid.clearSearchQuery()"
+                          class="catalog-search-clear"
+                          title="Clear search"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <!-- Category Screening Toggle Pills -->
+                      <div class="filter-pills-container">
+                        <button
+                          type="button"
+                          class="filter-pill"
+                          :class="{ 'is-active': $store.maltGrid.isCategorySelected('BASE') }"
+                          :aria-pressed="$store.maltGrid.isCategorySelected('BASE').toString()"
+                          @click="$store.maltGrid.toggleCategory('BASE')"
+                        >
+                          Base
+                        </button>
+                        <button
+                          type="button"
+                          class="filter-pill"
+                          :class="{ 'is-active': $store.maltGrid.isCategorySelected('CRYSTAL') }"
+                          :aria-pressed="$store.maltGrid.isCategorySelected('CRYSTAL').toString()"
+                          @click="$store.maltGrid.toggleCategory('CRYSTAL')"
+                        >
+                          Crystal
+                        </button>
+                        <button
+                          type="button"
+                          class="filter-pill"
+                          :class="{ 'is-active': $store.maltGrid.isCategorySelected('ROASTED') }"
+                          :aria-pressed="$store.maltGrid.isCategorySelected('ROASTED').toString()"
+                          @click="$store.maltGrid.toggleCategory('ROASTED')"
+                        >
+                          Roasted
+                        </button>
+                        <button
+                          type="button"
+                          class="filter-pill"
+                          :class="{ 'is-active': $store.maltGrid.isCategorySelected('ACID') }"
+                          :aria-pressed="$store.maltGrid.isCategorySelected('ACID').toString()"
+                          @click="$store.maltGrid.toggleCategory('ACID')"
+                        >
+                          Acid
+                        </button>
+                      </div>
+
+                      <!-- Live Result Counter -->
+                      <div class="catalog-result-counter text-xs" aria-live="polite" x-text="`Showing ${$store.maltGrid.catalogResultCount} available malts`"></div>
+
                       <div class="catalog-drawer-list">
-                        <template x-for="item in ($store.catalog.malts || [])" :key="item.id">
+                        <template x-for="item in $store.maltGrid.filteredCatalog" :key="item.id">
                           <div class="catalog-item-card">
                             <div>
                               <div class="catalog-item-name" x-text="item.name"></div>
-                              <div class="catalog-item-meta" x-text="item.category + ' • SRM: ' + item.color_srm"></div>
+                              <div class="catalog-item-meta" x-text="item.category + ' • SRM: ' + item.color_srm + (item.notes ? ' • ' + item.notes : '')"></div>
                             </div>
                             <button
                               type="button"
@@ -901,9 +965,14 @@
                             </button>
                           </div>
                         </template>
-                        <template x-if="!$store.catalog.malts || $store.catalog.malts.length === 0">
+                        <template x-if="!$store.catalog.loaded">
                           <div class="table-empty-cell">
                             Loading malt catalog...
+                          </div>
+                        </template>
+                        <template x-if="$store.catalog.loaded && $store.maltGrid.filteredCatalog.length === 0">
+                          <div class="table-empty-cell">
+                            No matching malts found. Adjust search query or category filters.
                           </div>
                         </template>
                       </div>
