@@ -471,25 +471,35 @@ document.addEventListener('alpine:init', () => {
     },
 
     get weightedPotentialDisplay() {
-      const sg = this.weightedPotential;
+      const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
+      const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
+      if (totalPct <= 0) return 0.0;
+
+      // weightedFrac is the weighted average potential fraction (e.g. 0.80)
+      const weightedFrac = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.potential_fraction) || 0.75)), 0) / totalPct;
+      
       const unitsStore = Alpine.store('units');
-      if (!unitsStore) return sg;
-      // If imperial/metric or extract_potential/gravity preference is Plato (°P), convert SG to Plato
-      const pref = unitsStore.getFieldUnit('extract_potential', 'grist_potential') || unitsStore.getFieldUnit('gravity', 'grist_potential');
-      if (pref === 'Plato' || pref === '°P') {
-        // Plato conversion from SG: -616.868 + (1111.14 * sg) - (630.272 * sg^2) + (135.997 * sg^3)
-        const plato = (-1 * 616.868) + (1111.14 * sg) - (630.272 * Math.pow(sg, 2)) + (135.997 * Math.pow(sg, 3));
-        return Number(plato.toFixed(1));
+      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal') : false;
+
+      if (isImperial) {
+        // Imperial: points * gal / lb
+        // Max extract potential at 100% pure sucrose is ~46 ppg (points per pound per gallon)
+        // weightedFrac * 46 gives ppg (e.g. 0.80 * 46 = 36.8 pts·gal/lb)
+        const ppg = weightedFrac * 46.0;
+        return Number(ppg.toFixed(1));
+      } else {
+        // Metric: L·°/kg (Liter * Degrees / Kg, or LDK)
+        // Standard metric extract potential: fraction * 386.4 L·°/kg (or points * L/kg)
+        // At 80% fraction, 0.80 * 386.4 ≈ 309.1 L·°/kg
+        const ldk = weightedFrac * 386.4;
+        return Number(ldk.toFixed(1));
       }
-      return unitsStore.toDisplay('gravity', sg, 'grist_potential');
     },
 
     get weightedPotentialUnit() {
       const unitsStore = Alpine.store('units');
-      if (!unitsStore) return 'SG';
-      const pref = unitsStore.getFieldUnit('extract_potential', 'grist_potential') || unitsStore.getFieldUnit('gravity', 'grist_potential');
-      if (pref === 'Plato' || pref === '°P') return '°P';
-      return unitsStore.activePreset === 'imperial' ? 'gal·°/lb' : 'SG';
+      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal') : false;
+      return isImperial ? 'pts·gal/lb' : 'L·°/kg';
     },
 
     get validationStatus() {
