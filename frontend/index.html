@@ -736,7 +736,6 @@
                   @click="$store.maltGrid.saveModal()"
                   class="btn btn-primary text-xs"
                   :disabled="$store.maltGrid.validationStatus.type !== 'balanced'"
-                  :class="{ 'opacity-50 cursor-not-allowed': $store.maltGrid.validationStatus.type !== 'balanced' }"
                 >
                   Save & Apply
                 </button>

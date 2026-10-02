@@ -457,6 +457,13 @@ pre {
   margin-top: 0.5rem;
 }
 
+.form-hint {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--sys-text-muted);
+  line-height: 1.35;
+}
+
 /* ==========================================================================
    5. Cards & Containers
    ========================================================================== */
@@ -1259,6 +1266,10 @@ pre {
   margin-top: 0.25rem;
 }
 
+.text-right,
+.align-right,
+.data-table th.text-right,
+.data-table td.text-right,
 .data-table th.align-right,
 .data-table td.align-right {
   text-align: right;
@@ -1268,6 +1279,52 @@ pre {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* --- Typography Scale & Color Hierarchy Helpers --- */
+
+.text-nano {
+  font-size: var(--text-nano);
+}
+
+.text-micro {
+  font-size: var(--text-micro);
+}
+
+.text-xs {
+  font-size: var(--text-xs);
+}
+
+.text-sm {
+  font-size: var(--text-sm);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-primary {
+  color: var(--sys-text-primary);
+}
+
+.text-secondary {
+  color: var(--sys-text-secondary);
+}
+
+.text-muted {
+  color: var(--sys-text-muted);
 }
 
 /* --- Preset Toolbar & Segmented Control --- */
@@ -1287,6 +1344,12 @@ pre {
 .preset-toolbar-select-group {
   flex: 1;
   min-width: 240px;
+}
+
+.preset-select-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .segmented-control {
