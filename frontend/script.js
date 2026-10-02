@@ -565,7 +565,7 @@ if (typeof document !== 'undefined') {
         if (sanitized.preferences) this.preferences = { ...this.preferences, ...sanitized.preferences };
         if (sanitized.fieldPreferences) this.fieldPreferences = { ...sanitized.fieldPreferences };
       } catch (err) {
-        this.error.message = err.message || 'Failed to load unit preferences';
+        this.error.message = err.message || BREW_CONSTANTS.MSG_UNIT_PREFERENCES_LOAD_FAILED;
         console.warn('Hydration coordinator error:', err);
       } finally {
         this.isReady = true;
@@ -1102,7 +1102,7 @@ if (typeof document !== 'undefined') {
         return;
       }
 
-      auth.onAuthStateChanged((firebaseUser) => {
+      const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
         if (firebaseUser) {
           this.user = {
             uid: firebaseUser.uid,
@@ -1123,6 +1123,13 @@ if (typeof document !== 'undefined') {
         }
         this.loading = false;
       });
+
+      // Register the mandatory cleanup routine to prevent memory leaks
+      // Note: For stores, this executes if the store is re-initialized or manually destroyed,
+      // but the pattern is critical for local components subject to x-if removal.
+      if (this.$cleanup) {
+          this.$cleanup(() => unsubscribe());
+      }
     },
 
     async signInWithGoogle() {
@@ -1285,7 +1292,7 @@ if (typeof document !== 'undefined') {
           throw new Error(errData.detail || `Delete failed: HTTP ${response.status}`);
         }
         this.profiles = this.profiles.filter(p => p.id !== profileId);
-        Alpine.store('ui').add('Equipment profile deleted', 'info');
+        Alpine.store('ui').add(BREW_CONSTANTS.MSG_EQUIPMENT_PROFILE_DELETED, 'info');
         return true;
       } catch (err) {
         this.error = err.message;
@@ -1519,7 +1526,7 @@ if (typeof document !== 'undefined') {
         }
 
         this.response = await res.json();
-        Alpine.store('ui').add('Ping processed successfully!', 'success');
+        Alpine.store('ui').add(BREW_CONSTANTS.MSG_PING_PROCESSED_SUCCESSFULLY, 'success');
       } catch (err) {
         this.error = err instanceof Error ? err.message : String(err);
       } finally {

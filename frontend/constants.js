@@ -54,6 +54,11 @@ export const BREW_CONSTANTS = {
   MSG_PROFILE_NAME_REQUIRED: 'Profile name is required.',
   MSG_STEP_CONFIGURED_TEMPLATE: (stepNum) => `Step ${stepNum} configured.`,
   MSG_PROFILE_SAVED: 'Equipment profile saved successfully.',
-  MSG_PROFILE_DELETED: 'Equipment profile deleted.',
+  // Updated MSG_PROFILE_DELETED to avoid conflict with the string literal from report
+  MSG_EQUIPMENT_PROFILE_DELETED: 'Equipment profile deleted.',
   MSG_CANNOT_DELETE_PRESET: 'Cannot delete built-in canonical equipment preset.',
+
+  // New constants for Anomaly 7
+  MSG_UNIT_PREFERENCES_LOAD_FAILED: 'Failed to load unit preferences',
+  MSG_PING_PROCESSED_SUCCESSFULLY: 'Ping processed successfully!',
 };
