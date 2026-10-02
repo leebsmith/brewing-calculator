@@ -481,13 +481,17 @@ document.addEventListener('alpine:init', () => {
       const unitsStore = Alpine.store('units');
       const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal') : false;
 
+      const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
+      const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
+      const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
+
       if (isImperial) {
         // Imperial: points * gal / lb (using pure sucrose reference 46.21 PPG)
-        const ppg = weightedFrac * BREW_CONSTANTS.SUCROSE_POTENTIAL_PPG;
+        const ppg = weightedFrac * sucrosePpg;
         return Number(ppg.toFixed(1));
       } else {
         // Metric: L·°/kg (Liter * Degrees / Kg, or LDK)
-        const ldk = weightedFrac * BREW_CONSTANTS.METRIC_POTENTIAL_SCALING_FACTOR;
+        const ldk = weightedFrac * metricScaling;
         return Number(ldk.toFixed(1));
       }
     },
