@@ -789,6 +789,8 @@ pre {
   padding: var(--space-4);
   background-color: var(--sys-surface-overlay);
   backdrop-filter: var(--sys-backdrop-blur);
+  container-type: size;
+  container-name: modal-bounds;
 }
 
 .modal-dialog {
@@ -840,12 +842,12 @@ pre {
   justify-content: flex-end;
 }
 
-/* --- Dedicated Workspace Modal Dialog --- */
-
-.modal-dialog-workspace {
-  max-width: min(94vw, var(--container-modal-workspace));
-  width: 100%;
-  height: min(85vh, 900px);
+@container modal-bounds (max-width: 800px) {
+  .modal-dialog-workspace {
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+  }
+}
   padding: var(--space-0);
   gap: var(--space-0);
   overflow: hidden;
