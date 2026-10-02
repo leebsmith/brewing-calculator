@@ -109,8 +109,9 @@ const UNIT_REGISTRY = {
   extract_potential: {
     base_unit: 'L·°/kg',
     units: {
-      'L·°/kg':    { label: 'L·°/kg',    to_base: (v) => v, from_base: (v) => v, precision: 2 },
-      'gal·°/lb': { label: 'gal·°/lb', to_base: (v) => v * 8.3454, from_base: (v) => v / 8.3454, precision: 2 }
+      'L·°/kg':      { label: 'L·°/kg',      to_base: (v) => v, from_base: (v) => v, precision: 2 },
+      'gal·°/lb':   { label: 'gal·°/lb',   to_base: (v) => v, from_base: (v) => v, precision: 2 },
+      'pts·gal/lb': { label: 'pts·gal/lb', to_base: (v) => v, from_base: (v) => v, precision: 2 }
     }
   },
   color: {
@@ -273,8 +274,8 @@ document.addEventListener('alpine:init', () => {
       this.promptModalOpen = false;
 
       const newUnits = presetName === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL
-        ? { volume: 'gal', mass: 'lb', hopMass: 'oz', temperature: 'F', gravity: 'SG', percentage: '%', color: 'SRM', grist_potential_unit: 'pts·gal/lb' }
-        : { volume: 'L', mass: 'kg', hopMass: 'g', temperature: 'C', gravity: 'SG', percentage: '%', color: 'ECB', grist_potential_unit: 'L·°/kg' };
+        ? { volume: 'gal', mass: 'lb', hopMass: 'oz', temperature: 'F', gravity: 'SG', percentage: '%', color: 'SRM', extract_potential: 'gal·°/lb' }
+        : { volume: 'L', mass: 'kg', hopMass: 'g', temperature: 'C', gravity: 'SG', percentage: '%', color: 'ECB', extract_potential: 'L·°/kg' };
 
       const updatedPrefs = { ...this.preferences };
       for (const [domain, unit] of Object.entries(newUnits)) {
@@ -502,15 +503,12 @@ document.addEventListener('alpine:init', () => {
       const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
 
       const baseVal = isImperial ? (weightedFrac * sucrosePpg) : (weightedFrac * metricScaling);
-      const domainKey = isImperial ? 'extract_potential' : 'grist_potential_unit';
-      return unitsStore ? unitsStore.toDisplay(domainKey, baseVal) : Number(baseVal.toFixed(1));
+      return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : Number(baseVal.toFixed(1));
     },
 
     get weightedPotentialUnit() {
       const unitsStore = Alpine.store('units');
-      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
-      const domainKey = isImperial ? 'extract_potential' : 'grist_potential_unit';
-      return unitsStore ? unitsStore.getFieldUnit(domainKey) : (isImperial ? 'gal·°/lb' : 'L·°/kg');
+      return unitsStore ? unitsStore.getFieldUnit('extract_potential') : 'L·°/kg';
     },
 
     maltColorDisplay(row) {
@@ -528,8 +526,7 @@ document.addEventListener('alpine:init', () => {
       const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
 
       const baseVal = isImperial ? (frac * sucrosePpg) : (frac * metricScaling);
-      const domainKey = isImperial ? 'extract_potential' : 'grist_potential_unit';
-      return unitsStore ? unitsStore.toDisplay(domainKey, baseVal) : Number(baseVal.toFixed(1));
+      return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : Number(baseVal.toFixed(1));
     },
 
     get validationStatus() {
