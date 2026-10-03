@@ -3,7 +3,13 @@
  * Registers Alpine.js global auth store and components for API interactions.
  */
 
+import Alpine from 'alpinejs';
+import collapse from '@alpinejs/collapse';
 import { BREW_CONSTANTS } from './constants.js';
+
+// Setup Alpine Native Plugins
+window.Alpine = Alpine;
+Alpine.plugin(collapse);
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -313,12 +319,6 @@ export function createWizardNavigation() {
       if (this.completedSteps.includes(stepNum)) return 'accordion-status-complete';
       if (this.activeStep === stepNum) return 'accordion-status-active';
       return 'accordion-status-locked';
-    },
-
-    getStepStatusClass(stepNum) {
-      if (this.completedSteps.includes(stepNum)) return 'accordion-status-complete';
-      if (this.activeStep === stepNum) return 'accordion-status-active';
-      return 'accordion-status-locked';
     }
   };
 }
@@ -505,1051 +505,1047 @@ export function createEquipmentManager() {
   };
 }
 
-if (typeof document !== 'undefined') {
-  document.addEventListener('alpine:init', () => {
-    // Global Units Store with Option C toggle support & per-field overrides
-  Alpine.store('units', {
-    activePreset: BREW_CONSTANTS.UNIT_PRESET_METRIC, // 'metric' | 'imperial' | 'custom'
-    domainDefaults: {
-      volume: 'L',
-      mass: 'kg',
-      hopMass: 'g',
-      temperature: 'C',
-      gravity: 'SG',
-      percentage: '%',
-      compound: 'L/kg',
-      extract_potential: 'L·°/kg',
-      color: 'SRM',
-      grist_potential_unit: 'L·°/kg'
-    },
-    preferences: {
-      // domain-level fallbacks
-      volume: { unit: 'L', is_customized: false },
-      mass: { unit: 'kg', is_customized: false },
-      hopMass: { unit: 'g', is_customized: false },
-      temperature: { unit: 'C', is_customized: false },
-      gravity: { unit: 'SG', is_customized: false },
-      percentage: { unit: '%', is_customized: false },
-      compound: { unit: 'L/kg', is_customized: false },
-      extract_potential: { unit: 'L·°/kg', is_customized: false },
-      color: { unit: 'SRM', is_customized: false },
-      grist_potential_unit: { unit: 'L·°/kg', is_customized: false }
-    },
-    fieldPreferences: {
-      // fieldKey -> { unit, is_customized }
-    },
-    promptModalOpen: false,
-    pendingPreset: null,
+// Global Units Store with Option C toggle support & per-field overrides
+Alpine.store('units', {
+  activePreset: BREW_CONSTANTS.UNIT_PRESET_METRIC, // 'metric' | 'imperial' | 'custom'
+  domainDefaults: {
+    volume: 'L',
+    mass: 'kg',
+    hopMass: 'g',
+    temperature: 'C',
+    gravity: 'SG',
+    percentage: '%',
+    compound: 'L/kg',
+    extract_potential: 'L·°/kg',
+    color: 'SRM',
+    grist_potential_unit: 'L·°/kg'
+  },
+  preferences: {
+    // domain-level fallbacks
+    volume: { unit: 'L', is_customized: false },
+    mass: { unit: 'kg', is_customized: false },
+    hopMass: { unit: 'g', is_customized: false },
+    temperature: { unit: 'C', is_customized: false },
+    gravity: { unit: 'SG', is_customized: false },
+    percentage: { unit: '%', is_customized: false },
+    compound: { unit: 'L/kg', is_customized: false },
+    extract_potential: { unit: 'L·°/kg', is_customized: false },
+    color: { unit: 'SRM', is_customized: false },
+    grist_potential_unit: { unit: 'L·°/kg', is_customized: false }
+  },
+  fieldPreferences: {
+    // fieldKey -> { unit, is_customized }
+  },
+  promptModalOpen: false,
+  pendingPreset: null,
 
-    // Bi-Directional Hydration Coordinator State
-    isReady: false,
-    isSaving: false,
-    error: { message: null },
+  // Bi-Directional Hydration Coordinator State
+  isReady: false,
+  isSaving: false,
+  error: { message: null },
 
-    sanitize(raw) {
-      if (!raw || typeof raw !== 'object') return {};
-      const sanitized = {};
-      if (raw.activePreset && typeof raw.activePreset === 'string') {
-        sanitized.activePreset = raw.activePreset;
+  sanitize(raw) {
+    if (!raw || typeof raw !== 'object') return {};
+    const sanitized = {};
+    if (raw.activePreset && typeof raw.activePreset === 'string') {
+      sanitized.activePreset = raw.activePreset;
+    }
+    if (raw.preferences && typeof raw.preferences === 'object') {
+      sanitized.preferences = raw.preferences;
+    }
+    if (raw.fieldPreferences && typeof raw.fieldPreferences === 'object') {
+      sanitized.fieldPreferences = raw.fieldPreferences;
+    }
+    return sanitized;
+  },
+
+  async hydrate(providerFn) {
+    this.isReady = false;
+    this.error.message = null;
+    try {
+      const raw = await providerFn();
+      const sanitized = this.sanitize(raw);
+      if (sanitized.activePreset) this.activePreset = sanitized.activePreset;
+      if (sanitized.preferences) this.preferences = { ...this.preferences, ...sanitized.preferences };
+      if (sanitized.fieldPreferences) this.fieldPreferences = { ...sanitized.fieldPreferences };
+    } catch (err) {
+      this.error.message = err.message || BREW_CONSTANTS.MSG_UNIT_PREFERENCES_LOAD_FAILED;
+      console.warn('Hydration coordinator error:', err);
+    } finally {
+      this.isReady = true;
+    }
+  },
+
+  async commit(payload, writerFn) {
+    this.isSaving = true;
+    this.error.message = null;
+    try {
+      const sanitized = this.sanitize(payload);
+      await writerFn(sanitized);
+    } catch (err) {
+      this.error.message = err.message || 'Failed to save unit preferences';
+      console.warn('Persistence coordinator error:', err);
+    } finally {
+      this.isSaving = false;
+    }
+  },
+
+  clearError() {
+    this.error.message = null;
+  },
+
+  isPureMetric() {
+    const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
+    const isMetricBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'L');
+    return isMetricBase && !hasCustom;
+  },
+  isMixedMetric() {
+    const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
+    const isMetricBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'L');
+    return isMetricBase && hasCustom;
+  },
+  isPureImperial() {
+    const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
+    const isImperialBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'gal');
+    return isImperialBase && !hasCustom;
+  },
+  isMixedImperial() {
+    const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
+    const isImperialBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'gal');
+    return isImperialBase && hasCustom;
+  },
+
+  init() {
+    this.hydrate(async () => {
+      const saved = localStorage.getItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES);
+      return saved ? JSON.parse(saved) : null;
+    });
+  },
+
+  saveToStorage() {
+    this.commit({
+      activePreset: this.activePreset,
+      preferences: this.preferences,
+      fieldPreferences: this.fieldPreferences
+    }, async (payload) => {
+      localStorage.setItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES, JSON.stringify(payload));
+    });
+  },
+
+  setPreset(presetName) {
+    const hasCustomOverrides = Object.values(this.preferences).some(p => p.is_customized) ||
+      Object.values(this.fieldPreferences).some(p => p.is_customized);
+    if (hasCustomOverrides && presetName !== this.activePreset) {
+      this.pendingPreset = presetName;
+      this.promptModalOpen = true;
+      return;
+    }
+    this.applyPreset(presetName, true);
+  },
+
+  applyPreset(presetName, overwriteAll = true) {
+    this.activePreset = presetName;
+    this.promptModalOpen = false;
+
+    const newUnits = presetName === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL
+      ? { volume: 'gal', mass: 'lb', hopMass: 'oz', temperature: 'F', gravity: 'SG', percentage: '%', color: 'SRM', extract_potential: 'gal·°/lb' }
+      : { volume: 'L', mass: 'kg', hopMass: 'g', temperature: 'C', gravity: 'SG', percentage: '%', color: 'ECB', extract_potential: 'L·°/kg' };
+
+    const updatedPrefs = { ...this.preferences };
+    for (const [domain, unit] of Object.entries(newUnits)) {
+      if (overwriteAll || !updatedPrefs[domain]?.is_customized) {
+        updatedPrefs[domain] = { unit, is_customized: false };
       }
-      if (raw.preferences && typeof raw.preferences === 'object') {
-        sanitized.preferences = raw.preferences;
-      }
-      if (raw.fieldPreferences && typeof raw.fieldPreferences === 'object') {
-        sanitized.fieldPreferences = raw.fieldPreferences;
-      }
-      return sanitized;
-    },
+    }
+    this.preferences = updatedPrefs;
 
-    async hydrate(providerFn) {
-      this.isReady = false;
-      this.error.message = null;
-      try {
-        const raw = await providerFn();
-        const sanitized = this.sanitize(raw);
-        if (sanitized.activePreset) this.activePreset = sanitized.activePreset;
-        if (sanitized.preferences) this.preferences = { ...this.preferences, ...sanitized.preferences };
-        if (sanitized.fieldPreferences) this.fieldPreferences = { ...sanitized.fieldPreferences };
-      } catch (err) {
-        this.error.message = err.message || BREW_CONSTANTS.MSG_UNIT_PREFERENCES_LOAD_FAILED;
-        console.warn('Hydration coordinator error:', err);
-      } finally {
-        this.isReady = true;
-      }
-    },
-
-    async commit(payload, writerFn) {
-      this.isSaving = true;
-      this.error.message = null;
-      try {
-        const sanitized = this.sanitize(payload);
-        await writerFn(sanitized);
-      } catch (err) {
-        this.error.message = err.message || 'Failed to save unit preferences';
-        console.warn('Persistence coordinator error:', err);
-      } finally {
-        this.isSaving = false;
-      }
-    },
-
-    clearError() {
-      this.error.message = null;
-    },
-
-    isPureMetric() {
-      const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
-      const isMetricBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'L');
-      return isMetricBase && !hasCustom;
-    },
-    isMixedMetric() {
-      const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
-      const isMetricBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'L');
-      return isMetricBase && hasCustom;
-    },
-    isPureImperial() {
-      const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
-      const isImperialBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'gal');
-      return isImperialBase && !hasCustom;
-    },
-    isMixedImperial() {
-      const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
-      const isImperialBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'gal');
-      return isImperialBase && hasCustom;
-    },
-
-    init() {
-      this.hydrate(async () => {
-        const saved = localStorage.getItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES);
-        return saved ? JSON.parse(saved) : null;
-      });
-    },
-
-    saveToStorage() {
-      this.commit({
-        activePreset: this.activePreset,
-        preferences: this.preferences,
-        fieldPreferences: this.fieldPreferences
-      }, async (payload) => {
-        localStorage.setItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES, JSON.stringify(payload));
-      });
-    },
-
-    setPreset(presetName) {
-      const hasCustomOverrides = Object.values(this.preferences).some(p => p.is_customized) ||
-        Object.values(this.fieldPreferences).some(p => p.is_customized);
-      if (hasCustomOverrides && presetName !== this.activePreset) {
-        this.pendingPreset = presetName;
-        this.promptModalOpen = true;
-        return;
-      }
-      this.applyPreset(presetName, true);
-    },
-
-    applyPreset(presetName, overwriteAll = true) {
-      this.activePreset = presetName;
-      this.promptModalOpen = false;
-
-      const newUnits = presetName === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL
-        ? { volume: 'gal', mass: 'lb', hopMass: 'oz', temperature: 'F', gravity: 'SG', percentage: '%', color: 'SRM', extract_potential: 'gal·°/lb' }
-        : { volume: 'L', mass: 'kg', hopMass: 'g', temperature: 'C', gravity: 'SG', percentage: '%', color: 'ECB', extract_potential: 'L·°/kg' };
-
-      const updatedPrefs = { ...this.preferences };
-      for (const [domain, unit] of Object.entries(newUnits)) {
-        if (overwriteAll || !updatedPrefs[domain]?.is_customized) {
-          updatedPrefs[domain] = { unit, is_customized: false };
+    if (overwriteAll) {
+      this.fieldPreferences = {};
+    } else {
+      const updatedFields = { ...this.fieldPreferences };
+      for (const [fieldKey, pref] of Object.entries(updatedFields)) {
+        if (!pref.is_customized) {
+          delete updatedFields[fieldKey];
         }
       }
-      this.preferences = updatedPrefs;
+      this.fieldPreferences = updatedFields;
+    }
+    this.saveToStorage();
+  },
 
-      if (overwriteAll) {
-        this.fieldPreferences = {};
-      } else {
-        const updatedFields = { ...this.fieldPreferences };
-        for (const [fieldKey, pref] of Object.entries(updatedFields)) {
-          if (!pref.is_customized) {
-            delete updatedFields[fieldKey];
-          }
-        }
-        this.fieldPreferences = updatedFields;
-      }
-      this.saveToStorage();
-    },
+  getFieldUnit(domain, fieldKey) {
+    if (fieldKey && this.fieldPreferences[fieldKey] && this.fieldPreferences[fieldKey].is_customized) {
+      return this.fieldPreferences[fieldKey].unit;
+    }
+    return this.preferences[domain]?.unit || this.domainDefaults[domain] || 'L';
+  },
 
-    getFieldUnit(domain, fieldKey) {
-      if (fieldKey && this.fieldPreferences[fieldKey] && this.fieldPreferences[fieldKey].is_customized) {
-        return this.fieldPreferences[fieldKey].unit;
-      }
-      return this.preferences[domain]?.unit || this.domainDefaults[domain] || 'L';
-    },
+  isFieldCustomized(fieldKey) {
+    return !!this.fieldPreferences[fieldKey]?.is_customized;
+  },
 
-    isFieldCustomized(fieldKey) {
-      return !!this.fieldPreferences[fieldKey]?.is_customized;
-    },
+  toggleField(domain, fieldKey) {
+    const current = this.getFieldUnit(domain, fieldKey);
+    let next = current;
+    if (domain === 'volume') {
+      next = current === 'L' ? 'gal' : 'L';
+    } else if (domain === 'mass' || domain === 'hopMass') {
+      next = current === 'kg' ? 'lb' : 'kg';
+    } else if (domain === 'temperature') {
+      next = current === 'C' ? 'F' : 'C';
+    } else if (domain === 'gravity') {
+      next = current === 'SG' ? 'Plato' : 'SG';
+    } else if (domain === 'percentage') {
+      next = current === 'fraction' ? '%' : 'fraction';
+    }
 
-    toggleField(domain, fieldKey) {
-      const current = this.getFieldUnit(domain, fieldKey);
-      let next = current;
-      if (domain === 'volume') {
-        next = current === 'L' ? 'gal' : 'L';
-      } else if (domain === 'mass' || domain === 'hopMass') {
-        next = current === 'kg' ? 'lb' : 'kg';
-      } else if (domain === 'temperature') {
-        next = current === 'C' ? 'F' : 'C';
-      } else if (domain === 'gravity') {
-        next = current === 'SG' ? 'Plato' : 'SG';
-      } else if (domain === 'percentage') {
-        next = current === 'fraction' ? '%' : 'fraction';
-      }
+    const defaultUnit = this.activePreset === 'imperial'
+      ? (domain === 'mass' || domain === 'hopMass' ? 'lb' : (domain === 'volume' ? 'gal' : (domain === 'temperature' ? 'F' : (domain === 'gravity' ? 'SG' : (domain === 'percentage' ? '%' : 'fraction')))))
+      : (domain === 'mass' || domain === 'hopMass' ? 'kg' : (domain === 'volume' ? 'L' : (domain === 'temperature' ? 'C' : (domain === 'gravity' ? 'SG' : (domain === 'percentage' ? '%' : 'fraction')))));
 
-      const defaultUnit = this.activePreset === 'imperial'
-        ? (domain === 'mass' || domain === 'hopMass' ? 'lb' : (domain === 'volume' ? 'gal' : (domain === 'temperature' ? 'F' : (domain === 'gravity' ? 'SG' : (domain === 'percentage' ? '%' : 'fraction')))))
-        : (domain === 'mass' || domain === 'hopMass' ? 'kg' : (domain === 'volume' ? 'L' : (domain === 'temperature' ? 'C' : (domain === 'gravity' ? 'SG' : (domain === 'percentage' ? '%' : 'fraction')))));
+    const isCustom = next !== defaultUnit;
+    this.activePreset = 'custom';
 
-      const isCustom = next !== defaultUnit;
-      this.activePreset = 'custom';
-
-      if (fieldKey) {
-        if (isCustom) {
-          this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
-        } else {
-          delete this.fieldPreferences[fieldKey];
-        }
-      } else {
-        this.preferences[domain] = { unit: next, is_customized: isCustom };
-      }
-      this.saveToStorage();
-    },
-
-    toggleCompound(fieldKey) {
-      const current = this.getFieldUnit('compound', fieldKey);
-      const next = current === 'L/kg' ? 'qt/lb' : 'L/kg';
-      const isCustom = next !== 'L/kg';
-      this.activePreset = 'custom';
+    if (fieldKey) {
       if (isCustom) {
         this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
       } else {
         delete this.fieldPreferences[fieldKey];
       }
-      this.saveToStorage();
-    },
-
-    toggleExtractPotential(fieldKey) {
-      const current = this.getFieldUnit('extract_potential', fieldKey);
-      const next = current === 'L·°/kg' ? 'gal·°/lb' : 'L·°/kg';
-      const isCustom = next !== 'L·°/kg';
-      this.activePreset = 'custom';
-      if (isCustom) {
-        this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
-      } else {
-        delete this.fieldPreferences[fieldKey];
-      }
-      this.saveToStorage();
-    },
-
-    togglePercentage(fieldKey) {
-      const current = this.getFieldUnit('percentage', fieldKey);
-      const next = current === 'fraction' ? '%' : 'fraction';
-      const isCustom = next !== '%';
-      this.activePreset = 'custom';
-      if (isCustom) {
-        this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
-      } else {
-        delete this.fieldPreferences[fieldKey];
-      }
-      this.saveToStorage();
-    },
-
-    toDisplay(domain, baseValue, fieldKey) {
-      if (baseValue == null || isNaN(baseValue)) return 0;
-      const domainDef = UNIT_REGISTRY[domain];
-      if (!domainDef) return baseValue;
-      const pref = this.getFieldUnit(domain, fieldKey);
-      const unitDef = domainDef.units[pref];
-      if (!unitDef) return baseValue;
-
-      let converted = 0;
-      if (unitDef.to_base) {
-        converted = unitDef.from_base ? unitDef.from_base(baseValue) : baseValue;
-      } else {
-        converted = baseValue / unitDef.factor;
-      }
-      return Number(converted.toFixed(unitDef.precision || 2));
-    },
-
-    toBase(domain, displayValue, fieldKey) {
-      if (displayValue == null || isNaN(displayValue)) return 0;
-      const domainDef = UNIT_REGISTRY[domain];
-      if (!domainDef) return displayValue;
-      const pref = this.getFieldUnit(domain, fieldKey);
-      const unitDef = domainDef.units[pref];
-      if (!unitDef) return displayValue;
-
-      let baseVal = 0;
-      if (unitDef.to_base) {
-        baseVal = unitDef.to_base(displayValue);
-      } else {
-        baseVal = displayValue * unitDef.factor;
-      }
-      return baseVal;
+    } else {
+      this.preferences[domain] = { unit: next, is_customized: isCustom };
     }
-  });
+    this.saveToStorage();
+  },
 
-  // Two-Tier Grist Grain Bill & Hamilton Proportional Allocation Engine
-  Alpine.store('maltGrid', {
-    majorMalts: [
-      {
-        row_id: 'row_default_1',
-        catalog_id: 'malt_2row',
-        is_custom: false,
-        name: 'Briess 2-Row Pale',
-        category: 'BASE',
-        parts: 10.0,
-        pct: 100.0,
-        potential_fraction: 0.80,
-        color_srm: 1.8,
-        moisture_pct: 0.04,
-        di_ph: 5.75,
-        buffer_index: 45.0,
-        notes: 'Standard American 2-row base malt.'
+  toggleCompound(fieldKey) {
+    const current = this.getFieldUnit('compound', fieldKey);
+    const next = current === 'L/kg' ? 'qt/lb' : 'L/kg';
+    const isCustom = next !== 'L/kg';
+    this.activePreset = 'custom';
+    if (isCustom) {
+      this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
+    } else {
+      delete this.fieldPreferences[fieldKey];
+    }
+    this.saveToStorage();
+  },
+
+  toggleExtractPotential(fieldKey) {
+    const current = this.getFieldUnit('extract_potential', fieldKey);
+    const next = current === 'L·°/kg' ? 'gal·°/lb' : 'L·°/kg';
+    const isCustom = next !== 'L·°/kg';
+    this.activePreset = 'custom';
+    if (isCustom) {
+      this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
+    } else {
+      delete this.fieldPreferences[fieldKey];
+    }
+    this.saveToStorage();
+  },
+
+  togglePercentage(fieldKey) {
+    const current = this.getFieldUnit('percentage', fieldKey);
+    const next = current === 'fraction' ? '%' : 'fraction';
+    const isCustom = next !== '%';
+    this.activePreset = 'custom';
+    if (isCustom) {
+      this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
+    } else {
+      delete this.fieldPreferences[fieldKey];
+    }
+    this.saveToStorage();
+  },
+
+  toDisplay(domain, baseValue, fieldKey) {
+    if (baseValue == null || isNaN(baseValue)) return 0;
+    const domainDef = UNIT_REGISTRY[domain];
+    if (!domainDef) return baseValue;
+    const pref = this.getFieldUnit(domain, fieldKey);
+    const unitDef = domainDef.units[pref];
+    if (!unitDef) return baseValue;
+
+    let converted = 0;
+    if (unitDef.to_base) {
+      converted = unitDef.from_base ? unitDef.from_base(baseValue) : baseValue;
+    } else {
+      converted = baseValue / unitDef.factor;
+    }
+    return Number(converted.toFixed(unitDef.precision || 2));
+  },
+
+  toBase(domain, displayValue, fieldKey) {
+    if (displayValue == null || isNaN(displayValue)) return 0;
+    const domainDef = UNIT_REGISTRY[domain];
+    if (!domainDef) return displayValue;
+    const pref = this.getFieldUnit(domain, fieldKey);
+    const unitDef = domainDef.units[pref];
+    if (!unitDef) return displayValue;
+
+    let baseVal = 0;
+    if (unitDef.to_base) {
+      baseVal = unitDef.to_base(displayValue);
+    } else {
+      baseVal = displayValue * unitDef.factor;
+    }
+    return baseVal;
+  }
+});
+
+// Two-Tier Grist Grain Bill & Hamilton Proportional Allocation Engine
+Alpine.store('maltGrid', {
+  majorMalts: [
+    {
+      row_id: 'row_default_1',
+      catalog_id: 'malt_2row',
+      is_custom: false,
+      name: 'Briess 2-Row Pale',
+      category: 'BASE',
+      parts: 10.0,
+      pct: 100.0,
+      potential_fraction: 0.80,
+      color_srm: 1.8,
+      moisture_pct: 0.04,
+      di_ph: 5.75,
+      buffer_index: 45.0,
+      notes: 'Standard American 2-row base malt.'
+    }
+  ],
+  traceMalts: [],
+
+  modalOpen: false,
+  draftMajorMalts: [],
+  draftTraceMalts: [],
+
+  drawerMode: null,
+  activeRowId: null,
+  catalogSearchQuery: '',
+  selectedCategories: ['BASE', 'CRYSTAL', 'ROASTED', 'ACID'],
+
+  get totalPct() {
+    return this.modalOpen
+      ? this.draftMajorMalts.reduce((sum, r) => sum + (r.pct || 0), 0)
+      : this.majorMalts.reduce((sum, r) => sum + (r.pct || 0), 0);
+  },
+
+  get weightedSrm() {
+    const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
+    const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
+    if (totalPct <= 0) return 0.0;
+    const weightedSum = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.color_srm) || 0)), 0);
+    return weightedSum / totalPct;
+  },
+
+  get isMetricUnits() {
+    const unitsStore = Alpine.store('units');
+    if (!unitsStore) return false;
+    return unitsStore.activePreset === 'metric' || unitsStore.preferences?.volume?.unit === 'L';
+  },
+
+  get weightedColorDisplay() {
+    const srm = this.weightedSrm;
+    const unitsStore = Alpine.store('units');
+    return unitsStore ? unitsStore.toDisplay('color', srm) : Number(srm.toFixed(1));
+  },
+
+  get weightedColorUnit() {
+    const unitsStore = Alpine.store('units');
+    return unitsStore ? unitsStore.getFieldUnit('color') : 'SRM';
+  },
+
+  get weightedPotential() {
+    const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
+    const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
+    if (totalPct <= 0) return 1.000;
+    const weightedFrac = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.potential_fraction) || 0.75)), 0) / totalPct;
+    const sg = 1.0 + (weightedFrac * 0.046);
+    return Number(sg.toFixed(3));
+  },
+
+  get weightedPotentialDisplay() {
+    const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
+    const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
+    if (totalPct <= 0) return 0.0;
+
+    const weightedFrac = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.potential_fraction) || 0.75)), 0) / totalPct;
+    
+    const unitsStore = Alpine.store('units');
+    const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
+
+    const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
+    const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
+    const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
+
+    const baseVal = isImperial ? (weightedFrac * sucrosePpg) : (weightedFrac * metricScaling);
+    return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : Number(baseVal.toFixed(1));
+  },
+
+  get weightedPotentialUnit() {
+    const unitsStore = Alpine.store('units');
+    const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
+    if (isImperial) return 'gal·°/lb';
+    return unitsStore ? unitsStore.getFieldUnit('extract_potential') : 'L·°/kg';
+  },
+
+  maltColorDisplay(row) {
+    const srm = parseFloat(row.color_srm) || 0;
+    const unitsStore = Alpine.store('units');
+    return unitsStore ? unitsStore.toDisplay('color', srm) : Number(srm.toFixed(1));
+  },
+
+  maltPotentialDisplay(row) {
+    const frac = parseFloat(row.potential_fraction) || 0.75;
+    const unitsStore = Alpine.store('units');
+    const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
+    const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
+    const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
+    const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
+
+    const baseVal = isImperial ? (frac * sucrosePpg) : (frac * metricScaling);
+    return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : Number(baseVal.toFixed(1));
+  },
+
+  get validationStatus() {
+    const total = Number(this.totalPct.toFixed(1));
+    if (total === 100.0) return { type: 'balanced', label: '100.0% Balanced', class: 'badge-success' };
+    if (total === 0.0) return { type: 'unconfigured', label: 'Unconfigured', class: 'badge-muted' };
+    if (total < 100.0) {
+      const remaining = (100.0 - total).toFixed(1);
+      return { type: 'deficit', label: `${total.toFixed(1)}% (Remaining: ${remaining}%)`, class: 'badge-amber' };
+    }
+    const excess = (total - 100.0).toFixed(1);
+    return { type: 'surplus', label: `${total.toFixed(1)}% (Excess: +${excess}%)`, class: 'badge-danger' };
+  },
+
+  openModal() {
+    this.draftMajorMalts = JSON.parse(JSON.stringify(this.majorMalts));
+    this.draftTraceMalts = JSON.parse(JSON.stringify(this.traceMalts));
+    this.drawerMode = null;
+    this.activeRowId = null;
+    this.modalOpen = true;
+    this.normalizeDraft();
+  },
+
+  saveModal() {
+    this.majorMalts = JSON.parse(JSON.stringify(this.draftMajorMalts));
+    this.traceMalts = JSON.parse(JSON.stringify(this.draftTraceMalts));
+    this.modalOpen = false;
+    this.drawerMode = null;
+    this.activeRowId = null;
+  },
+
+  cancelModal() {
+    this.modalOpen = false;
+    this.drawerMode = null;
+    this.activeRowId = null;
+  },
+
+  normalizeDraft() {
+    const rows = this.draftMajorMalts;
+    if (!rows || rows.length === 0) return;
+
+    const totalParts = rows.reduce((sum, r) => sum + Math.max(0, parseFloat(r.parts) || 0), 0);
+    if (totalParts === 0) {
+      rows.forEach(r => { r.pct = 0.0; });
+      return;
+    }
+
+    const scaled = rows.map((r, idx) => {
+      const parts = Math.max(0, parseFloat(r.parts) || 0);
+      const rawScaled = (parts / totalParts) * 1000;
+      const floored = Math.floor(rawScaled);
+      const remainder = rawScaled - floored;
+      return { index: idx, parts, floored, remainder };
+    });
+
+    const currentSum = scaled.reduce((sum, item) => sum + item.floored, 0);
+    const deficit = 1000 - currentSum;
+
+    scaled.sort((a, b) => {
+      if (Math.abs(b.remainder - a.remainder) > 1e-9) {
+        return b.remainder - a.remainder;
       }
-    ],
-    traceMalts: [],
-
-    modalOpen: false,
-    draftMajorMalts: [],
-    draftTraceMalts: [],
-
-    drawerMode: null,
-    activeRowId: null,
-    catalogSearchQuery: '',
-    selectedCategories: ['BASE', 'CRYSTAL', 'ROASTED', 'ACID'],
-
-    get totalPct() {
-      return this.modalOpen
-        ? this.draftMajorMalts.reduce((sum, r) => sum + (r.pct || 0), 0)
-        : this.majorMalts.reduce((sum, r) => sum + (r.pct || 0), 0);
-    },
-
-    get weightedSrm() {
-      const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
-      const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
-      if (totalPct <= 0) return 0.0;
-      const weightedSum = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.color_srm) || 0)), 0);
-      return weightedSum / totalPct;
-    },
-
-    get isMetricUnits() {
-      const unitsStore = Alpine.store('units');
-      if (!unitsStore) return false;
-      return unitsStore.activePreset === 'metric' || unitsStore.preferences?.volume?.unit === 'L';
-    },
-
-    get weightedColorDisplay() {
-      const srm = this.weightedSrm;
-      const unitsStore = Alpine.store('units');
-      return unitsStore ? unitsStore.toDisplay('color', srm) : Number(srm.toFixed(1));
-    },
-
-    get weightedColorUnit() {
-      const unitsStore = Alpine.store('units');
-      return unitsStore ? unitsStore.getFieldUnit('color') : 'SRM';
-    },
-
-    get weightedPotential() {
-      const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
-      const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
-      if (totalPct <= 0) return 1.000;
-      const weightedFrac = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.potential_fraction) || 0.75)), 0) / totalPct;
-      const sg = 1.0 + (weightedFrac * 0.046);
-      return Number(sg.toFixed(3));
-    },
-
-    get weightedPotentialDisplay() {
-      const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
-      const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
-      if (totalPct <= 0) return 0.0;
-
-      const weightedFrac = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.potential_fraction) || 0.75)), 0) / totalPct;
-      
-      const unitsStore = Alpine.store('units');
-      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
-
-      const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
-      const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
-      const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
-
-      const baseVal = isImperial ? (weightedFrac * sucrosePpg) : (weightedFrac * metricScaling);
-      return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : Number(baseVal.toFixed(1));
-    },
-
-    get weightedPotentialUnit() {
-      const unitsStore = Alpine.store('units');
-      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
-      if (isImperial) return 'gal·°/lb';
-      return unitsStore ? unitsStore.getFieldUnit('extract_potential') : 'L·°/kg';
-    },
-
-    maltColorDisplay(row) {
-      const srm = parseFloat(row.color_srm) || 0;
-      const unitsStore = Alpine.store('units');
-      return unitsStore ? unitsStore.toDisplay('color', srm) : Number(srm.toFixed(1));
-    },
-
-    maltPotentialDisplay(row) {
-      const frac = parseFloat(row.potential_fraction) || 0.75;
-      const unitsStore = Alpine.store('units');
-      const isImperial = unitsStore ? (unitsStore.activePreset === 'imperial' || unitsStore.preferences?.volume?.unit === 'gal' || unitsStore.isPureImperial?.()) : false;
-      const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
-      const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
-      const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
-
-      const baseVal = isImperial ? (frac * sucrosePpg) : (frac * metricScaling);
-      return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : Number(baseVal.toFixed(1));
-    },
-
-    get validationStatus() {
-      const total = Number(this.totalPct.toFixed(1));
-      if (total === 100.0) return { type: 'balanced', label: '100.0% Balanced', class: 'badge-success' };
-      if (total === 0.0) return { type: 'unconfigured', label: 'Unconfigured', class: 'badge-muted' };
-      if (total < 100.0) {
-        const remaining = (100.0 - total).toFixed(1);
-        return { type: 'deficit', label: `${total.toFixed(1)}% (Remaining: ${remaining}%)`, class: 'badge-amber' };
+      if (b.parts !== a.parts) {
+        return b.parts - a.parts;
       }
-      const excess = (total - 100.0).toFixed(1);
-      return { type: 'surplus', label: `${total.toFixed(1)}% (Excess: +${excess}%)`, class: 'badge-danger' };
-    },
+      return a.index - b.index;
+    });
 
-    openModal() {
-      this.draftMajorMalts = JSON.parse(JSON.stringify(this.majorMalts));
-      this.draftTraceMalts = JSON.parse(JSON.stringify(this.traceMalts));
-      this.drawerMode = null;
-      this.activeRowId = null;
-      this.modalOpen = true;
+    const finalScaled = new Array(rows.length);
+    scaled.forEach((item, rank) => {
+      let val = item.floored;
+      if (rank < deficit) {
+        val += 1;
+      }
+      finalScaled[item.index] = val;
+    });
+
+    rows.forEach((r, idx) => {
+      r.pct = finalScaled[idx] / 10.0;
+    });
+  },
+
+  updateParts(rowId, val) {
+    const row = this.draftMajorMalts.find(r => r.row_id === rowId);
+    if (row) {
+      const parsed = parseFloat(val);
+      row.parts = isNaN(parsed) || parsed < 0 ? 0 : parsed;
       this.normalizeDraft();
-    },
-
-    saveModal() {
-      this.majorMalts = JSON.parse(JSON.stringify(this.draftMajorMalts));
-      this.traceMalts = JSON.parse(JSON.stringify(this.draftTraceMalts));
-      this.modalOpen = false;
-      this.drawerMode = null;
-      this.activeRowId = null;
-    },
-
-    cancelModal() {
-      this.modalOpen = false;
-      this.drawerMode = null;
-      this.activeRowId = null;
-    },
-
-    normalizeDraft() {
-      const rows = this.draftMajorMalts;
-      if (!rows || rows.length === 0) return;
-
-      const totalParts = rows.reduce((sum, r) => sum + Math.max(0, parseFloat(r.parts) || 0), 0);
-      if (totalParts === 0) {
-        rows.forEach(r => { r.pct = 0.0; });
-        return;
-      }
-
-      const scaled = rows.map((r, idx) => {
-        const parts = Math.max(0, parseFloat(r.parts) || 0);
-        const rawScaled = (parts / totalParts) * 1000;
-        const floored = Math.floor(rawScaled);
-        const remainder = rawScaled - floored;
-        return { index: idx, parts, floored, remainder };
-      });
-
-      const currentSum = scaled.reduce((sum, item) => sum + item.floored, 0);
-      const deficit = 1000 - currentSum;
-
-      scaled.sort((a, b) => {
-        if (Math.abs(b.remainder - a.remainder) > 1e-9) {
-          return b.remainder - a.remainder;
-        }
-        if (b.parts !== a.parts) {
-          return b.parts - a.parts;
-        }
-        return a.index - b.index;
-      });
-
-      const finalScaled = new Array(rows.length);
-      scaled.forEach((item, rank) => {
-        let val = item.floored;
-        if (rank < deficit) {
-          val += 1;
-        }
-        finalScaled[item.index] = val;
-      });
-
-      rows.forEach((r, idx) => {
-        r.pct = finalScaled[idx] / 10.0;
-      });
-    },
-
-    updateParts(rowId, val) {
-      const row = this.draftMajorMalts.find(r => r.row_id === rowId);
-      if (row) {
-        const parsed = parseFloat(val);
-        row.parts = isNaN(parsed) || parsed < 0 ? 0 : parsed;
-        this.normalizeDraft();
-      }
-    },
-
-    isTrace(pct) {
-      return pct < 2.0;
-    },
-
-    addMajorMalt(catalogItem) {
-      const newRow = {
-        row_id: 'row_' + Math.random().toString(36).substring(2, 11),
-        catalog_id: catalogItem.id || null,
-        is_custom: false,
-        name: catalogItem.name,
-        category: catalogItem.category || 'BASE',
-        parts: 10.0,
-        pct: 0.0,
-        potential_fraction: catalogItem.potential_fraction ?? (catalogItem.potential_sg ? (catalogItem.potential_sg - 1.0) / 0.046 : 0.75),
-        color_srm: catalogItem.color_srm || 2.0,
-        moisture_pct: catalogItem.moisture_pct || 0.04,
-        di_ph: catalogItem.di_ph || 5.75,
-        buffer_index: catalogItem.buffer_index || 45.0,
-        notes: catalogItem.notes || ''
-      };
-      this.draftMajorMalts.push(newRow);
-      this.normalizeDraft();
-    },
-
-    removeMajorMalt(rowId) {
-      this.draftMajorMalts = this.draftMajorMalts.filter(r => r.row_id !== rowId);
-      if (this.activeRowId === rowId) {
-        this.activeRowId = null;
-        if (this.drawerMode === 'inspect') this.drawerMode = null;
-      }
-      this.normalizeDraft();
-    },
-
-    cloneAndEdit(rowId) {
-      const row = this.draftMajorMalts.find(r => r.row_id === rowId);
-      if (!row) return;
-      const clone = JSON.parse(JSON.stringify(row));
-      clone.row_id = 'row_' + Math.random().toString(36).substring(2, 11);
-      clone.is_custom = true;
-      clone.name = `${clone.name} (Custom)`;
-      this.draftMajorMalts.push(clone);
-      this.normalizeDraft();
-      this.inspectRow(clone.row_id);
-    },
-
-    inspectRow(rowId) {
-      this.activeRowId = rowId;
-      this.drawerMode = 'inspect';
-    },
-
-    openSearchDrawer() {
-      this.drawerMode = 'search';
-      this.activeRowId = null;
-      this.catalogSearchQuery = '';
-      this.selectedCategories = ['BASE', 'CRYSTAL', 'ROASTED', 'ACID'];
-    },
-
-    toggleCategory(cat) {
-      if (this.selectedCategories.includes(cat)) {
-        this.selectedCategories = this.selectedCategories.filter(c => c !== cat);
-      } else {
-        this.selectedCategories.push(cat);
-      }
-    },
-
-    isCategorySelected(cat) {
-      return this.selectedCategories.includes(cat);
-    },
-
-    clearSearchQuery() {
-      this.catalogSearchQuery = '';
-    },
-
-    get filteredCatalog() {
-      const allMalts = Alpine.store('catalog') ? Alpine.store('catalog').malts : [];
-      const activeCatalogIds = new Set(this.draftMajorMalts.map(r => r.catalog_id).filter(Boolean));
-      const q = (this.catalogSearchQuery || '').trim().toLowerCase();
-
-      return allMalts.filter(item => {
-        if (activeCatalogIds.has(item.id)) return false;
-        if (!this.selectedCategories.includes(item.category)) return false;
-        if (q) {
-          const matchName = item.name && item.name.toLowerCase().includes(q);
-          const matchNotes = item.notes && item.notes.toLowerCase().includes(q);
-          if (!matchName && !matchNotes) return false;
-        }
-        return true;
-      });
-    },
-
-    get catalogResultCount() {
-      return this.filteredCatalog.length;
-    },
-
-    closeDrawer() {
-      this.drawerMode = null;
-      this.activeRowId = null;
     }
-  });
+  },
 
-  // Global Authentication Store
-  Alpine.store('auth', {
-    user: null,
-    loading: true,
-    error: null,
+  isTrace(pct) {
+    return pct < 2.0;
+  },
 
-    init() {
-      if (!auth) {
-        this.loading = false;
-        return;
-      }
-
-      const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
-        if (firebaseUser) {
-          this.user = {
-            uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName || 'Google User',
-            email: firebaseUser.email,
-            photoURL: firebaseUser.photoURL || null,
-          };
-          // Fetch ingredient catalog and equipment profiles upon successful authentication
-          Alpine.store('catalog').fetchCatalog();
-          Alpine.store('equipment').fetchProfiles();
-        } else {
-          this.user = null;
-          Alpine.store('catalog').malts = [];
-          Alpine.store('catalog').sugars = [];
-          Alpine.store('catalog').loaded = false;
-          Alpine.store('equipment').profiles = [];
-          Alpine.store('equipment').loaded = false;
-        }
-        this.loading = false;
-      });
-
-      // Register the mandatory cleanup routine to prevent memory leaks
-      // Note: For stores, this executes if the store is re-initialized or manually destroyed,
-      // but the pattern is critical for local components subject to x-if removal.
-      if (this.$cleanup) {
-          this.$cleanup(() => unsubscribe());
-      }
-    },
-
-    async signInWithGoogle() {
-      if (!auth) return;
-      this.error = null;
-      try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        await auth.signInWithPopup(provider);
-      } catch (err) {
-        this.error = err.message;
-        console.error('Google Sign-In failed:', err);
-      }
-    },
-
-    async signOut() {
-      if (!auth) return;
-      this.error = null;
-      try {
-        await auth.signOut();
-        this.user = null;
-      } catch (err) {
-        this.error = err.message;
-        console.error('Sign-Out failed:', err);
-      }
-    },
-
-    requireAuth(redirectUrl = '/index.html') {
-      if (!this.loading && !this.user) {
-        window.location.replace(redirectUrl);
-      }
-    }
-  });
-
-  // Global UI Store for notifications
-  Alpine.store('ui', {
-    toasts: [],
-    add(message, type = 'info', timeout = 4000) {
-      const id = Date.now();
-      this.toasts.push({ id, message, type });
-      setTimeout(() => this.remove(id), timeout);
-    },
-    remove(id) {
-      this.toasts = this.toasts.filter(t => t.id !== id);
-    }
-  });
-
-  // Global Catalog Store for Fermentables (Malts & Sugars)
-  Alpine.store('catalog', {
-    malts: [],
-    sugars: [],
-    loading: false,
-    error: null,
-    loaded: false,
-
-    async fetchCatalog() {
-      if (this.loaded || this.loading) return;
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await apiFetch('/api/fermentables');
-        if (!response.ok) {
-          throw new Error(`Failed to load fermentables catalog: ${response.status}`);
-        }
-        const data = await response.json();
-        this.malts = data.malts || [];
-        this.sugars = data.sugars || [];
-        this.loaded = true;
-      } catch (err) {
-        this.error = err.message;
-        console.error('Error fetching fermentables catalog:', err);
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    getMaltById(id) {
-      return this.malts.find(m => m.id === id) || null;
-    },
-
-    getSugarById(id) {
-      return this.sugars.find(s => s.id === id) || null;
-    },
-
-    getMaltsByCategory(category) {
-      return this.malts.filter(m => m.category === category);
-    }
-  });
-
-  // Global Equipment Profiles Store
-  Alpine.store('equipment', {
-    profiles: [],
-    loading: false,
-    error: null,
-    loaded: false,
-
-    async fetchProfiles() {
-      if (this.loaded || this.loading) return;
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await apiFetch('/api/equipment-profiles');
-        if (!response.ok) {
-          throw new Error(`Failed to load equipment profiles: ${response.status}`);
-        }
-        const data = await response.json();
-        this.profiles = data.profiles || [];
-        this.loaded = true;
-      } catch (err) {
-        this.error = err.message;
-        console.error('Error fetching equipment profiles:', err);
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    getProfileById(id) {
-      return this.profiles.find(p => p.id === id) || null;
-    },
-
-    async saveProfile(profileData) {
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await apiFetch('/api/equipment-profiles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(profileData)
-        });
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.detail || `Save failed: HTTP ${response.status}`);
-        }
-        const saved = await response.json();
-        const existingIdx = this.profiles.findIndex(p => p.id === saved.id);
-        if (existingIdx >= 0) {
-          this.profiles[existingIdx] = saved;
-        } else {
-          this.profiles.push(saved);
-        }
-        Alpine.store('ui').add(`Saved profile "${saved.name}"`, 'success');
-        return saved;
-      } catch (err) {
-        this.error = err.message;
-        Alpine.store('ui').add(err.message, 'error');
-        throw err;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async deleteProfile(profileId) {
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await apiFetch(`/api/equipment-profiles/${encodeURIComponent(profileId)}`, {
-          method: 'DELETE'
-        });
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.detail || `Delete failed: HTTP ${response.status}`);
-        }
-        this.profiles = this.profiles.filter(p => p.id !== profileId);
-        Alpine.store('ui').add(BREW_CONSTANTS.MSG_EQUIPMENT_PROFILE_DELETED, 'info');
-        return true;
-      } catch (err) {
-        this.error = err.message;
-        Alpine.store('ui').add(err.message, 'error');
-        throw err;
-      } finally {
-        this.loading = false;
-      }
-    }
-  });
-
-  // Decoupled Presentation FSM: Wizard Navigation Component
-  Alpine.data('wizardNavigation', () => createWizardNavigation());
-
-  // Decoupled Presentation State: Equipment Manager Component
-  Alpine.data('equipmentManager', () => createEquipmentManager());
-
-  // Progressive 12-Step Wizard State Machine (Decoupled Orchestrator)
-  Alpine.data('wizard', () => {
-    const nav = createWizardNavigation();
-    const eqMgr = createEquipmentManager();
-
-    return {
-      ...nav,
-      ...eqMgr,
-
-      // Working Recipe Manifest
-      manifest: {
-        name: BREW_CONSTANTS.DEFAULT_BATCH_NAME,
-        equipment_profile_id: BREW_CONSTANTS.DEFAULT_EQUIPMENT_PROFILE_ID,
-        equipment: {
-          max_kettle_volume_l: 38.0,
-          max_mash_tun_volume_l: 38.0,
-          max_hlt_volume_l: 38.0,
-          mash_dead_space_l: 1.5,
-          trub_loss_l: 2.0,
-          boil_off_rate_l_per_hr: 3.5,
-          grain_absorption_factor_l_per_kg: 0.96,
-          conversion_efficiency: 0.90,
-          shrinkage_pct: 0.04,
-          hlt_min_volume_l: 12.0,
-        },
-        target_volume_l: BREW_CONSTANTS.DEFAULT_TARGET_VOLUME_L,
-        target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
-        boil_time_min: BREW_CONSTANTS.DEFAULT_BOIL_TIME_MIN,
-        boil_solver_mode: 'option_b', // 'option_b' (solve post-boil/OG) or 'option_a' (solve boil-off rate)
-        preboil_volume_l: 26.0,
-        preboil_gravity: 1.045,
-        postboil_volume_l: 22.5,
-        postboil_gravity: 1.052,
-        grain_bill: [],
-        late_additions: [],
-        mash_profile: [],
-        water_profile_id: null,
-        hop_schedule: [],
-        yeast_id: null,
-        fermentation_schedule: [],
-        dry_hops: []
-      },
-
-      init() {
-        // Event bus listener for recipe recalculation & step invalidation
-        window.addEventListener('recipe:recalculate', () => {
-          this.runBoilSolver();
-        });
-        window.addEventListener('wizard:invalidate', (e) => {
-          if (e.detail && e.detail.step) {
-            this.invalidateDownstream(e.detail.step);
-          }
-        });
-
-        // Auto-load matching preset once equipment profiles are available
-        this.$watch('$store.equipment.profiles', (profiles) => {
-          if (profiles && profiles.length > 0 && !this.manifest.equipment_profile_id) {
-            this.selectProfile(profiles[0].id);
-            this.runBoilSolver();
-          }
-        });
-        this.runBoilSolver();
-      },
-
-      setBoilSolverMode(mode) {
-        this.manifest.boil_solver_mode = mode;
-        this.runBoilSolver();
-      },
-
-      // Unit-aware field binding helpers (automatically convert between metric base storage and selected display unit)
-      volDisplay(baseVal, fieldKey) {
-        return Alpine.store('units') ? Alpine.store('units').toDisplay('volume', baseVal, fieldKey) : baseVal;
-      },
-      setVolDisplay(obj, prop, displayVal, fieldKey) {
-        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('volume', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-        obj[prop] = isNaN(baseVal) ? 0 : baseVal;
-        if (this.$dispatch) {
-          this.$dispatch('recipe:recalculate');
-        } else {
-          this.runBoilSolver();
-        }
-      },
-      massDisplay(baseVal, fieldKey) {
-        return Alpine.store('units') ? Alpine.store('units').toDisplay('mass', baseVal, fieldKey) : baseVal;
-      },
-      setMassDisplay(obj, prop, displayVal, fieldKey) {
-        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('mass', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-        obj[prop] = isNaN(baseVal) ? 0 : baseVal;
-      },
-      compoundDisplay(baseVal, fieldKey) {
-        return Alpine.store('units') ? Alpine.store('units').toDisplay('compound', baseVal, fieldKey) : baseVal;
-      },
-      setCompoundDisplay(obj, prop, displayVal, fieldKey) {
-        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('compound', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-        obj[prop] = isNaN(baseVal) ? 0 : baseVal;
-      },
-      percentageDisplay(baseVal, fieldKey) {
-        return Alpine.store('units') ? Alpine.store('units').toDisplay('percentage', baseVal, fieldKey) : baseVal;
-      },
-      setPercentageDisplay(obj, prop, displayVal, fieldKey) {
-        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('percentage', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-        obj[prop] = isNaN(baseVal) ? 0 : baseVal;
-      },
-      gravityDisplay(baseVal, fieldKey) {
-        return Alpine.store('units') ? Alpine.store('units').toDisplay('gravity', baseVal, fieldKey) : baseVal;
-      },
-      setGravityDisplay(obj, prop, displayVal, fieldKey) {
-        const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('gravity', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
-        obj[prop] = isNaN(baseVal) ? 1.0 : baseVal;
-        if (this.$dispatch) {
-          this.$dispatch('recipe:recalculate');
-        } else {
-          this.runBoilSolver();
-        }
-      },
-
-      onBatchMetaChange() {
-        this.runBoilSolver();
-        this.invalidateDownstream(2);
-      },
-
-      runBoilSolver() {
-        ThermodynamicSolver.solveBoil(this.manifest);
-      },
-
-      // Step 1 Synthesized Outputs (delegated to ThermodynamicSolver)
-      get fixedSystemLoss() {
-        const eq = this.manifest.equipment;
-        return ThermodynamicSolver.calculateFixedLoss(eq.mash_dead_space_l, eq.trub_loss_l);
-      },
-
-      get hourlyEvaporation() {
-        return (parseFloat(this.manifest.equipment.boil_off_rate_l_per_hr) || 0).toFixed(2);
-      },
-
-      get kettleCapacity() {
-        return (parseFloat(this.manifest.equipment.max_kettle_volume_l) || 0).toFixed(1);
-      },
-
-      get hltCoilFloor() {
-        return (parseFloat(this.manifest.equipment.hlt_min_volume_l) || 0).toFixed(1);
-      },
-
-      // Step 2 Synthesized Outputs (delegated to ThermodynamicSolver)
-      get targetVolumeDisplay() {
-        return (parseFloat(this.manifest.target_volume_l) || 0).toFixed(1);
-      },
-
-      get targetOgPoints() {
-        return ThermodynamicSolver.calculateOgPoints(this.manifest.target_og);
-      },
-
-      get targetKettleExtract() {
-        return ThermodynamicSolver.calculateKettleExtract(this.manifest.target_volume_l, this.manifest.target_og);
-      },
-
-      // Step Validation Override for Wizard Workflow
-      markStepComplete(stepNumber) {
-        // Validate Step 1
-        if (stepNumber === 1) {
-          const eq = this.manifest.equipment;
-          if (!eq.max_kettle_volume_l || eq.max_kettle_volume_l <= 0) {
-            Alpine.store('ui').add(BREW_CONSTANTS.MSG_KETTLE_VOLUME_REQUIRED, 'error');
-            return;
-          }
-          if (!eq.boil_off_rate_l_per_hr || eq.boil_off_rate_l_per_hr <= 0) {
-            Alpine.store('ui').add(BREW_CONSTANTS.MSG_BOIL_OFF_REQUIRED, 'error');
-            return;
-          }
-        }
-
-        // Validate Step 2
-        if (stepNumber === 2) {
-          if (!this.manifest.name || this.manifest.name.trim() === '') {
-            Alpine.store('ui').add(BREW_CONSTANTS.MSG_BATCH_NAME_REQUIRED, 'error');
-            return;
-          }
-          if (!this.manifest.target_volume_l || this.manifest.target_volume_l <= 0) {
-            Alpine.store('ui').add(BREW_CONSTANTS.MSG_TARGET_VOLUME_REQUIRED, 'error');
-            return;
-          }
-          if (!this.manifest.target_og || this.manifest.target_og < 1.010 || this.manifest.target_og > 1.200) {
-            Alpine.store('ui').add(BREW_CONSTANTS.MSG_TARGET_OG_REQUIRED, 'error');
-            return;
-          }
-        }
-
-        nav.markStepComplete.call(this, stepNumber);
-      }
+  addMajorMalt(catalogItem) {
+    const newRow = {
+      row_id: 'row_' + Math.random().toString(36).substring(2, 11),
+      catalog_id: catalogItem.id || null,
+      is_custom: false,
+      name: catalogItem.name,
+      category: catalogItem.category || 'BASE',
+      parts: 10.0,
+      pct: 0.0,
+      potential_fraction: catalogItem.potential_fraction ?? (catalogItem.potential_sg ? (catalogItem.potential_sg - 1.0) / 0.046 : 0.75),
+      color_srm: catalogItem.color_srm || 2.0,
+      moisture_pct: catalogItem.moisture_pct || 0.04,
+      di_ph: catalogItem.di_ph || 5.75,
+      buffer_index: catalogItem.buffer_index || 45.0,
+      notes: catalogItem.notes || ''
     };
-  });
+    this.draftMajorMalts.push(newRow);
+    this.normalizeDraft();
+  },
 
-  // Main Page Interactive Component
-  Alpine.data('app', () => ({
-    messageInput: '',
-    loading: false,
-    response: null,
-    error: null,
+  removeMajorMalt(rowId) {
+    this.draftMajorMalts = this.draftMajorMalts.filter(r => r.row_id !== rowId);
+    if (this.activeRowId === rowId) {
+      this.activeRowId = null;
+      if (this.drawerMode === 'inspect') this.drawerMode = null;
+    }
+    this.normalizeDraft();
+  },
 
-    async sendPing() {
-      this.loading = true;
-      this.error = null;
-      this.response = null;
+  cloneAndEdit(rowId) {
+    const row = this.draftMajorMalts.find(r => r.row_id === rowId);
+    if (!row) return;
+    const clone = JSON.parse(JSON.stringify(row));
+    clone.row_id = 'row_' + Math.random().toString(36).substring(2, 11);
+    clone.is_custom = true;
+    clone.name = `${clone.name} (Custom)`;
+    this.draftMajorMalts.push(clone);
+    this.normalizeDraft();
+    this.inspectRow(clone.row_id);
+  },
 
-      try {
-        const query = this.messageInput ? `?message=${encodeURIComponent(this.messageInput)}` : '';
-        const res = await apiFetch(`/api/ping${query}`, { method: 'GET' });
+  inspectRow(rowId) {
+    this.activeRowId = rowId;
+    this.drawerMode = 'inspect';
+  },
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          const errMsg = errData.detail || `HTTP ${res.status}: ${res.statusText}`;
-          Alpine.store('ui').add(errMsg, 'error');
-          throw new Error(errMsg);
+  openSearchDrawer() {
+    this.drawerMode = 'search';
+    this.activeRowId = null;
+    this.catalogSearchQuery = '';
+    this.selectedCategories = ['BASE', 'CRYSTAL', 'ROASTED', 'ACID'];
+  },
+
+  toggleCategory(cat) {
+    if (this.selectedCategories.includes(cat)) {
+      this.selectedCategories = this.selectedCategories.filter(c => c !== cat);
+    } else {
+      this.selectedCategories.push(cat);
+    }
+  },
+
+  isCategorySelected(cat) {
+    return this.selectedCategories.includes(cat);
+  },
+
+  clearSearchQuery() {
+    this.catalogSearchQuery = '';
+  },
+
+  get filteredCatalog() {
+    const allMalts = Alpine.store('catalog') ? Alpine.store('catalog').malts : [];
+    const activeCatalogIds = new Set(this.draftMajorMalts.map(r => r.catalog_id).filter(Boolean));
+    const q = (this.catalogSearchQuery || '').trim().toLowerCase();
+
+    return allMalts.filter(item => {
+      if (activeCatalogIds.has(item.id)) return false;
+      if (!this.selectedCategories.includes(item.category)) return false;
+      if (q) {
+        const matchName = item.name && item.name.toLowerCase().includes(q);
+        const matchNotes = item.notes && item.notes.toLowerCase().includes(q);
+        if (!matchName && !matchNotes) return false;
+      }
+      return true;
+    });
+  },
+
+  get catalogResultCount() {
+    return this.filteredCatalog.length;
+  },
+
+  closeDrawer() {
+    this.drawerMode = null;
+    this.activeRowId = null;
+  }
+});
+
+// Global Authentication Store
+Alpine.store('auth', {
+  user: null,
+  loading: true,
+  error: null,
+
+  init() {
+    if (!auth) {
+      this.loading = false;
+      return;
+    }
+
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      if (firebaseUser) {
+        this.user = {
+          uid: firebaseUser.uid,
+          displayName: firebaseUser.displayName || 'Google User',
+          email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL || null,
+        };
+        // Fetch ingredient catalog and equipment profiles upon successful authentication
+        Alpine.store('catalog').fetchCatalog();
+        Alpine.store('equipment').fetchProfiles();
+      } else {
+        this.user = null;
+        Alpine.store('catalog').malts = [];
+        Alpine.store('catalog').sugars = [];
+        Alpine.store('catalog').loaded = false;
+        Alpine.store('equipment').profiles = [];
+        Alpine.store('equipment').loaded = false;
+      }
+      this.loading = false;
+    });
+
+    if (this.$cleanup) {
+        this.$cleanup(() => unsubscribe());
+    }
+  },
+
+  async signInWithGoogle() {
+    if (!auth) return;
+    this.error = null;
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await auth.signInWithPopup(provider);
+    } catch (err) {
+      this.error = err.message;
+      console.error('Google Sign-In failed:', err);
+    }
+  },
+
+  async signOut() {
+    if (!auth) return;
+    this.error = null;
+    try {
+      await auth.signOut();
+      this.user = null;
+    } catch (err) {
+      this.error = err.message;
+      console.error('Sign-Out failed:', err);
+    }
+  },
+
+  requireAuth(redirectUrl = '/index.html') {
+    if (!this.loading && !this.user) {
+      window.location.replace(redirectUrl);
+    }
+  }
+});
+
+// Global UI Store for notifications
+Alpine.store('ui', {
+  toasts: [],
+  add(message, type = 'info', timeout = 4000) {
+    const id = Date.now();
+    this.toasts.push({ id, message, type });
+    setTimeout(() => this.remove(id), timeout);
+  },
+  remove(id) {
+    this.toasts = this.toasts.filter(t => t.id !== id);
+  }
+});
+
+// Global Catalog Store for Fermentables (Malts & Sugars)
+Alpine.store('catalog', {
+  malts: [],
+  sugars: [],
+  loading: false,
+  error: null,
+  loaded: false,
+
+  async fetchCatalog() {
+    if (this.loaded || this.loading) return;
+    this.loading = true;
+    this.error = null;
+    try {
+      const response = await apiFetch('/api/fermentables');
+      if (!response.ok) {
+        throw new Error(`Failed to load fermentables catalog: ${response.status}`);
+      }
+      const data = await response.json();
+      this.malts = data.malts || [];
+      this.sugars = data.sugars || [];
+      this.loaded = true;
+    } catch (err) {
+      this.error = err.message;
+      console.error('Error fetching fermentables catalog:', err);
+    } finally {
+      this.loading = false;
+    }
+  },
+
+  getMaltById(id) {
+    return this.malts.find(m => m.id === id) || null;
+  },
+
+  getSugarById(id) {
+    return this.sugars.find(s => s.id === id) || null;
+  },
+
+  getMaltsByCategory(category) {
+    return this.malts.filter(m => m.category === category);
+  }
+});
+
+// Global Equipment Profiles Store
+Alpine.store('equipment', {
+  profiles: [],
+  loading: false,
+  error: null,
+  loaded: false,
+
+  async fetchProfiles() {
+    if (this.loaded || this.loading) return;
+    this.loading = true;
+    this.error = null;
+    try {
+      const response = await apiFetch('/api/equipment-profiles');
+      if (!response.ok) {
+        throw new Error(`Failed to load equipment profiles: ${response.status}`);
+      }
+      const data = await response.json();
+      this.profiles = data.profiles || [];
+      this.loaded = true;
+    } catch (err) {
+      this.error = err.message;
+      console.error('Error fetching equipment profiles:', err);
+    } finally {
+      this.loading = false;
+    }
+  },
+
+  getProfileById(id) {
+    return this.profiles.find(p => p.id === id) || null;
+  },
+
+  async saveProfile(profileData) {
+    this.loading = true;
+    this.error = null;
+    try {
+      const response = await apiFetch('/api/equipment-profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData)
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || `Save failed: HTTP ${response.status}`);
+      }
+      const saved = await response.json();
+      const existingIdx = this.profiles.findIndex(p => p.id === saved.id);
+      if (existingIdx >= 0) {
+        this.profiles[existingIdx] = saved;
+      } else {
+        this.profiles.push(saved);
+      }
+      Alpine.store('ui').add(`Saved profile "${saved.name}"`, 'success');
+      return saved;
+    } catch (err) {
+      this.error = err.message;
+      Alpine.store('ui').add(err.message, 'error');
+      throw err;
+    } finally {
+      this.loading = false;
+    }
+  },
+
+  async deleteProfile(profileId) {
+    this.loading = true;
+    this.error = null;
+    try {
+      const response = await apiFetch(`/api/equipment-profiles/${encodeURIComponent(profileId)}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || `Delete failed: HTTP ${response.status}`);
+      }
+      this.profiles = this.profiles.filter(p => p.id !== profileId);
+      Alpine.store('ui').add(BREW_CONSTANTS.MSG_EQUIPMENT_PROFILE_DELETED, 'info');
+      return true;
+    } catch (err) {
+      this.error = err.message;
+      Alpine.store('ui').add(err.message, 'error');
+      throw err;
+    } finally {
+      this.loading = false;
+    }
+  }
+});
+
+// Decoupled Presentation FSM: Wizard Navigation Component
+Alpine.data('wizardNavigation', () => createWizardNavigation());
+
+// Decoupled Presentation State: Equipment Manager Component
+Alpine.data('equipmentManager', () => createEquipmentManager());
+
+// Progressive 12-Step Wizard State Machine (Decoupled Orchestrator)
+Alpine.data('wizard', () => {
+  const nav = createWizardNavigation();
+  const eqMgr = createEquipmentManager();
+
+  return {
+    ...nav,
+    ...eqMgr,
+
+    // Working Recipe Manifest
+    manifest: {
+      name: BREW_CONSTANTS.DEFAULT_BATCH_NAME,
+      equipment_profile_id: BREW_CONSTANTS.DEFAULT_EQUIPMENT_PROFILE_ID,
+      equipment: {
+        max_kettle_volume_l: 38.0,
+        max_mash_tun_volume_l: 38.0,
+        max_hlt_volume_l: 38.0,
+        mash_dead_space_l: 1.5,
+        trub_loss_l: 2.0,
+        boil_off_rate_l_per_hr: 3.5,
+        grain_absorption_factor_l_per_kg: 0.96,
+        conversion_efficiency: 0.90,
+        shrinkage_pct: 0.04,
+        hlt_min_volume_l: 12.0,
+      },
+      target_volume_l: BREW_CONSTANTS.DEFAULT_TARGET_VOLUME_L,
+      target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
+      boil_time_min: BREW_CONSTANTS.DEFAULT_BOIL_TIME_MIN,
+      boil_solver_mode: 'option_b', // 'option_b' (solve post-boil/OG) or 'option_a' (solve boil-off rate)
+      preboil_volume_l: 26.0,
+      preboil_gravity: 1.045,
+      postboil_volume_l: 22.5,
+      postboil_gravity: 1.052,
+      grain_bill: [],
+      late_additions: [],
+      mash_profile: [],
+      water_profile_id: null,
+      hop_schedule: [],
+      yeast_id: null,
+      fermentation_schedule: [],
+      dry_hops: []
+    },
+
+    init() {
+      // Event bus listener for recipe recalculation & step invalidation
+      window.addEventListener('recipe:recalculate', () => {
+        this.runBoilSolver();
+      });
+      window.addEventListener('wizard:invalidate', (e) => {
+        if (e.detail && e.detail.step) {
+          this.invalidateDownstream(e.detail.step);
         }
+      });
 
-        this.response = await res.json();
-        Alpine.store('ui').add(BREW_CONSTANTS.MSG_PING_PROCESSED_SUCCESSFULLY, 'success');
-      } catch (err) {
-        this.error = err instanceof Error ? err.message : String(err);
-      } finally {
-        this.loading = false;
+      // Auto-load matching preset once equipment profiles are available
+      this.$watch('$store.equipment.profiles', (profiles) => {
+        if (profiles && profiles.length > 0 && !this.manifest.equipment_profile_id) {
+          this.selectProfile(profiles[0].id);
+          this.runBoilSolver();
+        }
+      });
+      this.runBoilSolver();
+    },
+
+    setBoilSolverMode(mode) {
+      this.manifest.boil_solver_mode = mode;
+      this.runBoilSolver();
+    },
+
+    // Unit-aware field binding helpers (automatically convert between metric base storage and selected display unit)
+    volDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('volume', baseVal, fieldKey) : baseVal;
+    },
+    setVolDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('volume', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+      if (this.$dispatch) {
+        this.$dispatch('recipe:recalculate');
+      } else {
+        this.runBoilSolver();
+      }
+    },
+    massDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('mass', baseVal, fieldKey) : baseVal;
+    },
+    setMassDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('mass', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+    },
+    compoundDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('compound', baseVal, fieldKey) : baseVal;
+    },
+    setCompoundDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('compound', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+    },
+    percentageDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('percentage', baseVal, fieldKey) : baseVal;
+    },
+    setPercentageDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('percentage', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 0 : baseVal;
+    },
+    gravityDisplay(baseVal, fieldKey) {
+      return Alpine.store('units') ? Alpine.store('units').toDisplay('gravity', baseVal, fieldKey) : baseVal;
+    },
+    setGravityDisplay(obj, prop, displayVal, fieldKey) {
+      const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('gravity', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
+      obj[prop] = isNaN(baseVal) ? 1.0 : baseVal;
+      if (this.$dispatch) {
+        this.$dispatch('recipe:recalculate');
+      } else {
+        this.runBoilSolver();
       }
     },
 
-    clearResponse() {
-      this.response = null;
-      this.error = null;
+    onBatchMetaChange() {
+      this.runBoilSolver();
+      this.invalidateDownstream(2);
     },
 
-    formatTimestamp(ts) {
-      if (!ts) return '';
-      const date = new Date(ts > 1e11 ? ts : ts * 1000);
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    runBoilSolver() {
+      ThermodynamicSolver.solveBoil(this.manifest);
     },
-  }));
-  });
-}
+
+    // Step 1 Synthesized Outputs (delegated to ThermodynamicSolver)
+    get fixedSystemLoss() {
+      const eq = this.manifest.equipment;
+      return ThermodynamicSolver.calculateFixedLoss(eq.mash_dead_space_l, eq.trub_loss_l);
+    },
+
+    get hourlyEvaporation() {
+      return (parseFloat(this.manifest.equipment.boil_off_rate_l_per_hr) || 0).toFixed(2);
+    },
+
+    get kettleCapacity() {
+      return (parseFloat(this.manifest.equipment.max_kettle_volume_l) || 0).toFixed(1);
+    },
+
+    get hltCoilFloor() {
+      return (parseFloat(this.manifest.equipment.hlt_min_volume_l) || 0).toFixed(1);
+    },
+
+    // Step 2 Synthesized Outputs (delegated to ThermodynamicSolver)
+    get targetVolumeDisplay() {
+      return (parseFloat(this.manifest.target_volume_l) || 0).toFixed(1);
+    },
+
+    get targetOgPoints() {
+      return ThermodynamicSolver.calculateOgPoints(this.manifest.target_og);
+    },
+
+    get targetKettleExtract() {
+      return ThermodynamicSolver.calculateKettleExtract(this.manifest.target_volume_l, this.manifest.target_og);
+    },
+
+    // Step Validation Override for Wizard Workflow
+    markStepComplete(stepNumber) {
+      // Validate Step 1
+      if (stepNumber === 1) {
+        const eq = this.manifest.equipment;
+        if (!eq.max_kettle_volume_l || eq.max_kettle_volume_l <= 0) {
+          Alpine.store('ui').add(BREW_CONSTANTS.MSG_KETTLE_VOLUME_REQUIRED, 'error');
+          return;
+        }
+        if (!eq.boil_off_rate_l_per_hr || eq.boil_off_rate_l_per_hr <= 0) {
+          Alpine.store('ui').add(BREW_CONSTANTS.MSG_BOIL_OFF_REQUIRED, 'error');
+          return;
+        }
+      }
+
+      // Validate Step 2
+      if (stepNumber === 2) {
+        if (!this.manifest.name || this.manifest.name.trim() === '') {
+          Alpine.store('ui').add(BREW_CONSTANTS.MSG_BATCH_NAME_REQUIRED, 'error');
+          return;
+        }
+        if (!this.manifest.target_volume_l || this.manifest.target_volume_l <= 0) {
+          Alpine.store('ui').add(BREW_CONSTANTS.MSG_TARGET_VOLUME_REQUIRED, 'error');
+          return;
+        }
+        if (!this.manifest.target_og || this.manifest.target_og < 1.010 || this.manifest.target_og > 1.200) {
+          Alpine.store('ui').add(BREW_CONSTANTS.MSG_TARGET_OG_REQUIRED, 'error');
+          return;
+        }
+      }
+
+      nav.markStepComplete.call(this, stepNumber);
+    }
+  };
+});
+
+// Main Page Interactive Component
+Alpine.data('app', () => ({
+  messageInput: '',
+  loading: false,
+  response: null,
+  error: null,
+
+  async sendPing() {
+    this.loading = true;
+    this.error = null;
+    this.response = null;
+
+    try {
+      const query = this.messageInput ? `?message=${encodeURIComponent(this.messageInput)}` : '';
+      const res = await apiFetch(`/api/ping${query}`, { method: 'GET' });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        const errMsg = errData.detail || `HTTP ${res.status}: ${res.statusText}`;
+        Alpine.store('ui').add(errMsg, 'error');
+        throw new Error(errMsg);
+      }
+
+      this.response = await res.json();
+      Alpine.store('ui').add(BREW_CONSTANTS.MSG_PING_PROCESSED_SUCCESSFULLY, 'success');
+    } catch (err) {
+      this.error = err instanceof Error ? err.message : String(err);
+    } finally {
+      this.loading = false;
+    }
+  },
+
+  clearResponse() {
+    this.response = null;
+    this.error = null;
+  },
+
+  formatTimestamp(ts) {
+    if (!ts) return '';
+    const date = new Date(ts > 1e11 ? ts : ts * 1000);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  },
+}));
+
+// Finally, start Alpine natively
+Alpine.start();

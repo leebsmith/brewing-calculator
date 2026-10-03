@@ -10,15 +10,38 @@ from app.schemas.templates import EquipmentProfile, EquipmentProfilesResponse
 
 app = FastAPI(title="Batch Brewing Calculator")
 
-# Development CORS configuration
+# CORS configuration for development and production
+# In production, Firebase Hosting acts as a proxy, so requests appear to originate from the same origin.
+# However, explicitly configuring CORS is a good security practice.
+# For local development, we allow Vite's default dev server port and the Firebase emulator port.
+# For production, we allow the Firebase Hosting domain(s).
+
+# NOTE: Replace '<your-firebase-project-id>' with your actual Firebase project ID.
+# The production Firebase domain is typically '<your-firebase-project-id>.web.app' or '<your-firebase-project-id>.firebaseapp.com'.
+# If using custom domains, those should also be added here.
+PRODUCTION_FIREBASE_DOMAINS = [
+    "https://batch-brewing-calculator.web.app",
+    "https://batch-brewing-calculator.firebaseapp.com",
+    # Add any custom domains here if applicable
+    # "https://your-custom-domain.com"
+]
+
+# Combine development and production origins. Using a set to avoid duplicates.
+ALL_ALLOWED_ORIGINS = list(set([
+    "http://localhost:5173",  # Vite default dev server port
+    "http://127.0.0.1:5173",  # Vite default dev server port (alternative)
+    "http://localhost:5000",  # Firebase emulator port (for Hosting)
+    "http://127.0.0.1:5000",  # Firebase emulator port (for Hosting)
+    "http://localhost:8000",  # FastAPI backend dev server port
+    "http://127.0.0.1:8000",  # FastAPI backend dev server port (alternative)
+    *PRODUCTION_FIREBASE_DOMAINS
+]))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5000",
-        "http://localhost:5000",
-    ],
+    allow_origins=ALL_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"], # Allowing OPTIONS for preflight requests
     allow_headers=["*"],
 )
 
