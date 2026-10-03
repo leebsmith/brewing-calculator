@@ -14,7 +14,9 @@ This project is a mono-repo containing vanilla JavaScript with Alpine.js and pur
 * This project exclusively uses `uv` for backend dependency and environment management.
 * Always formulate backend commands as `uv run <command>`, `uv add <package>`, or `uv sync`.
 * The frontend utilizes Node.js, npm/npx, and Vite for its build toolchain. Package management is handled by npm, and build scripts are defined in `package.json` and orchestrated via a Makefile.
-* When running git commands in the agentic CLI, prepend GIT_PAGER=cat (e.g., GIT_PAGER=cat git diff or GIT_PAGER=cat git log -n 3) to stream output non-interactively without tripping flag-security filters or affecting your normal terminal pager settings.
+* When running git commands in the agentic CLI, **prefer** prepending `GIT_PAGER=cat` (e.g., `GIT_PAGER=cat git diff` or `GIT_PAGER=cat git log -n 3`) to stream output non-interactively and safely.
+* If `GIT_PAGER=cat` encounters environmental execution issues, use specific, non-paginating flags where available (e.g., `git diff --staged --no-ext-diff`) to achieve similar results.
+* **For committing complex messages:** To avoid shell interpretation issues with multi-line strings and special characters, **always** use the pattern `printf "Your commit message..." | git commit -F - <files>`. This method safely pipes the message content to Git's standard input. Avoid direct `git commit -m "..."` when messages contain newlines or extensive special characters. **NEVER use command substitution (`$(...)` or backticks) to create temporary files for commit messages.**
 * **No Combined Git Flags or File Path Arguments:** Never chain multiple git commands or flags together with `&&` or complex flag combinations (like `git diff --stat HEAD`), and avoid passing flag arguments to `git add` in shell calls to prevent false positive security warnings.
 
 ## 3. Frontend Architecture & Conventions

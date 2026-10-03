@@ -8,10 +8,10 @@
 This specification defines the exhaustive front-end UI/UX architecture and functional requirements for the **Batch Brewing Calculator**. It synthesizes the foundational domain physics and Directed Acyclic Graph (DAG) math pipeline from `calculator-design-spec.pdf` with the responsive, accessible, token-driven design system from `SPA Wizard UI Design Plan - Google Docs.md`.
 
 ### 1.1 Core Technology Boundaries
-* **Architecture:** Zero-build, static Single Page Application (SPA) deployed to Firebase Hosting, consuming a headless FastAPI backend over a unified origin (`/api/**`).
+* **Architecture:** Static Single Page Application (SPA) deployed to Firebase Hosting, consuming a headless FastAPI backend over a unified origin (`/api/**`).
 * **State & Reactivity:** **Alpine.js (v3)** exclusively governs Document Object Model (DOM) reactivity, component state, and the presentation Finite State Machine (FSM).
 * **Styling & Layout:** **Modular Vanilla CSS** (`tokens.css` and `style.css`) driven entirely by CSS Custom Properties, CSS Container Queries (`@container`), and native fluid functions (`clamp()`).
-* **Toolchain Constraints:** Strictly zero build tools. No `package.json`, `npm`, `npx`, bundlers, or CSS preprocessors. All external dependencies (Alpine.js, Firebase Auth Compat SDK) load via trusted Content Delivery Networks (CDNs).
+* **Toolchain Constraints:** The frontend utilizes Node.js, npm/npx, and Vite for its build toolchain, orchestrated via a Makefile. Package management is handled by npm. External dependencies are managed via `package.json` and installed using `npm install` (or `uv sync` for backend dependencies when applicable).
 * **Decoupled Separation of Concerns:** JavaScript **never** applies inline styling or framework-specific utility strings for dynamic presentation. JavaScript manages semantic state classes (`.is-active`, `.is-completed`, `.is-locked`, `.is-dirty`), while the CSS engine drives all visual rendering, transitions, and hardware-accelerated animations.
 
 ### 1.2 The Tripartite Compositor Hierarchy
