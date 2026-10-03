@@ -6,7 +6,7 @@
         "source": "/api/**",
         "run": {
           "serviceId": "batch-brewing-calculator-backend",
-          "region": "us-central1"
+          "region": "us-east4"
         }
       },
       {
@@ -14,5 +14,20 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "hosting": {
+      "port": 5000
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
   }
 }
