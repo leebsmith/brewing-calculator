@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # ==============================================================================
-# Zero-Build Architecture Pre-Commit Linting Pipeline
+# Frontend Build Pre-Commit Linting Pipeline
 # ==============================================================================
-# This hook ensures that only fully linted, valid files are committed to the 
+# This hook ensures that only code adhering to project quality standards (linted, valid files) is committed to the 
 # repository. It utilizes plumbing-level Git commands to identify staged files 
 # and routes them to ESLint, Stylelint, and PurgeCSS analysis.
 # ==============================================================================
@@ -16,7 +16,7 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}▶ Initiating Zero-Build Pre-Commit Linting Pipeline...${NC}"
+echo -e "${BLUE}▶ Initiating Frontend Build Linting Pipeline...${NC}"
 
 # Extract staged files
 STAGED_FILES=$(git diff-index --cached --name-only --diff-filter=ACM HEAD 2>/dev/null || git diff-index --cached --name-only --diff-filter=ACM $(git hash-object -t tree /dev/null))
@@ -108,13 +108,13 @@ fi
 
 if [ $HAS_ERROR -ne 0 ]; then
   echo -e "${RED}====================================================${NC}"
-  echo -e "${RED}COMMIT REJECTED: Code quality standards not met.${NC}"
+  echo -e "${RED}COMMIT REJECTED: Frontend build quality standards not met.${NC}"
   echo -e "${RED}Please resolve the errors detailed above and try again.${NC}"
   echo -e "${RED}====================================================${NC}"
   exit 1
 else
   echo -e "${GREEN}====================================================${NC}"
-  echo -e "${GREEN}COMMIT ACCEPTED: All zero-build quality checks passed.${NC}"
+  echo -e "${GREEN}COMMIT ACCEPTED: All frontend build quality checks passed.${NC}"
   echo -e "${GREEN}====================================================${NC}"
   exit 0
 fi

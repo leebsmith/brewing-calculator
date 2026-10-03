@@ -13,13 +13,13 @@ This project is a mono-repo containing vanilla JavaScript with Alpine.js and pur
 * Do not suggest commands using `pip`, `venv`, or `virtualenv`.
 * This project exclusively uses `uv` for backend dependency and environment management.
 * Always formulate backend commands as `uv run <command>`, `uv add <package>`, or `uv sync`.
-* The frontend has no Node.js or `npm` build toolchain. Do not introduce `package.json`, `npm`, `npx`, or frontend bundlers.
+* The frontend utilizes Node.js, npm/npx, and Vite for its build toolchain. Package management is handled by npm, and build scripts are defined in `package.json` and orchestrated via a Makefile.
 * When running git commands in the agentic CLI, prepend GIT_PAGER=cat (e.g., GIT_PAGER=cat git diff or GIT_PAGER=cat git log -n 3) to stream output non-interactively without tripping flag-security filters or affecting your normal terminal pager settings.
 * **No Combined Git Flags or File Path Arguments:** Never chain multiple git commands or flags together with `&&` or complex flag combinations (like `git diff --stat HEAD`), and avoid passing flag arguments to `git add` in shell calls to prevent false positive security warnings.
 
 ## 3. Frontend Architecture & Conventions
 
-The frontend is a lightweight, zero-build static application hosted via Firebase Hosting. It pairs **Alpine.js** for reactive UI state with **modular Vanilla CSS** (`tokens.css` and `style.css`) for tokenized styling, native dark mode, and zero build tools.
+The frontend is a static application with a build process managed by Vite, hosted via Firebase Hosting. It pairs **Alpine.js** for reactive UI state with **modular CSS** (`tokens.css` and `style.css`) for tokenized styling, native dark mode, and a defined build toolchain.
 
 **Key Conventions:**
 
