@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batch Brewing Calculator</title>
+
+  <!-- Prevent FOUC with Alpine x-cloak -->
+  <style>[x-cloak]{display:none!important}</style>
+
+  <!-- Design System Tokens & Modular Vanilla Stylesheets -->
+
+  <!-- Firebase Web SDK (Compat libraries for CDN delivery) -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+
+  <!-- Application logic and constants loaded as native Vite ES modules -->
+  <script type="module" crossorigin src="/assets/index-DvTVzVUy.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-dJGAO2LY.css">
+</head>
+<body class="app-shell" x-data>
+  <!-- Top Navigation Bar -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark">B</span>
+        <h1 class="brand-title">Batch Brewing Calculator</h1>
+      </div>
+
+      <div class="header-actions">
+        <!-- Tri-State Unit Pill Selector -->
+        <div class="tri-state-group">
+          <button
+            type="button"
+            @click="$store.units.setPreset('metric')"
+            class="tri-state-pill"
+            :class="{
+              'tri-state-pill-solid': $store.units.isPureMetric(),
+              'tri-state-pill-tinted': $store.units.isMixedMetric(),
+              'tri-state-pill-ghost': !$store.units.isPureMetric() && !$store.units.isMixedMetric()
+            }"
+            :aria-pressed="$store.units.activePreset === 'metric'"
+          >
+            Metric (L)
+          </button>
+          <button
+            type="button"
+            @click="$store.units.setPreset('imperial')"
+            class="tri-state-pill"
+            :class="{
+              'tri-state-pill-solid': $store.units.isPureImperial(),
+              'tri-state-pill-tinted': $store.units.isMixedImperial(),
+              'tri-state-pill-ghost': !$store.units.isPureImperial() && !$store.units.isMixedImperial()
+            }"
+            :aria-pressed="$store.units.activePreset === 'imperial'"
+          >
+            Imperial (gal)
+          </button>
+        </div>
+
+        <!-- Ephemeral UI Toggle: Architecture modal state -->
+        <div x-data="{ showInfo: false }">
+          <button
+            type="button"
+            @click="showInfo = true"
+            class="btn btn-secondary"
+          >
+            Architecture Info
+          </button>
+
+          <!-- Ephemeral Modal Backdrop & Panel -->
+          <div
+            x-cloak
+            x-show="showInfo"
+            x-transition.opacity.duration.200ms
+            class="modal-backdrop"
+            @keydown.escape.window="showInfo = false"
+          >
+            <div
+              @click.outside="showInfo = false"
+              class="modal-dialog"
+            >
+              <div class="modal-header">
+                <h2 class="modal-title">Auth & Frontend Architecture</h2>
+                <button
+                  type="button"
+                  @click="showInfo = false"
+                  class="btn-close"
+                  aria-label="Close modal"
+                >
+                  ✕
+                </button>
+              </div>
+              <div class="modal-body">
+                <p><strong>Zero-Build Frontend:</strong> Modular Vanilla CSS (Design Tokens), Firebase SDK CDN, and Alpine.js.</p>
+                <p><strong>Global Auth Store:</strong> Managed via <code>$store.auth</code> and Firebase Auth (emulator port 9099 locally).</p>
+                <p><strong>Token Injection:</strong> Handled by <code>apiFetch()</code>, passing fresh Bearer ID tokens to FastAPI.</p>
+                <p><strong>Protected Backend:</strong> FastAPI validates JWTs via Firebase Admin SDK with strict Tach boundaries.</p>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  @click="showInfo = false"
+                  class="btn btn-secondary"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Global Auth Controls bound to $store.auth -->
+        <div class="user-profile">
+          <!-- Auth Loading State -->
+          <template x-if="$store.auth.loading">
+            <span class="auth-loading">
+              <svg class="spin icon-spin" fill="none" viewBox="0 0 24 24">
+                <circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Checking session...</span>
+            </span>
+          </template>
+
+          <!-- Authenticated User Profile -->
+          <template x-if="!$store.auth.loading && $store.auth.user">
+            <div class="user-profile">
+              <div class="user-meta">
+                <template x-if="$store.auth.user.photoURL">
+                  <img :src="$store.auth.user.photoURL" alt="User avatar" class="user-avatar" />
+                </template>
+                <template x-if="!$store.auth.user.photoURL">
+                  <span class="user-avatar-placeholder" x-text="$store.auth.user.displayName.charAt(0)"></span>
+                </template>
+                <span class="user-name" x-text="$store.auth.user.displayName"></span>
+              </div>
+              <button
+                type="button"
+                @click="$store.auth.signOut()"
+                class="btn btn-danger-outline"
+              >
+                Sign Out
+              </button>
+            </div>
+          </template>
+
+          <!-- Unauthenticated Sign-In Button -->
+          <div x-show="!$store.auth.loading && !$store.auth.user" style="display: none;">
+            <button
+              type="button"
+              @click="$store.auth.signInWithGoogle()"
+              class="btn btn-outline"
+            >
+              <svg class="icon-spin" style="animation: none;" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+              <span>Sign in with Google</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container: Alpine.data Component -->
+  <main class="main-content" x-data="app">
+    <div class="content-stack">
+      <!-- Auth Status Banner / Guest State Gate -->
+      <div
+        x-cloak
+        x-show="!$store.auth.loading && !$store.auth.user"
+        class="card card-hero"
+      >
+        <h2 class="card-title">Batch Brewing Calculator</h2>
+        <p class="card-description">
+          Please sign in with Google using the button in the top navigation bar to authenticate and access the secure brewing calculation engine and ingredient catalog.
+        </p>
+      </div>
+
+      <!-- Authenticated Workspace -->
+      <div
+        x-cloak
+        x-show="!$store.auth.loading && $store.auth.user"
+        class="wizard-stack"
+        x-data="wizard"
+      >
+        <!-- Ingredient Catalog Status Card -->
+        <div class="card">
+          <h2 class="card-title">Ingredient Catalog Status</h2>
+          <p class="card-description">
+            Reference primitives loaded securely from the backend repository shim via Firebase Authentication.
+          </p>
+          <div class="catalog-status-bar">
+            <span class="status-badge status-badge-success">
+              <span class="status-dot status-dot-success"></span>
+              <span x-text="$store.catalog.malts.length + ' Malts Loaded'"></span>
+            </span>
+            <span class="status-badge status-badge-success">
+              <span class="status-dot status-dot-success"></span>
+              <span x-text="$store.catalog.sugars.length + ' Sugars Loaded'"></span>
+            </span>
+            <template x-if="$store.catalog.loading">
+              <span class="catalog-status-loading">Loading catalog...</span>
+            </template>
+          </div>
+        </div>
+
+        <!-- Step 1: Equipment Profile Accordion Card -->
+        <div class="step-card" :class="{ 'is-active': activeStep === 1, 'is-completed': completedSteps.includes(1) }">
+          <div class="accordion-header">
+            <button
+              type="button"
+              class="accordion-trigger"
+              :aria-expanded="activeStep === 1"
+              aria-controls="step-panel-1"
+              id="step-trigger-1"
+              @click="setActiveStep(1)"
+            >
+              <div class="accordion-title-wrap">
+                <span class="accordion-step-num">1</span>
+                <div>
+                  <span class="accordion-title">Equipment Profile</span>
+                  <span class="accordion-subtitle">Hardware capacities, vessel limits & fixed losses</span>
+                </div>
+              </div>
+              <div class="accordion-controls">
+                <span class="accordion-status-pill" :class="getStepStatusClass(1)" x-text="getStepStatusLabel(1)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 1 ? '▲' : '▼'"></span>
+              </div>
+            </button>
+          </div>
+
+          <div
+            id="step-panel-1"
+            role="region"
+            aria-labelledby="step-trigger-1"
+            x-show="activeStep === 1"
+            x-collapse
+            class="step-card-body"
+          >
+            <!-- Profile Preset Selector & Drawer Trigger -->
+            <div class="preset-toolbar">
+              <div class="preset-toolbar-select-group">
+                <label for="profile-selector" class="form-label text-xs">Hardware Preset Library</label>
+                <div class="preset-select-controls">
+                  <select
+                    id="profile-selector"
+                    class="form-select text-sm"
+                    x-model="manifest.equipment_profile_id"
+                    @change="selectProfile($event.target.value)"
+                  >
+                    <option value="">-- Custom Profile --</option>
+                    <template x-for="p in $store.equipment.profiles" :key="p.id">
+                      <option :value="p.id" x-text="p.name"></option>
+                    </template>
+                  </select>
+                  <template x-if="isCustomModified">
+                    <span class="status-badge status-badge-warning text-xs">Custom Modified</span>
+                  </template>
+                </div>
+              </div>
+              <div>
+                <button
+                  type="button"
+                  @click="openProfileDrawer()"
+                  class="btn btn-secondary text-xs"
+                >
+                  Manage Profiles (CRUD)
+                </button>
+              </div>
+            </div>
+
+            <!-- 10 Equipment Parameters Grid -->
+            <div class="step-grid-2col">
+              <!-- Max Kettle Volume -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Max Kettle Volume</span>
+                  <button type="button" @click="$store.units.toggleField('volume', 'max_kettle_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('max_kettle_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'max_kettle_volume_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_kettle_volume_l, 'max_kettle_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_kettle_volume_l', $event.target.value, 'max_kettle_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Boil kettle brim capacity</span>
+              </div>
+
+              <!-- Max Mash Tun Volume -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Max Mash Tun Volume</span>
+                  <button type="button" @click="$store.units.toggleField('volume', 'max_mash_tun_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('max_mash_tun_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'max_mash_tun_volume_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_mash_tun_volume_l, 'max_mash_tun_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_mash_tun_volume_l', $event.target.value, 'max_mash_tun_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Mash vessel overflow limit</span>
+              </div>
+
+              <!-- Max HLT Volume -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Max HLT Volume</span>
+                  <button type="button" @click="$store.units.toggleField('volume', 'max_hlt_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('max_hlt_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'max_hlt_volume_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.max_hlt_volume_l, 'max_hlt_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_hlt_volume_l', $event.target.value, 'max_hlt_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Hot Liquor Tank initial fill capacity</span>
+              </div>
+
+              <!-- HLT Min Coil Floor -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>HLT Min Coil Floor</span>
+                  <button type="button" @click="$store.units.toggleField('volume', 'hlt_min_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('hlt_min_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'hlt_min_volume_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.hlt_min_volume_l, 'hlt_min_volume_l')" @input="setVolDisplay(manifest.equipment, 'hlt_min_volume_l', $event.target.value, 'hlt_min_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">HERMS coil submersion floor</span>
+              </div>
+
+              <!-- Mash Dead Space -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Mash Dead Space</span>
+                  <button type="button" @click="$store.units.toggleField('volume', 'mash_dead_space_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('mash_dead_space_l') }" x-text="$store.units.getFieldUnit('volume', 'mash_dead_space_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.mash_dead_space_l, 'mash_dead_space_l')" @input="setVolDisplay(manifest.equipment, 'mash_dead_space_l', $event.target.value, 'mash_dead_space_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Unrecoverable mash plumbing loss</span>
+              </div>
+
+              <!-- Trub Loss -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Trub Loss</span>
+                  <button type="button" @click="$store.units.toggleField('volume', 'trub_loss_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('trub_loss_l') }" x-text="$store.units.getFieldUnit('volume', 'trub_loss_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.trub_loss_l, 'trub_loss_l')" @input="setVolDisplay(manifest.equipment, 'trub_loss_l', $event.target.value, 'trub_loss_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Kettle bottom sediment loss</span>
+              </div>
+
+              <!-- Boil-Off Rate -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Boil-Off Rate (/hr)</span>
+                  <button type="button" @click="$store.units.toggleField('volume', 'boil_off_rate_l_per_hr')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('boil_off_rate_l_per_hr') }" x-text="$store.units.getFieldUnit('volume', 'boil_off_rate_l_per_hr')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.1" min="0.1" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'boil_off_rate_l_per_hr')" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value, 'boil_off_rate_l_per_hr'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Evaporation rate per hour</span>
+              </div>
+
+              <!-- Grain Absorption Factor -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Grain Absorption Factor</span>
+                  <button type="button" @click="$store.units.toggleCompound('grain_absorption')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('grain_absorption') }" x-text="$store.units.getFieldUnit('compound', 'grain_absorption')" title="Click to toggle compound unit"></button>
+                </label>
+                <input type="number" step="0.01" min="0.5" max="3.0" :value="compoundDisplay(manifest.equipment.grain_absorption_factor_l_per_kg, 'grain_absorption')" @input="setCompoundDisplay(manifest.equipment, 'grain_absorption_factor_l_per_kg', $event.target.value, 'grain_absorption'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Wort retained per unit mass of dry malt</span>
+              </div>
+
+              <!-- Conversion Efficiency -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Conversion Efficiency (Ce)</span>
+                  <button type="button" @click="$store.units.togglePercentage('conversion_efficiency')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('conversion_efficiency') }" x-text="$store.units.getFieldUnit('percentage', 'conversion_efficiency')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="1" min="0" max="100" :value="percentageDisplay(manifest.equipment.conversion_efficiency, 'conversion_efficiency')" @input="setPercentageDisplay(manifest.equipment, 'conversion_efficiency', $event.target.value, 'conversion_efficiency'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Starch conversion efficiency</span>
+              </div>
+
+              <!-- Cooling Shrinkage -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Cooling Shrinkage</span>
+                  <button type="button" @click="$store.units.togglePercentage('shrinkage_pct')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('shrinkage_pct') }" x-text="$store.units.getFieldUnit('percentage', 'shrinkage_pct')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.5" min="0" max="20" :value="percentageDisplay(manifest.equipment.shrinkage_pct, 'shrinkage_pct')" @input="setPercentageDisplay(manifest.equipment, 'shrinkage_pct', $event.target.value, 'shrinkage_pct'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Hot-to-cold contraction factor</span>
+              </div>
+            </div>
+
+            <!-- Synthesized Output Summary Card -->
+            <div class="synthesized-card">
+              <div class="synthesized-header">
+                <span class="synthesized-title">Synthesized Hardware Summary</span>
+                <span class="status-badge status-badge-success text-xs">DAG Entry Validated</span>
+              </div>
+              <div class="metric-strip">
+                <div class="metric-cell">
+                  <span class="metric-cell-label">Kettle Limit</span>
+                  <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.max_kettle_volume_l) + ' ' + $store.units.preferences.volume.unit"></span>
+                </div>
+                <div class="metric-cell">
+                  <span class="metric-cell-label">Fixed Losses</span>
+                  <span class="metric-cell-val" x-text="volDisplay((parseFloat(manifest.equipment.mash_dead_space_l) || 0) + (parseFloat(manifest.equipment.trub_loss_l) || 0)) + ' ' + $store.units.preferences.volume.unit"></span>
+                </div>
+                <div class="metric-cell">
+                  <span class="metric-cell-label">Boil-Off Rate</span>
+                  <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.boil_off_rate_l_per_hr) + ' ' + $store.units.preferences.volume.unit + '/hr'"></span>
+                </div>
+                <div class="metric-cell">
+                  <span class="metric-cell-label">HERMS Coil Floor</span>
+                  <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.hlt_min_volume_l) + ' ' + $store.units.preferences.volume.unit"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step Action Button -->
+            <div class="step-actions">
+              <button
+                type="button"
+                @click="markStepComplete(1)"
+                class="btn btn-primary"
+              >
+                Next: Batch Metadata →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Batch Metadata Accordion Card -->
+        <div class="step-card" :class="{ 'is-active': activeStep === 2, 'is-completed': completedSteps.includes(2) }">
+          <div class="accordion-header">
+            <button
+              type="button"
+              class="accordion-trigger"
+              :aria-expanded="activeStep === 2"
+              aria-controls="step-panel-2"
+              id="step-trigger-2"
+              @click="setActiveStep(2)"
+            >
+              <div class="accordion-title-wrap">
+                <span class="accordion-step-num">2</span>
+                <div>
+                  <span class="accordion-title">Batch Metadata & Targets</span>
+                  <span class="accordion-subtitle">Recipe name, target volume, original gravity & boil duration</span>
+                </div>
+              </div>
+              <div class="accordion-controls">
+                <span class="accordion-status-pill" :class="getStepStatusClass(2)" x-text="getStepStatusLabel(2)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 2 ? '▲' : '▼'"></span>
+              </div>
+            </button>
+          </div>
+
+          <div
+            id="step-panel-2"
+            role="region"
+            aria-labelledby="step-trigger-2"
+            x-show="activeStep === 2"
+            x-collapse
+            class="step-card-body"
+          >
+            <!-- Batch Metadata & Boil Solver -->
+            <div class="step-card-content">
+              <!-- Batch Name -->
+              <div class="form-group">
+                <label class="form-label">Batch Name</label>
+                <input type="text" x-model="manifest.name" @input="onBatchMetaChange" class="form-input" placeholder="e.g. West Coast IPA 2026" required />
+                <span class="form-hint">Unique identifier for this brewing recipe</span>
+              </div>
+
+              <!-- Solver Mode Toggle -->
+              <div class="form-group">
+                <div class="solver-mode-header">
+                  <label class="form-label">Boil Solver Mode</label>
+                  <span class="solver-mode-hint" x-text="manifest.boil_solver_mode === 'option_b' ? 'Fixing Rate → Solving Post-Vol' : 'Fixing Post-Vol → Solving Rate'"></span>
+                </div>
+                <div class="segmented-control">
+                  <button
+                    type="button"
+                    @click="setBoilSolverMode('option_b')"
+                    class="segmented-control-item"
+                    :class="{ 'is-active': manifest.boil_solver_mode === 'option_b' }"
+                  >
+                    Hardware-Driven (Option B)
+                  </button>
+                  <button
+                    type="button"
+                    @click="setBoilSolverMode('option_a')"
+                    class="segmented-control-item"
+                    :class="{ 'is-active': manifest.boil_solver_mode === 'option_a' }"
+                  >
+                    Target-Driven (Option A)
+                  </button>
+                </div>
+              </div>
+
+              <div class="step-grid-2col">
+                <!-- Pre-Boil Volume -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Pre-Boil Volume</span>
+                    <button type="button" @click="$store.units.toggleField('volume', 'preboil_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('preboil_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'preboil_volume_l')" title="Click to toggle unit"></button>
+                  </label>
+                  <input type="number" step="0.5" min="1" :value="volDisplay(manifest.preboil_volume_l, 'preboil_volume_l')" @input="setVolDisplay(manifest, 'preboil_volume_l', $event.target.value, 'preboil_volume_l')" class="form-input tabular-nums" required />
+                  <span class="form-hint">Total wort collected in kettle prior to boil</span>
+                </div>
+
+                <!-- Pre-Boil Gravity -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Pre-Boil Gravity</span>
+                    <button type="button" @click="$store.units.toggleField('gravity', 'preboil_gravity')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('preboil_gravity') }" x-text="$store.units.getFieldUnit('gravity', 'preboil_gravity')" title="Click to toggle gravity unit"></button>
+                  </label>
+                  <input type="number" step="0.001" min="1.000" max="1.200" :value="gravityDisplay(manifest.preboil_gravity, 'preboil_gravity')" @input="setGravityDisplay(manifest, 'preboil_gravity', $event.target.value, 'preboil_gravity')" class="form-input tabular-nums" required />
+                  <span class="form-hint">Specific gravity or Plato measured before boil</span>
+                </div>
+
+                <!-- Boil Time -->
+                <div class="form-group">
+                  <label class="form-label">Boil Time (min)</label>
+                  <input type="number" step="5" min="0" max="180" x-model.number="manifest.boil_time_min" @input="onBatchMetaChange" class="form-input tabular-nums" required />
+                  <span class="form-hint">Duration of wort boil</span>
+                </div>
+
+                <!-- Boil-Off Rate -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Boil-Off Rate</span>
+                    <button type="button" @click="$store.units.toggleField('volume', 'boil_off_rate_l_per_hr')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('boil_off_rate_l_per_hr') }" x-text="$store.units.getFieldUnit('volume', 'boil_off_rate_l_per_hr') + '/hr'" title="Click to toggle unit"></button>
+                  </label>
+                  <input type="number" step="0.1" min="0.1" max="15" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'boil_off_rate_l_per_hr')" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value, 'boil_off_rate_l_per_hr')" :disabled="manifest.boil_solver_mode === 'option_a'" class="form-input tabular-nums" required />
+                  <span class="form-hint" x-text="manifest.boil_solver_mode === 'option_a' ? 'Solved automatically from pre/post volumes' : 'Evaporation rate per hour (PID duty cycle)'"></span>
+                </div>
+
+                <!-- Post-Boil Volume -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Post-Boil Volume</span>
+                    <button type="button" @click="$store.units.toggleField('volume', 'postboil_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('postboil_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'postboil_volume_l')" title="Click to toggle unit"></button>
+                  </label>
+                  <input type="number" step="0.5" min="1" :value="volDisplay(manifest.postboil_volume_l, 'postboil_volume_l')" @input="setVolDisplay(manifest, 'postboil_volume_l', $event.target.value, 'postboil_volume_l')" :disabled="manifest.boil_solver_mode === 'option_b'" class="form-input tabular-nums" required />
+                  <span class="form-hint" x-text="manifest.boil_solver_mode === 'option_b' ? 'Derived from pre-boil volume minus boil-off' : 'Hot wort volume at flameout'"></span>
+                </div>
+
+                <!-- Target Packaged Volume (Result) -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Target Packaged Volume</span>
+                    <button type="button" @click="$store.units.toggleField('volume', 'target_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('target_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'target_volume_l')" title="Click to toggle unit"></button>
+                  </label>
+                  <input type="number" step="0.5" min="1" :value="volDisplay(manifest.target_volume_l, 'target_volume_l')" readonly disabled class="form-input tabular-nums" />
+                  <span class="form-hint">Derived: Post-boil minus trub loss & cooling shrinkage</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Synthesized Output Summary Card -->
+            <div class="synthesized-card">
+              <div class="synthesized-header">
+                <span class="synthesized-title">Synthesized Target Kettle Extract (S<sub>kettle</sub>)</span>
+                <span class="status-badge status-badge-success text-xs">Mass Balance Validated</span>
+              </div>
+              <div class="metric-strip">
+                <div class="metric-cell">
+                  <span class="metric-cell-label">Pre-Boil Vol / SG</span>
+                  <span class="metric-cell-val" x-text="manifest.preboil_volume_l + ' L (' + manifest.preboil_gravity + ')'"></span>
+                </div>
+                <div class="metric-cell">
+                  <span class="metric-cell-label">Post-Boil Vol / OG</span>
+                  <span class="metric-cell-val" x-text="manifest.postboil_volume_l + ' L (' + manifest.target_og + ')'"></span>
+                </div>
+                <div class="metric-cell">
+                  <span class="metric-cell-label">Target Packaged Vol</span>
+                  <span class="metric-cell-val" x-text="targetVolumeDisplay + ' ' + $store.units.preferences.volume.unit"></span>
+                </div>
+                <div class="metric-cell">
+                  <span class="metric-cell-label">Target Total Extract</span>
+                  <span class="metric-cell-val" x-text="targetKettleExtract + ' L·°'"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step Action Button -->
+            <div class="step-actions">
+              <button
+                type="button"
+                @click="markStepComplete(2)"
+                class="btn btn-primary"
+              >
+                Next: Grain Bill →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Fermentables (Grain Bill & Hamilton Proportional Allocator) -->
+        <div class="step-card" :class="{ 'is-active': activeStep === 3, 'is-completed': completedSteps.includes(3) }">
+          <div class="accordion-header">
+            <button
+              type="button"
+              class="accordion-trigger"
+              :aria-expanded="activeStep === 3"
+              aria-controls="step-panel-3"
+              id="step-trigger-3"
+              @click="setActiveStep(3)"
+            >
+              <div class="accordion-title-wrap">
+                <span class="accordion-step-num">3</span>
+                <div>
+                  <span class="accordion-title">Fermentables & Grist Bill</span>
+                  <span class="accordion-subtitle">Major structural malts (proportional parts) & trace additions</span>
+                </div>
+              </div>
+              <div class="accordion-controls">
+                <span class="status-badge text-xs" :class="$store.maltGrid.validationStatus.class" x-text="$store.maltGrid.validationStatus.label"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(1)" x-text="getStepStatusLabel(1)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 3 ? '▲' : '▼'"></span>
+              </div>
+            </button>
+          </div>
+
+          <div
+            id="step-panel-3"
+            role="region"
+            aria-labelledby="step-trigger-3"
+            x-show="activeStep === 3"
+            x-collapse
+            class="step-card-body"
+          >
+            <!-- Collapsed Static Card Summary Table -->
+            <div class="step-card-content">
+              <div class="table-header-toolbar">
+                <div>
+                  <h3 class="modal-drawer-title">Major Grist Contributors</h3>
+                  <p class="table-header-meta">Normalized via Hamilton Largest Remainder algorithm (summing to 100.0%)</p>
+                </div>
+                <button
+                  type="button"
+                  @click="$store.maltGrid.openModal()"
+                  class="btn btn-primary text-xs"
+                >
+                  <span>Configure Malts ⚙</span>
+                </button>
+              </div>
+
+              <!-- Summary Table -->
+              <div class="data-table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Malt Name</th>
+                      <th>Category</th>
+                      <th class="align-right">Parts</th>
+                      <th class="align-right">Malt %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="row in $store.maltGrid.majorMalts" :key="row.row_id">
+                      <tr>
+                        <td>
+                          <span class="font-medium" x-text="row.name"></span>
+                          <template x-if="row.is_custom">
+                            <span class="status-badge status-badge-info text-nano">Custom</span>
+                          </template>
+                        </td>
+                        <td x-text="row.category"></td>
+                        <td class="align-right tabular-nums" x-text="row.parts"></td>
+                        <td class="align-right tabular-nums font-bold" :class="$store.maltGrid.isTrace(row.pct) ? 'table-pct-value is-trace' : 'table-pct-value'" x-text="row.pct.toFixed(1) + '%'"></td>
+                      </tr>
+                    </template>
+                    <template x-if="$store.maltGrid.majorMalts.length === 0">
+                      <tr>
+                        <td colspan="4" class="table-empty-cell">
+                          No malts added yet. Click 'Configure Malts' to build your grain bill.
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Bottom Summary Footer Card -->
+              <div class="card" style="margin-top: var(--space-4); padding: var(--space-4); background-color: var(--sys-surface-subtle);">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4);">
+                  <div style="display: flex; align-items: center; gap: var(--space-6);">
+                    <div>
+                      <span class="text-xs text-muted block">Weighted Grist Color</span>
+                      <span class="text-base font-bold tabular-nums" x-text="$store.maltGrid.weightedColorDisplay + ' ' + $store.maltGrid.weightedColorUnit"></span>
+                    </div>
+                    <div>
+                      <span class="text-xs text-muted block">Est. Grist Extract Potential</span>
+                      <span class="text-base font-bold tabular-nums" x-text="$store.maltGrid.weightedPotentialDisplay + ' ' + $store.maltGrid.weightedPotentialUnit"></span>
+                    </div>
+                  </div>
+                  <div class="text-xs text-muted" style="max-width: 28rem; line-height: var(--line-height-snug);">
+                    * Subject to change with trace additions, mash efficiency, and extraction adjustments.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step Action Button -->
+            <div class="step-actions">
+              <button
+                type="button"
+                @click="markStepComplete(3)"
+                class="btn btn-primary"
+                :disabled="$store.maltGrid.validationStatus.type !== 'balanced'"
+              >
+                Next: Mash Profile →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Editor Workspace (Popped Out) -->
+        <div
+          x-show="$store.maltGrid.modalOpen"
+          x-transition.opacity.duration.200ms
+          class="modal-backdrop"
+          style="display: none;"
+          @keydown.escape.window="$store.maltGrid.cancelModal()"
+        >
+          <div
+            @click.outside=""
+            class="modal-dialog modal-dialog-workspace"
+          >
+            <!-- Modal Header -->
+            <div class="modal-workspace-header">
+              <div class="modal-workspace-header-title">
+                <h2 class="modal-workspace-title">Grain Bill Editor (Major Contributors)</h2>
+                <span class="status-badge text-xs" :class="$store.maltGrid.validationStatus.class" x-text="$store.maltGrid.validationStatus.label"></span>
+              </div>
+              <div class="modal-workspace-header-actions">
+                <button
+                  type="button"
+                  @click="$store.maltGrid.cancelModal()"
+                  class="btn btn-secondary text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  @click="$store.maltGrid.saveModal()"
+                  class="btn btn-primary text-xs"
+                  :disabled="$store.maltGrid.validationStatus.type !== 'balanced'"
+                >
+                  Save & Apply
+                </button>
+              </div>
+            </div>
+
+            <!-- Modal Body (2-Zone Spatial Layout) -->
+            <div class="modal-workspace-body">
+              <!-- Left/Center: Main Grid Workspace -->
+              <div class="modal-workspace-main">
+                <div class="table-header-toolbar">
+                  <span class="table-header-meta">Enter relative proportional parts. Hamilton algorithm normalizes total to exactly 100.0%.</span>
+                  <button
+                    type="button"
+                    @click="$store.maltGrid.openSearchDrawer()"
+                    class="btn btn-primary text-xs"
+                  >
+                    <span>+ Add Malt from Catalog</span>
+                  </button>
+                </div>
+
+                <!-- Fixed-Layout Data Grid (7 Columns) -->
+                <div class="data-table-container">
+                  <table class="data-table is-fixed">
+                    <colgroup>
+                      <col style="width: 28%;">
+                      <col style="width: 14%;">
+                      <col style="width: 12%;">
+                      <col style="width: 12%;">
+                      <col style="width: 12%;">
+                      <col style="width: 12%;">
+                      <col style="width: 10%;">
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th>Malt Name</th>
+                        <th>Category</th>
+                        <th class="text-right" x-text="$store.maltGrid.weightedColorUnit"></th>
+                        <th class="text-right" x-text="$store.maltGrid.weightedPotentialUnit"></th>
+                        <th class="text-right">Parts</th>
+                        <th class="text-right">Malt %</th>
+                        <th class="text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="row in $store.maltGrid.draftMajorMalts" :key="row.row_id">
+                        <tr :class="{ 'is-selected': $store.maltGrid.activeRowId === row.row_id }">
+                          <td class="font-sans font-medium text-primary truncate">
+                            <span x-text="row.name"></span>
+                            <template x-if="row.is_custom">
+                              <span class="status-badge status-badge-info text-nano">Custom</span>
+                            </template>
+                          </td>
+                          <td class="font-sans text-secondary text-micro truncate" x-text="row.category"></td>
+                          <td class="text-right tabular-nums text-secondary" x-text="$store.maltGrid.maltColorDisplay(row)"></td>
+                          <td class="text-right tabular-nums text-secondary" x-text="$store.maltGrid.maltPotentialDisplay(row)"></td>
+                          <td class="text-right">
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              :value="row.parts"
+                              @input="$store.maltGrid.updateParts(row.row_id, $event.target.value)"
+                              class="form-input table-input-parts"
+                            />
+                          </td>
+                          <td class="align-right">
+                            <div class="table-pct-cell">
+                              <span
+                                class="table-pct-value"
+                                :class="{ 'is-trace': $store.maltGrid.isTrace(row.pct) }"
+                                x-text="row.pct.toFixed(1) + '%'"
+                              ></span>
+                              <template x-if="$store.maltGrid.isTrace(row.pct)">
+                                <span class="table-pct-badge is-trace"><span>✗</span> <span>Trace (&lt;2%)</span></span>
+                              </template>
+                              <template x-if="!$store.maltGrid.isTrace(row.pct)">
+                                <span class="table-pct-badge is-valid"><span>✓</span></span>
+                              </template>
+                            </div>
+                          </td>
+                          <td class="align-right">
+                            <div class="table-action-cell">
+                              <button
+                                type="button"
+                                @click="$store.maltGrid.cloneAndEdit(row.row_id)"
+                                class="btn-action-icon"
+                                title="Clone & Edit"
+                              >
+                                <span>📋</span>
+                              </button>
+                              <button
+                                type="button"
+                                @click="$store.maltGrid.removeMajorMalt(row.row_id)"
+                                class="btn-action-icon btn-action-danger"
+                                title="Remove Malt"
+                              >
+                                <span>🗑</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </template>
+                      <template x-if="$store.maltGrid.draftMajorMalts.length === 0">
+                        <tr>
+                          <td colspan="7" class="table-empty-cell">
+                            No malts in grain bill draft. Click '+ Add Malt from Catalog' to begin.
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Slide-Over Drawer Scrim -->
+              <div
+                x-show="$store.maltGrid.drawerMode !== null"
+                x-transition.opacity.duration.200ms
+                class="modal-drawer-scrim"
+                style="display: none;"
+                @click="$store.maltGrid.closeDrawer()"
+              ></div>
+
+              <!-- Right: Contextual Slide-Out Utility Drawer -->
+              <div
+                x-show="$store.maltGrid.drawerMode !== null"
+                x-transition:enter="drawer-slide-enter"
+                x-transition:enter-start="drawer-slide-hidden"
+                x-transition:enter-end="drawer-slide-visible"
+                x-transition:leave="drawer-slide-leave"
+                x-transition:leave-start="drawer-slide-visible"
+                x-transition:leave-end="drawer-slide-hidden"
+                class="modal-workspace-drawer"
+                style="display: none;"
+                @keydown.escape.window="$store.maltGrid.closeDrawer()"
+              >
+                <!-- Drawer Header -->
+                <div class="modal-drawer-header">
+                  <h3 class="modal-drawer-title" x-text="$store.maltGrid.drawerMode === 'search' ? 'Malt Catalog Browser' : 'Row Inspector'"></h3>
+                  <button type="button" @click="$store.maltGrid.closeDrawer()" class="btn-close text-xs">✕</button>
+                </div>
+
+                <!-- Drawer Body -->
+                <div class="modal-drawer-body">
+                  <!-- Search / Catalog Mode -->
+                  <template x-if="$store.maltGrid.drawerMode === 'search'">
+                    <div class="catalog-drawer-list">
+                      <span class="table-header-meta">Select a malt from the catalog cache to add to your grist.</span>
+                      
+                      <!-- Real-time Full-Text Search Input -->
+                      <div class="catalog-search-wrapper" style="position: relative; margin-top: var(--space-3); margin-bottom: var(--space-2);">
+                        <input
+                          type="text"
+                          x-model.debounce.50ms="$store.maltGrid.catalogSearchQuery"
+                          placeholder="Search malts by name or notes..."
+                          class="form-input text-xs"
+                          style="padding-right: var(--space-8);"
+                        />
+                        <button
+                          type="button"
+                          x-show="$store.maltGrid.catalogSearchQuery"
+                          @click="$store.maltGrid.clearSearchQuery()"
+                          class="catalog-search-clear"
+                          title="Clear search"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <!-- Category Screening Toggle Pills -->
+                      <div class="filter-pills-container">
+                        <button
+                          type="button"
+                          class="filter-pill"
+                          :class="{ 'is-active': $store.maltGrid.isCategorySelected('BASE') }"
+                          :aria-pressed="$store.maltGrid.isCategorySelected('BASE').toString()"
+                          @click="$store.maltGrid.toggleCategory('BASE')"
+                        >
+                          Base
+                        </button>
+                        <button
+                          type="button"
+                          class="filter-pill"
+                          :class="{ 'is-active': $store.maltGrid.isCategorySelected('CRYSTAL') }"
+                          :aria-pressed="$store.maltGrid.isCategorySelected('CRYSTAL').toString()"
+                          @click="$store.maltGrid.toggleCategory('CRYSTAL')"
+                        >
+                          Crystal
+                        </button>
+                        <button
+                          type="button"
+                          class="filter-pill"
+                          :class="{ 'is-active': $store.maltGrid.isCategorySelected('ROASTED') }"
+                          :aria-pressed="$store.maltGrid.isCategorySelected('ROASTED').toString()"
+                          @click="$store.maltGrid.toggleCategory('ROASTED')"
+                        >
+                          Roasted
+                        </button>
+                        <button
+                          type="button"
+                          class="filter-pill"
+                          :class="{ 'is-active': $store.maltGrid.isCategorySelected('ACID') }"
+                          :aria-pressed="$store.maltGrid.isCategorySelected('ACID').toString()"
+                          @click="$store.maltGrid.toggleCategory('ACID')"
+                        >
+                          Acid
+                        </button>
+                      </div>
+
+                      <!-- Live Result Counter -->
+                      <div class="catalog-result-counter text-xs" aria-live="polite" x-text="`Showing ${$store.maltGrid.catalogResultCount} available malts`"></div>
+
+                      <div class="catalog-drawer-list">
+                        <template x-for="item in $store.maltGrid.filteredCatalog" :key="item.id">
+                          <div class="catalog-item-card">
+                            <div>
+                              <div class="catalog-item-name" x-text="item.name"></div>
+                              <div class="catalog-item-meta" x-text="item.category + ' • SRM: ' + item.color_srm + (item.notes ? ' • ' + item.notes : '')"></div>
+                            </div>
+                            <button
+                              type="button"
+                              @click="$store.maltGrid.addMajorMalt(item); $store.maltGrid.closeDrawer();"
+                              class="btn btn-primary text-xs"
+                            >
+                              + Add
+                            </button>
+                          </div>
+                        </template>
+                        <template x-if="!$store.catalog.loaded">
+                          <div class="table-empty-cell">
+                            Loading malt catalog...
+                          </div>
+                        </template>
+                        <template x-if="$store.catalog.loaded && $store.maltGrid.filteredCatalog.length === 0">
+                          <div class="table-empty-cell">
+                            No matching malts found. Adjust search query or category filters.
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Row Inspector Mode -->
+                  <template x-if="$store.maltGrid.drawerMode === 'inspect'">
+                    <div class="inspector-form">
+                      <template x-if="$store.maltGrid.draftMajorMalts.find(r => r.row_id === $store.maltGrid.activeRowId)">
+                        <div class="inspector-form" x-data="{ row: $store.maltGrid.draftMajorMalts.find(r => r.row_id === $store.maltGrid.activeRowId) }">
+                          <div class="form-group">
+                            <label class="form-label text-xs">Malt Name</label>
+                            <input type="text" x-model="row.name" class="form-input text-xs" />
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label text-xs">Category</label>
+                            <select x-model="row.category" class="form-select text-xs">
+                              <option value="BASE">BASE</option>
+                              <option value="CRYSTAL">CRYSTAL</option>
+                              <option value="ROASTED">ROASTED</option>
+                              <option value="SPECIALTY">SPECIALTY</option>
+                              <option value="ADJUNCT">ADJUNCT</option>
+                            </select>
+                          </div>
+                          <div class="inspector-grid-2col">
+                            <div class="form-group">
+                              <label class="form-label text-xs">Extract Yield (%)</label>
+                              <input type="number" step="0.01" min="0.5" max="1.0" x-model.number="row.potential_fraction" class="form-input text-xs font-mono" />
+                            </div>
+                            <div class="form-group">
+                              <label class="form-label text-xs">Color (SRM)</label>
+                              <input type="number" step="0.1" min="0" x-model.number="row.color_srm" class="form-input text-xs font-mono" />
+                            </div>
+                            <div class="form-group">
+                              <label class="form-label text-xs">Moisture (%)</label>
+                              <input type="number" step="0.005" min="0" max="0.2" x-model.number="row.moisture_pct" class="form-input text-xs font-mono" />
+                            </div>
+                            <div class="form-group">
+                              <label class="form-label text-xs">Distilled pH</label>
+                              <input type="number" step="0.01" min="4.0" max="7.0" x-model.number="row.di_ph" class="form-input text-xs font-mono" />
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label text-xs">Notes / Supplier Info</label>
+                            <textarea x-model="row.notes" class="form-input text-xs" rows="3"></textarea>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide-Over CRUD Drawer for Equipment Profiles -->
+        <div
+          x-show="showProfileDrawer"
+          x-transition.opacity
+          class="drawer-backdrop"
+          style="display: none;"
+          @keydown.escape.window="closeProfileDrawer()"
+        >
+          <div
+            @click.outside="closeProfileDrawer()"
+            class="drawer-panel"
+          >
+            <div class="drawer-header">
+              <h2 class="drawer-title" x-text="drawerMode === 'list' ? 'Equipment Profile Library' : (drawerMode === 'create' ? 'Create Custom Profile' : 'Edit Profile')"></h2>
+              <button type="button" @click="closeProfileDrawer()" class="btn-close">✕</button>
+            </div>
+
+            <div class="drawer-body">
+              <template x-if="drawerError">
+                <div class="panel-error text-xs" x-text="drawerError"></div>
+              </template>
+
+              <!-- List Mode -->
+              <template x-if="drawerMode === 'list'">
+                <div class="profile-drawer-list-view">
+                  <div class="table-header-toolbar">
+                    <span class="text-xs text-muted">Select preset or create custom hardware profile.</span>
+                    <button type="button" @click="startCreateProfile()" class="btn btn-primary text-xs">+ New Profile</button>
+                  </div>
+                  <div class="profile-roster">
+                    <template x-for="p in $store.equipment.profiles" :key="p.id">
+                      <div class="profile-card-item" :class="{ 'is-selected': manifest.equipment_profile_id === p.id }">
+                        <div>
+                          <div class="profile-card-header">
+                            <span x-text="p.name"></span>
+                            <template x-if="p.is_custom">
+                              <span class="status-badge status-badge-info text-nano">Custom</span>
+                            </template>
+                          </div>
+                          <div class="profile-card-meta" x-text="p.description || 'No description'"></div>
+                        </div>
+                        <div class="profile-card-actions">
+                          <button type="button" @click="selectProfile(p.id); closeProfileDrawer();" class="btn btn-secondary text-xs">Load</button>
+                          <template x-if="p.is_custom">
+                            <div class="profile-card-custom-actions">
+                              <button type="button" @click="editProfile(p)" class="btn btn-secondary text-xs">Edit</button>
+                              <button type="button" @click="removeCustomProfile(p.id)" class="btn btn-danger-outline text-xs">Delete</button>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Create / Edit Form Mode -->
+              <template x-if="drawerMode === 'create' || drawerMode === 'edit'">
+                <form @submit.prevent="submitDrawerProfile()" class="profile-drawer-form">
+                  <div class="form-group">
+                    <label class="form-label">Profile Identifier (Slug)</label>
+                    <input type="text" x-model="drawerForm.id" :disabled="drawerMode === 'edit'" class="form-input" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Profile Name</label>
+                    <input type="text" x-model="drawerForm.name" class="form-input" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea x-model="drawerForm.description" class="form-input" rows="2"></textarea>
+                  </div>
+                  <div class="step-grid-2col">
+                    <div class="form-group">
+                      <label class="form-label">Max Kettle (L)</label>
+                      <input type="number" step="0.5" x-model.number="drawerForm.max_kettle_volume_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Max Mash Tun (L)</label>
+                      <input type="number" step="0.5" x-model.number="drawerForm.max_mash_tun_volume_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Max HLT (L)</label>
+                      <input type="number" step="0.5" x-model.number="drawerForm.max_hlt_volume_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">HLT Coil Floor (L)</label>
+                      <input type="number" step="0.5" x-model.number="drawerForm.hlt_min_volume_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Mash Dead Space (L)</label>
+                      <input type="number" step="0.1" x-model.number="drawerForm.mash_dead_space_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Trub Loss (L)</label>
+                      <input type="number" step="0.1" x-model.number="drawerForm.trub_loss_l" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Boil-Off (L/hr)</label>
+                      <input type="number" step="0.1" x-model.number="drawerForm.boil_off_rate_l_per_hr" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Grain Absorption (L/kg)</label>
+                      <input type="number" step="0.01" x-model.number="drawerForm.grain_absorption_factor_l_per_kg" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Conversion Efficiency (Ce)</label>
+                      <input type="number" step="0.01" x-model.number="drawerForm.conversion_efficiency" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Shrinkage (%)</label>
+                      <input type="number" step="0.005" x-model.number="drawerForm.shrinkage_pct" class="form-input" required />
+                    </div>
+                  </div>
+
+                  <div class="drawer-footer-actions">
+                    <button type="button" @click="drawerMode = 'list'" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Profile</button>
+                  </div>
+                </form>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Global Toast Notification Container -->
+  <div class="toast-container">
+    <template x-for="toast in $store.ui.toasts" :key="toast.id">
+      <div
+        x-transition
+        class="toast"
+        :class="toast.type === 'success' ? 'toast-success' : 
+                toast.type === 'error' ? 'toast-error' : 
+                'toast-info'"
+      >
+        <span x-text="toast.message"></span>
+        <button @click="$store.ui.remove(toast.id)" class="toast-close" aria-label="Close notification">✕</button>
+      </div>
+    </template>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div>
+      Decoupled SPA / Headless FastAPI Architecture
+    </div>
+  </footer>
+
+  <!-- Option C Custom Override Prompt Modal -->
+  <div
+    x-show="$store.units.promptModalOpen"
+    x-transition.opacity.duration.200ms
+    class="modal-backdrop"
+    style="display: none;"
+    @keydown.escape.window="$store.units.promptModalOpen = false"
+  >
+    <div
+      @click.outside="$store.units.promptModalOpen = false"
+      class="modal-dialog"
+    >
+      <div class="modal-header">
+        <h2 class="modal-title">Custom Unit Overrides Detected</h2>
+        <button
+          type="button"
+          @click="$store.units.promptModalOpen = false"
+          class="btn-close"
+          aria-label="Close modal"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>You have active custom unit overrides for specific fields in your recipe. How would you like to apply the <strong x-text="$store.units.pendingPreset"></strong> preset?</p>
+        <div class="prompt-choice-list">
+          <button
+            type="button"
+            @click="$store.units.applyPreset($store.units.pendingPreset, true)"
+            class="btn btn-primary btn-prompt-choice"
+          >
+            <div>
+              <strong>Apply to All Fields</strong>
+              <span class="btn-prompt-choice-desc">Overwrites all custom unit choices with preset defaults. Warning: Previous custom overrides will be permanently lost.</span>
+            </div>
+          </button>
+          <button
+            type="button"
+            @click="$store.units.applyPreset($store.units.pendingPreset, false)"
+            class="btn btn-secondary btn-prompt-choice"
+          >
+            <div>
+              <strong>Update Unmodified Only</strong>
+              <span class="btn-prompt-choice-desc">Applies preset defaults only to fields that were not customized.</span>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          @click="$store.units.promptModalOpen = false"
+          class="btn btn-secondary"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

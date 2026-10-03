@@ -1,195 +1,222 @@
-# Full-Stack Mono-Repo: FastAPI + Firebase (Cloud Run MWE)
+# Full-Stack Monorepo: Vite Frontend + FastAPI Backend
 
-A minimal working example and low-friction cloneable template for building applications with a static frontend and a Python backend.
+This repository is a modern template for building applications with a bundled Vite frontend and a FastAPI Python backend, leveraging a monorepo structure for efficient development and management.
 
-This project enforces strict architectural boundaries using Tach and utilizes uv for lightning-fast dependency and environment management.
+## Architecture Overview
 
----
+This project embraces a decoupled, monorepo architecture for enhanced maintainability and scalability:
+
+*   **Frontend:** Built with **Vite** as the development server and build tool, utilizing **npm** (or `pnpm`/`yarn` workspaces) for package management. **Alpine.js** is integrated for reactive UI elements, and the **Firebase Web SDK v10** (modular) is used for client-side Firebase interactions.
+*   **Backend:** Developed with **FastAPI**, a high-performance Python web framework. **`uv`** is employed for lightning-fast package and environment management. **`tach`** enforces strict module boundaries and architectural governance.
+*   **Deployment & Infrastructure:**
+    *   **Firebase Hosting:** Serves the static Vite frontend assets and provides a unified origin. It is configured to proxy API requests (`/api/**`) to the backend.
+    *   **Google Cloud Run:** Hosts the containerized FastAPI backend service, enabling scalable, serverless execution.
+*   **Local Development:** A streamlined workflow using Vite\'s dev server, FastAPI\'s `uvicorn`, and the Firebase Emulators suite, with `firebase.json` configured for local API proxying.
 
 ## Toolchain
 
-* **Frontend:** Vanilla HTML/JS augmented with Alpine.js and HTMX, deployed via Firebase Hosting.
-* **Backend:** Python 3.12+ with FastAPI, deployed via Google Cloud Run.
-* **Authentication:** Firebase Authentication (Google SSO) using short-lived Bearer tokens.
-* **Networking:** Hybrid Single-Origin Pattern via Firebase Hosting rewrites (`/api/**` to Cloud Run in production; dev CORS locally).
-* **Environment Management:** uv (Replaces pip and venv).
-* **Architecture Linting:** Tach (Enforces clean dependency injection and boundaries).
-* **Local Dev:** Firebase Local Emulator Suite (Firestore, Auth, Hosting).
-
----
-
-## Architecture
-
-The backend follows a strict Clean Architecture dependency flow, enforced at the module level:
-`main` (Router) → `auth` (Verification) / `service` (Business Logic) → `repositories` (Data Access) → `schemas` (Data Models)
-
-* **No direct database access** in the service layer.
-* **No external framework imports** in the repository or schema layers.
-* **Authentication isolation:** Token verification is isolated in `app.auth` and injected via FastAPI dependencies in `app.main`.
-* **Dependency Injection** passes verified user context and the database client from `main` downwards.
-* **Boundary Rules:** Custom architecture constraints and module maps are defined locally in `backend/tach.toml`.
-
-### Hybrid Networking Pattern
-* **Production:** Firebase Hosting rewrites `/api/**` to Cloud Run (`api-backend`), providing a unified single-origin domain. CORS is eliminated and all client-side calls use clean relative paths (`/api/...`).
-* **Local Development:** Frontend assets run on `http://127.0.0.1:5000` while FastAPI runs natively on `http://127.0.0.1:8000` with local dev CORS enabled.
-
----
+*   **Frontend:**
+    *   Build Tool: Vite
+    *   Package Manager: npm (or pnpm/yarn workspaces)
+    *   JavaScript Framework: Alpine.js
+    *   Firebase Integration: Firebase Web SDK v10 (modular)
+*   **Backend:**
+    *   Framework: FastAPI (Python)
+    *   Package/Environment Manager: `uv`
+    *   Architecture Governance: `tach`
+    *   Testing: `pytest`
+*   **Infrastructure & Deployment:**
+    *   Hosting: Firebase Hosting
+    *   Backend Compute: Google Cloud Run
+    *   Local Emulation: Firebase Emulator Suite
 
 ## Prerequisites
 
-1. Install uv:
+Before you begin, ensure you have the following installed globally on your system:
+
+1.  **Node.js and npm:** Required for frontend development with Vite. (Install from [nodejs.org](https://nodejs.org/)).
+2.  **Python 3.11+:** For the FastAPI backend. (Install from [python.org](https://www.python.org/)).
+3.  **`uv`:** A fast Python package installer and virtual environment manager.
+    ```bash
     curl -LsSf https://astral.sh/uv/install.sh | sh
-
-2. Install the Firebase CLI:
+    ```
+4.  **Firebase CLI:** For deploying to Firebase Hosting and running local emulators.
+    ```bash
     npm install -g firebase-tools
+    ```
+5.  **Google Cloud CLI (gcloud):** For deploying the backend to Cloud Run.
+    Follow instructions at: [https://cloud.google.com/sdk/docs/install](https://cloud.google.com/sdk/docs/install)
 
-3. Install the Google Cloud CLI (gcloud):
-    Follow instructions at: https://cloud.google.com/sdk/docs/install
+## Local Development Workflow
+
+This setup requires running multiple services concurrently for a seamless development experience.
+
+### 1. Initialize Project & Install Dependencies
+
+Navigate to your project directory.
+
+\`\`\`bash
+# If cloning for the first time:
+# git clone <repository_url>
+# cd <repository_name>
+
+# Install backend dependencies using uv
+cd backend
+uv sync --python-version 3.11 # Specify Python version if needed, or omit to use system default
+# If you have a pyproject.toml and uv.lock, uv sync is sufficient.
+# Otherwise, you might need uv install or uv add <packages> initially.
+
+# Install frontend dependencies using npm (or pnpm/yarn)
+cd ../frontend # Adjust path if frontend is in a different monorepo structure
+npm install # or pnpm install or yarn install
+\`\`\`
+
+### 2. Start Services
+
+You will need three terminals open:
+
+**Terminal 1: Start Firebase Emulators**
+From the repository root:
+\`\`\`bash
+firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data
+\`\`\`
+*   **Hosting UI:** \`http://localhost:5000\` (or \`4000\`)
+*   **Auth Emulator:** \`http://localhost:9099\`
+*   **Firestore Emulator:** \`http://localhost:8080\`
+
+**Terminal 2: Start Backend API**
+From the \`backend/\` directory:
+\`\`\`bash
+# Ensure your environment is set up correctly. uv run handles virtual environments.
+uv run uvicorn app.main:app --reload --port 8000
+\`\`\`
+*   **API Docs (Swagger UI):** \`http://localhost:8000/docs\`
+
+**Terminal 3: Start Frontend Dev Server**
+From the \`frontend/\` directory:
+\`\`\`bash
+npm run dev # or pnpm dev or yarn dev
+\`\`\`
+*   **Frontend App:** Usually \`http://localhost:5173\` (Vite default)
+
+### 3. Accessing the Application
+
+Your frontend application will be served by Vite on its port. API requests from the frontend (e.g., to \`/api/users\`) will be intercepted by the Firebase Hosting emulator. Due to the \`firebase.json\` rewrite rules, these requests will be forwarded to your locally running FastAPI backend on \`http://localhost:8000\`.
+
+---
+
+## Frontend Architecture & Conventions
+
+The frontend is managed as a Vite project within the monorepo.
+
+*   **Structure:** (\`frontend/\`)
+    *   \`index.html\`: Main entry point.
+    *   \`vite.config.js\`: Vite configuration.
+    *   \`package.json\`: npm package management.
+    *   \`src/\`: Source files including components, stores, and utilities.
+    *   \`dist/\`: Build output.
+*   **Alpine.js Integration:** Alpine.js directives can be used directly in HTML templates. Ensure Alpine.js is imported and initialized in your main JavaScript entry point (e.g., \`src/main.js\`).
+*   **Firebase SDK:** Use modular imports for Firebase services (e.g., \`import { getAuth } from \'firebase/auth\';\`).
+
+---
+
+## Backend Architecture & Tach Rules
+
+The backend adheres to strict architectural boundaries enforced by `tach`.
+
+*   **Structure:** (\`backend/app/\`)
+    *   \`main.py\`: FastAPI entry point and router.
+    *   \`auth/\`: Authentication and token verification.
+    *   \`service/\`: Business logic.
+    *   \`repositories/\`: Data access layer.
+    *   \`schemas/\`: Pydantic data models.
+    *   \`database/\`: Firebase client initialization.
+*   **`uv` Management:** All Python dependencies are managed via \`pyproject.toml\` and \`uv.lock\`. Use \`uv sync\` to install/update dependencies and \`uv run <command>\` to execute Python scripts within the managed environment.
+*   **Tach Contracts:** Strictly adhere to the import rules defined in \`backend/tach.toml\` to maintain module integrity.
+
+---
+
+## Deployment
+
+### 1. Prepare for Deployment
+
+*   **Firebase Project:** Ensure you have a Firebase project created and linked (\`firebase use <project-id>\`).
+*   **Cloud Run Service:** Deploy your FastAPI backend to Google Cloud Run. This typically involves creating a \`Dockerfile\` and using \`gcloud run deploy\`.
+*   **Firebase Hosting Configuration:** Update \`firebase.json\` to point API rewrites (\`/api/**\`) to your Cloud Run service ID and region.
+
+### 2. Deploy Backend to Cloud Run
+
+Run this command from the \`backend/\` directory:
+\`\`\`bash
+# Build and deploy the Docker image to Cloud Run
+gcloud run deploy api-backend --source . --region us-east4 --allow-unauthenticated
+\`\`\`
+*Note: The \`Dockerfile\` in the \`backend/\` directory should be set up to serve the application using \`uvicorn\` on the port specified by the \`PORT\` environment variable.*
+
+### 3. Deploy Frontend to Firebase Hosting
+
+From the repository root:
+\`\`\`bash
+firebase deploy --only hosting
+\`\`\`
+Firebase Hosting will serve your Vite build artifacts and proxy API requests to your deployed Cloud Run service.
 
 ---
 
 ## Repository Structure & Hygiene
 
-The mono-repo is organized to separate frontend static assets, backend application code, and local workspace artifacts:
+The monorepo is organized to separate frontend static assets, backend application code, and local workspace artifacts:
 
     .
     ├── backend/              # Python FastAPI service, tests, and configuration
     ├── frontend/             # Static HTML, CSS, and client-side JavaScript
+    ├── emulator-data/        # Firebase emulator data persistence
     ├── firebase.json         # Firebase project configuration and emulator settings
     └── README.md             # Project documentation
 
-*Note on Artifact Hygiene:* Transient build artifacts like `__pycache__/` directories and local debugging logs (`firebase-debug.log`, `firestore-debug.log`, `ui-debug.log`) are generated during local execution. Ensure these are kept out of version control via your `.gitignore` configuration.
-
----
-
-## Local Development
-
-Local development relies on the Firebase Local Emulator Suite paired with the FastAPI backend. You do not need Google Cloud credentials to run this stack locally.
-
-### 1. Start the Emulators (Terminal 1 - Repository Root)
-
-From the root of the repository, start the Firestore, Auth, and Hosting emulators with data import and export persistence enabled:
-
-    firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data
-
-*Note:* On your initial run, the Firebase CLI will skip importing if `./emulator-data` does not yet exist. When you shut down the emulators with `Ctrl+C`, it will automatically export and populate the directory for subsequent sessions.
-
-* **Frontend:** http://127.0.0.1:5000
-* **Emulator UI Dashboard:** http://127.0.0.1:4000
-* **Auth Emulator:** http://127.0.0.1:9099
-* **Firestore Emulator:** http://127.0.0.1:8080
-
-### 2. Start the Backend (Terminal 2 - Backend Directory)
-
-Navigate to the backend directory and start FastAPI. The injected environment variables ensure the Firebase Admin SDK connects to the local emulators instead of production:
-
-    cd backend
-    FIRESTORE_EMULATOR_HOST="127.0.0.1:8080" FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099" uv run fastapi dev app/main.py
-
-* **API Docs (Swagger UI):** http://127.0.0.1:8000/docs
-* **Direct Backend API:** http://127.0.0.1:8000
+*Note on Artifact Hygiene:* Transient build artifacts like \`__pycache__/\` directories and local debugging logs (\`firebase-debug.log\`, etc.) are generated during local execution. Ensure these are kept out of version control via your \`.gitignore\` configuration.
 
 ---
 
 ## Testing & Linting
 
-Because uv manages the virtual environment automatically, you can run tests and linting directly without manual activation. Always execute these commands from within the `backend/` directory.
-
-**Run the Boundary Linter:**
-
-    cd backend
-    uv run tach check
-
-**Run the Test Suite:**
-The test suite utilizes dependency_overrides to mock the Firestore client, allowing tests to run entirely offline without the emulator:
-
-    cd backend
-    uv run pytest
-
----
-
-## Project Creation & Live Deployment
-
-To deploy this stack to the public internet, you must create a Firebase project, configure a database, and link the frontend and backend.
-
-### 1. Project & Database Setup
-
-1. Go to the Firebase Console and create a new project (Tip: You can toggle off Google Analytics during creation to bypass the analytics account requirement).
-2. Upgrade the project to the "Blaze" (Pay-as-you-go) plan. Cloud Run requires a billing account.
-3. In the left sidebar, click Firestore Database and click Create database (accept the default location and start in Production mode).
-
-### 2. Authenticate & Link Local CLI
-
-Authenticate your local tools and link them to your new Project ID:
-
-    gcloud auth login
-    firebase login
-
-    gcloud config set project YOUR_PROJECT_ID
-    firebase use YOUR_PROJECT_ID
-
-### 3. Configure IAM Policies for Cloud Build
-
-New Google Cloud projects do not automatically grant the default compute service account the necessary permissions to build containers from source. Run these commands to dynamically fetch your project number and grant the required Storage and Artifact Registry roles:
-
-    PROJECT_NUMBER=$(gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)")
-
-    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-      --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
-      --role="roles/storage.admin"
-
-    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-      --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
-      --role="roles/artifactregistry.writer"
-
-### 4. Deploy Backend (Google Cloud Run)
-
-Google Cloud Run can build your Dockerfile directly from source and deploy it in one command. Run this from inside the `backend/` directory:
-
-    cd backend
-    gcloud run deploy api-backend --source . --region us-east4 --allow-unauthenticated
-
-*Verification Note:* Visiting the root URL may display a `{"detail": "Not Found"}` JSON response. This is a standard FastAPI 404 error indicating no endpoint is explicitly defined for the root path (`/`). Append `/docs` to your new URL to view the interactive Swagger UI, which confirms your Python backend is successfully containerized, deployed, and serving traffic.
-
-### 5. Deploy Frontend (Firebase Hosting)
-
-With the hybrid networking configuration in `firebase.json`, Firebase Hosting rewrites `/api/**` requests to your deployed Cloud Run service automatically under your single hosting origin. No hardcoded backend URLs or CORS configurations are needed in production frontend code.
-
-Deploy the static assets by running the following command from the repository root:
-
+*   **Backend:**
+    *   **Boundary Linter:** Run \`cd backend && uv run tach check\`.
+    *   **Test Suite:** Run \`cd backend && uv run pytest\`. Tests are designed to run offline by mocking dependencies.
+*   **Frontend:** (If applicable, specify linting/formatting commands, e.g., \`npm run lint\` or \`prettier --check .\`)
 
 ---
 
 ## Authentication & Project Management FAQ
 
 ### I am getting "Error: An unexpected error has occurred" when running firebase commands.
-This is often caused by a timeout during the Firebase CLI's automated telemetry ping. Disable usage tracking to fix this:
-```bash
+This is often caused by a timeout during the Firebase CLI\'s automated telemetry ping. Disable usage tracking to fix this:
+\`\`\`bash
 # Disable usage tracking permanently
-sed -i 's/"usage": true/"usage": false/' ~/.config/configstore/firebase-tools.json
-```
+sed -i \'s/\"usage\": true/\"usage\": false/\' ~/.config/configstore/firebase-tools.json
+\`\`\`
 
 ### How do I switch Firebase/GCloud accounts?
 The CLI tools are separate. Use the following commands to manage accounts:
 
-* **Google Cloud (gcloud):**
-  ```bash
-  gcloud auth login                # Log in as a new user
-  gcloud auth list                 # View all accounts
-  gcloud config set account <email> # Switch active account
-  ```
+*   **Google Cloud (gcloud):**
+    \`\`\`bash
+    gcloud auth login                # Log in as a new user
+    gcloud auth list                 # View all accounts
+    gcloud config set account <email> # Switch active account
+    \`\`\`
 
-* **Firebase CLI:**
-  ```bash
-  firebase login:add               # Authorize additional account
-  firebase login:list              # List authorized accounts
-  firebase login:use <email>       # Switch active account
-  ```
+*   **Firebase CLI:**
+    \`\`\`bash
+    firebase login:add               # Authorize additional account
+    firebase login:list              # List authorized accounts
+    firebase login:use <email>       # Switch active account
+    \`\`\`
 
-### How do I ensure I'm using the right project?
+### How do I ensure I\'m using the right project?
 To list all projects you have access to, and set the default for your current directory:
-```bash
+\`\`\`bash
 firebase projects:list
 firebase use <project-id>
-```
-Your current project is also stored in `.firebaserc`. Ensure the `default` key matches your target `project-id`.
+\`\`\`
+Your current project is also stored in \`.firebaserc\`. Ensure the \`default\` key matches your target \`project-id\`.

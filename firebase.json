@@ -1,35 +1,18 @@
 {
   "hosting": {
-    "public": "frontend",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
+    "public": "public",
     "rewrites": [
       {
         "source": "/api/**",
         "run": {
-          "serviceId": "api-backend",
-          "region": "us-east4"
+          "serviceId": "batch-brewing-calculator-backend",
+          "region": "us-central1"
         }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ]
-  },
-  "emulators": {
-    "auth": {
-      "port": 9099
-    },
-    "firestore": {
-      "port": 8080
-    },
-    "hosting": {
-      "port": 5000
-    },
-    "ui": {
-      "enabled": true,
-      "port": 4000
-    },
-    "singleProjectMode": true
   }
 }
