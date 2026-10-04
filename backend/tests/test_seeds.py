@@ -20,7 +20,7 @@ def test_load_seed_malts_returns_valid_catalog():
         assert isinstance(malt.category, MaltCategory)
         assert 1.000 <= malt.potential_sg <= 1.045
         assert 0.0 <= malt.potential_dry_basis <= 0.90
-        assert malt.color_srm >= 0.0
+        assert malt.color_lovibond >= 0.0
         assert malt.notes is not None and len(malt.notes) > 10
 
 
@@ -35,7 +35,7 @@ def test_load_seed_sugars_returns_valid_catalog():
         seen_ids.add(sugar.id)
 
         assert 1.025 <= sugar.potential_sg <= 1.048
-        assert sugar.color_srm >= 0.0
+        assert sugar.color_lovibond >= 0.0
         assert sugar.notes is not None and len(sugar.notes) > 10
 
 

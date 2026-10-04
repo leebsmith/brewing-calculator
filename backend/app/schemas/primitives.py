@@ -22,7 +22,7 @@ class MaltPrimitive(BaseModel):
     category: MaltCategory
     potential_sg: float = Field(..., description="Extract potential in SG, e.g., 1.037")
     potential_dry_basis: float = Field(..., description="Decimal yield, e.g., 0.80")
-    color_srm: float
+    color_lovibond: float
     moisture_pct: float = 0.04
     di_ph: float | None = None
     buffer_index: float | None = None
@@ -50,5 +50,5 @@ class SugarPrimitive(BaseModel):
     id: str
     name: str
     potential_sg: float
-    color_srm: float
+    color_lovibond: float
     notes: str | None = None

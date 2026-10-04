@@ -245,10 +245,10 @@
             x-collapse
             class="step-card-body"
           >
-            <!-- Profile Preset Selector & Drawer Trigger -->
+            <!-- ProfilePreset Selector & Drawer Trigger -->
             <div class="preset-toolbar">
               <div class="preset-toolbar-select-group">
-                <label for="profile-selector" class="form-label text-xs">Hardware Preset Library</label>
+                <label for="profile-selector" class="form-label text-xs">HardwarePreset Library</label>
                 <div class="preset-select-controls">
                   <select
                     id="profile-selector"
@@ -345,7 +345,7 @@
                   <span>Boil-Off Rate (/hr)</span>
                   <button type="button" @click="$store.units.toggleField('volume', 'boil_off_rate_l_per_hr')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('boil_off_rate_l_per_hr') }" x-text="$store.units.getFieldUnit('volume', 'boil_off_rate_l_per_hr')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.1" min="0.1" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'boil_off_rate_l_per_hr')" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value, 'boil_off_rate_l_per_hr'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.1" min="0.1" max="15" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'boil_off_rate_l_per_hr')" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value, 'boil_off_rate_l_per_hr'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Evaporation rate per hour</span>
               </div>
 
@@ -783,9 +783,9 @@
                     </thead>
                     <tbody>
                       <template x-for="row in $store.maltGrid.draftMajorMalts" :key="row.row_id">
-                        <tr :class="{ 'is-selected': $store.maltGrid.activeRowId === row.row_id }">
-                          <td class="font-sans font-medium text-primary truncate">
-                            <span x-text="row.name"></span>
+                        <tr>
+                          <td>
+                            <span class="font-sans font-medium text-primary truncate" x-text="row.name"></span>
                             <template x-if="row.is_custom">
                               <span class="status-badge status-badge-info text-nano">Custom</span>
                             </template>
@@ -955,7 +955,7 @@
                           <div class="catalog-item-card">
                             <div>
                               <div class="catalog-item-name" x-text="item.name"></div>
-                              <div class="catalog-item-meta" x-text="item.category + ' • SRM: ' + item.color_srm + (item.notes ? ' • ' + item.notes : '')"></div>
+                              <div class="catalog-item-meta" x-text="item.category + ' • Lovibond: ' + item.color_lovibond + (item.notes ? ' • ' + item.notes : '')"></div>
                             </div>
                             <button
                               type="button"
@@ -1005,8 +1005,8 @@
                               <input type="number" step="0.01" min="0.5" max="1.0" x-model.number="row.potential_fraction" class="form-input text-xs font-mono" />
                             </div>
                             <div class="form-group">
-                              <label class="form-label text-xs">Color (SRM)</label>
-                              <input type="number" step="0.1" min="0" x-model.number="row.color_srm" class="form-input text-xs font-mono" />
+                              <label class="form-label text-xs">Color (Lovibond)</label>
+                              <input type="number" step="0.1" min="0" x-model.number="row.color_lovibond" class="form-input text-xs font-mono" />
                             </div>
                             <div class="form-group">
                               <label class="form-label text-xs">Moisture (%)</label>
@@ -1034,7 +1034,7 @@
         <!-- Slide-Over CRUD Drawer for Equipment Profiles -->
         <div
           x-show="showProfileDrawer"
-          x-transition.opacity
+          x-transition.opacity.duration.200ms
           class="drawer-backdrop"
           style="display: none;"
           @keydown.escape.window="closeProfileDrawer()"
