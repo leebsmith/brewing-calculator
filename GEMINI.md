@@ -33,7 +33,21 @@ To prevent security guard blocks, pager formatting errors (`delta`), and shell i
 
 * **No Combined Flags or Complex Chaining:** Never chain multiple git commands or flags together with `&&`, and avoid passing complex flag arguments to `git add` in shell calls to prevent false positive security warnings.
 
-## 3. Frontend Architecture & Conventions
+## 3. Operational Mandate: Complex File Modification Protocol
+
+When performing complex edits, multi-line refactoring, or surgical updates to existing files, Gemini must strictly adhere to the following sequence to eliminate `old_string` mismatch loops:
+
+1. **Mandatory Read-Before-Write:** 
+   - Never attempt a `replace` operation on a file without first reading its current contents in the immediate conversational context (via tool read or `@` reference). Ensure absolute parity with current line endings, indentation, and trailing whitespace.
+2. **Anchor-Based Targeting:** 
+   - Construct `old_string` blocks using distinct, immutable structural anchors (e.g., unique function signatures, class boundaries, or specific comment blocks) rather than fragile, isolated lines of code. Keep replacement chunks granular and localized.
+3. **Fallback to Full Rewriting:** 
+   - If a surgical `replace` operation fails twice consecutively due to string matching errors, immediately abort the replacement strategy. Fall back to reading the complete file, modifying it entirely in memory, and writing it out via `write_file`.
+4. **Verification Checkpoints:** 
+   - Following any major file modification, invoke validation or syntax check tools (such as linters or test suites) before reporting completion.
+
+
+## 4. Frontend Architecture & Conventions
 
 The frontend is a static application with a build process managed by Vite, hosted via Firebase Hosting. It pairs **Alpine.js** for reactive UI state with **modular CSS** (`tokens.css` and `style.css`) for tokenized styling, native dark mode, and a defined build toolchain.
 
@@ -45,7 +59,7 @@ The frontend is a static application with a build process managed by Vite, hoste
 * **Ephemeral DOM Toggles:** Presentation-only UI state (such as dropdown visibility, modal toggles, or expandable menus) may use lightweight inline `x-data="{ open: false }"` attributes directly in markup.
 * **Headless Decoupling:** The frontend remains fully decoupled from the backend. The FastAPI service is a headless JSON API and must not return HTML partials or Jinja2 templates.
 
-## 4. Backend Architecture & Tach Rules
+## 5. Backend Architecture & Tach Rules
 
 The Python backend enforces strict module boundaries using `Tach`. You MUST respect these rules when generating or modifying Python code.
 
@@ -67,17 +81,17 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
 * `app.database` MAY ONLY import `firebase_admin` and standard libraries. It MUST NOT import internal modules.
 * `app.schemas` MUST NOT import from ANY other internal module.
 
-## 5. Hybrid Networking & CORS Rules
+## 6. Hybrid Networking & CORS Rules
 
 * **Production:** Firebase Hosting rewrites `/api/**` to Cloud Run, operating under a unified single origin (`https://<project>.web.app`). CORS is eliminated; all client requests must use relative paths (e.g., `/api/...`).
 * **Local Development:** The frontend runs on the Hosting emulator (`http://127.0.0.1:5000`) and the backend runs natively (`http://127.0.0.1:8000`). FastAPI enables development-scoped `CORSMiddleware` for port 5000 origins.
 
-## 6. Local Emulation & Testing
+## 7. Local Emulation & Testing
 
 * By default, the backend expects the Firebase Emulator Suite. Connections should assume `FIRESTORE_EMULATOR_HOST` (e.g., `127.0.0.1:8080`) and `FIREBASE_AUTH_EMULATOR_HOST` (e.g., `127.0.0.1:9099`) may be set in the environment. Do not suggest generating GCP service account keys for local dev.
 * Unit tests must utilize FastAPI's `dependency_overrides` in `conftest.py` to mock both the Firestore client (`get_db`) and authentication (`get_current_user`), ensuring tests execute entirely offline.
 
-## 7. Documentation & Planning
+## 8. Documentation & Planning
 
 * Centralized planning documents, design proposals, and task roadmaps reside in the `plans/` directory.
 * General project documentation and operational guides reside in the `docs/` directory.
@@ -87,12 +101,12 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
   * Treat `plans/master-frontend-ui-requirements.md` as exhaustive. If an edge case or detail is unspecified or conflicts with older historical files, DO NOT assume the historical documentation overrides the master plan; stop and ask the user for clarification.
 * **Documentation Synchronization Mandate:** Any code modifications that introduce, modify, or remove wizard steps, field names, domain parameters, or calculation formulas MUST be kept strictly in sync by updating `plans/master-frontend-ui-requirements.md` in the same work cycle.
 
-## 8. Constants & Configuration Conventions
+## 9. Constants & Configuration Conventions
 
 * **No Magic Numbers or Strings:** Hardcoded domain strings, error messages, and physical calculation defaults (e.g., default conversion efficiency, grain absorption, shrinkage) MUST be centralized in `backend/app/core/constants.py` and `frontend/constants.js`.
 * **Profile-Specific Data Exception:** Equipment-specific profile capacities and vessel measurements (e.g., preset kettle volumes, mash tun sizes, HLT minimums for 30L/50L HERMS or BIAB) belong strictly in equipment profile seed/storage files (e.g., `equipment_profiles.json`), not in general constants.
 
-## 9. Frontend Hydration & Persistence Architecture (Coordinator Pattern)
+## 10. Frontend Hydration & Persistence Architecture (Coordinator Pattern)
 
 * **Mandatory Store Design:** All current and future Alpine.js stores (`Alpine.store(...)`) MUST implement the **Bi-directional Hydration Coordinator** pattern detailed in `docs/bi-directional-hydration-spec.md`.
 * **Core Requirements:**
@@ -102,7 +116,7 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
   * **Adapter Decoupling:** Persistence mechanisms (`localStorage`, REST endpoints, Firestore) must be encapsulated behind agnostic asynchronous provider and writer adapter functions.
   * **Perimeter Interactivity Gating:** Form containers must wrap inputs in native `<fieldset :disabled="!$store.<domain>.isReady \vert{}\vert{}$store.<domain>.isSaving">` blocks.
 
-## 10. CSS Architecture & Styling Governance
+## 11. CSS Architecture & Styling Governance
 
 * **STRICT PROHIBITION (Zero Tailwind/Utility Frameworks):** Do not use, reference, import, or assume Tailwind CSS or any utility framework. Never generate utility classes (`flex`, `grid`, `p-*`, `m-*`, `text-*`, `bg-*`, `items-*`, `justify-*`), arbitrary bracket syntax (`w-[100px]`), or directives (`@tailwind`, `@apply`, `@layer`). Assume zero build-time CSS processors exist.
 * **Two-File Separation of Concerns:**
