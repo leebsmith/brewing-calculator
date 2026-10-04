@@ -20,9 +20,9 @@ This project is a mono-repo containing vanilla JavaScript with Alpine.js and pur
 To prevent security guard blocks, pager formatting errors (`delta`), and shell interpretation faults in the agentic CLI, strictly adhere to these patterns:
 
 * **Reviewing Changes (`git diff`):**
-  When running git diff, you MUST always prepend `git -c core.pager=cat` and pass the `--no-ext-diff` flag to completely bypass external diff tools like `delta` and ensure non-interactive, plain-text output streaming.
-  * To review all changes (including unstaged) to tracked files: `git -c core.pager=cat diff --no-ext-diff HEAD`
-  * To review only staged changes: `git -c core.pager=cat diff --no-ext-diff --staged`
+  When running git diff, you MUST always prepend `git -c core.pager=cat` and pass the `--no-ext-diff` flag to completely bypass external diff tools like `delta` and ensure non-interactive, plain-text output streaming. **Never pass path filters (such as `-- <file>`) to git diff commands**, as path arguments trigger false-positive untrusted flag security warnings.
+  * To review all changes (including unstaged) across the repository: `git -c core.pager=cat diff --no-ext-diff HEAD`
+  * To review only staged changes across the repository: `git -c core.pager=cat diff --no-ext-diff --staged`
 
 * **Committing Complex Messages:**
   The local shell security environment strictly intercepts piping (`|`), string redirection, command substitution, and complex quotes. To commit changes safely without triggering injection blocks:
