@@ -14,10 +14,24 @@ This project is a mono-repo containing vanilla JavaScript with Alpine.js and pur
 * This project exclusively uses `uv` for backend dependency and environment management.
 * Always formulate backend commands as `uv run <command>`, `uv add <package>`, or `uv sync`.
 * The frontend utilizes Node.js, npm/npx, and Vite for its build toolchain. Package management is handled by npm, and build scripts are defined in `package.json` and orchestrated via a Makefile.
-* When running git commands in the agentic CLI, **prefer** prepending `GIT_PAGER=cat` (e.g., `GIT_PAGER=cat git diff` or `GIT_PAGER=cat git log -n 3`) to stream output non-interactively and safely.
-* If `GIT_PAGER=cat` encounters environmental execution issues, use specific, non-paginating flags where available (e.g., `git diff --staged --no-ext-diff`) to achieve similar results.
-* **For committing complex messages:** To avoid shell interpretation issues with multi-line strings and special characters, **always** use the pattern `printf "Your commit message..." | git commit -F - <files>`. This method safely pipes the message content to Git's standard input. Avoid direct `git commit -m "..."` when messages contain newlines or extensive special characters. **NEVER use command substitution (`$(...)` or backticks) to create temporary files for commit messages.**
-* **No Combined Git Flags or File Path Arguments:** Never chain multiple git commands or flags together with `&&` or complex flag combinations (like `git diff --stat HEAD`), and avoid passing flag arguments to `git add` in shell calls to prevent false positive security warnings.
+
+### Git Command Standards & Security Protocols (MANDATORY)
+
+To prevent security guard blocks, pager formatting errors (`delta`), and shell interpretation faults in the agentic CLI, strictly adhere to these patterns:
+
+* **Reviewing Changes (`git diff`):**
+  When running git diff, you MUST always prepend `git -c core.pager=cat` and pass the `--no-ext-diff` flag to completely bypass external diff tools like `delta` and ensure non-interactive, plain-text output streaming.
+  * To review all changes (including unstaged) to tracked files: `git -c core.pager=cat diff --no-ext-diff HEAD`
+  * To review only staged changes: `git -c core.pager=cat diff --no-ext-diff --staged`
+
+* **Committing Complex Messages:**
+  The local shell security environment strictly intercepts piping (`|`), string redirection, command substitution, and complex quotes. To commit changes safely without triggering injection blocks:
+  1. Use your native file-writing/editing capability to create a temporary file named `.gemini_commit_msg` in the project root containing the exact, fully formatted commit message.
+  2. Execute the shell command: `git commit -F .gemini_commit_msg`
+  3. Clean up the directory by executing the shell command: `rm .gemini_commit_msg`
+  * **NEVER** use `git commit -m "..."` for multi-line strings or messages with special characters. **NEVER** attempt to pipe messages into git using `printf` or standard input.
+
+* **No Combined Flags or Complex Chaining:** Never chain multiple git commands or flags together with `&&`, and avoid passing complex flag arguments to `git add` in shell calls to prevent false positive security warnings.
 
 ## 3. Frontend Architecture & Conventions
 
@@ -93,11 +107,11 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
 * **STRICT PROHIBITION (Zero Tailwind/Utility Frameworks):** Do not use, reference, import, or assume Tailwind CSS or any utility framework. Never generate utility classes (`flex`, `grid`, `p-*`, `m-*`, `text-*`, `bg-*`, `items-*`, `justify-*`), arbitrary bracket syntax (`w-[100px]`), or directives (`@tailwind`, `@apply`, `@layer`). Assume zero build-time CSS processors exist.
 * **Two-File Separation of Concerns:**
 
-  * `frontend/tokens.css` manages **values and theming only**[cite: 6, 7]. It defines the multi-tiered token taxonomy (primitives -> semantic `--sys-*` roles -> layout dimensions) and handles all light/dark mode switching at the `:root` level.
-  * `frontend/style.css` manages **structure and component rules**[cite: 5, 7]. It consumes semantic tokens without regard for color schemes.
-* **Upstream Theming Invariance (No Dark-Mode in style.css):** `frontend/style.css` MUST NEVER contain `@media (prefers-color-scheme: dark)` blocks or theme-override selectors. All components must bind to semantic `--sys-*` tokens that adapt upstream inside `tokens.css`[cite: 5, 6].
-* **Strict Semantic Tiering (No Primitive Escapes):** Selectors in `frontend/style.css` must exclusively consume semantic `--sys-*` tokens or generic scales (`--space-*`, `--radius-*`, `--text-*`)[cite: 5, 7]. Direct references to primitive palette tokens (`var(--color-indigo-*)`, `var(--color-slate-*)`, etc.) and raw color literals (hex, rgb, rgba, hsl) are strictly prohibited[cite: 5, 7].
+  * `frontend/tokens.css` manages **values and theming only**. It defines the multi-tiered token taxonomy (primitives -> semantic `--sys-*` roles -> layout dimensions) and handles all light/dark mode switching at the `:root` level.
+  * `frontend/style.css` manages **structure and component rules**. It consumes semantic tokens without regard for color schemes.
+* **Upstream Theming Invariance (No Dark-Mode in style.css):** `frontend/style.css` MUST NEVER contain `@media (prefers-color-scheme: dark)` blocks or theme-override selectors. All components must bind to semantic `--sys-*` tokens that adapt upstream inside `tokens.css`.
+* **Strict Semantic Tiering (No Primitive Escapes):** Selectors in `frontend/style.css` must exclusively consume semantic `--sys-*` tokens or generic scales (`--space-*`, `--radius-*`, `--text-*`). Direct references to primitive palette tokens (`var(--color-indigo-*)`, `var(--color-slate-*)`, etc.) and raw color literals (hex, rgb, rgba, hsl) are strictly prohibited.
 * **Transition Performance (No transition: all):** Never declare `transition: all`. Always explicitly enumerate target properties (e.g., `transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);`) to prevent layout and composite thrashing.
 * **Spacing Scale Ordinal Purity:** Section 2 of `tokens.css` must remain strictly ordinal and generic (`--space-0` through `--space-12`). Component-specific widths, heights, and ad-hoc horizontal dimensions belong in Section 4 (Layout Dimensions & Sizing) under descriptive semantic names (e.g., `--size-indicator-sm`, `--width-parts-input`, `--space-unit-badge-x`).
-* **Reuse-First Component Hierarchy:** Always favor existing classes in `style.css` (`.btn`, `.form-group`, `.card`, `.badge-*`, `.data-table`) over introducing new selectors[cite: 5, 7]. New classes require explicit justification, must use semantic BEM-style or functional names, and must be synchronized in `plans/master-frontend-ui-requirements.md`.
+* **Reuse-First Component Hierarchy:** Always favor existing classes in `style.css` (`.btn`, `.form-group`, `.card`, `.badge-*`, `.data-table`) over introducing new selectors. New classes require explicit justification, must use semantic BEM-style or functional names, and must be synchronized in `plans/master-frontend-ui-requirements.md`.
 * **Token Audit Verification Gate:** Any suggested modifications to `frontend/style.css` or `frontend/tokens.css` MUST pass `scripts/audit-tokens.sh frontend/style.css` with zero violations.
