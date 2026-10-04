@@ -9,16 +9,27 @@ CLOUD_RUN_REGION := us-east4
 # Frontend build output directory (matches vite.config.js).
 FRONTEND_PUBLIC_DIR := public
 
-.PHONY: local deploy deploy-backend deploy-frontend destroy
+.PHONY: local local-dev clean deploy deploy-backend deploy-frontend destroy
 
-local:
-	@echo "Starting local emulators and development servers..."
+# Target to start local emulators and development servers using concurrently
+local-dev:
+	@echo "Starting local emulators and development servers with concurrently..."
 	@echo "When finished, access the app at http://localhost:5173"
-	@bash -c "trap 'kill 0' SIGINT; \
-		(cd backend && FIREBASE_AUTH_EMULATOR_HOST='127.0.0.1:9099' FIRESTORE_EMULATOR_HOST='127.0.0.1:8080' uv run uvicorn app.main:app --reload --port 8000) & \
-		(cd frontend && npx vite dev) & \
-		npx firebase emulators:start & \
-		wait"
+	@./frontend/node_modules/.bin/concurrently \
+	  --names "VITE,FIREBASE,UV" \
+	  --prefix-colors "blue,yellow,green" \
+	  "cd frontend && npx vite dev" \
+	  "npx firebase emulators:start" \
+	  "cd backend && uv run uvicorn app.main:app --reload --port 8000"
+
+# Target to clean up local environment: stop processes and close ports.
+clean:
+	@echo "Cleaning up local environment..."
+	@echo "Stopping Firebase emulators and other local services..."
+	@pkill -f 'firebase emulators:start' || true
+	@pkill -f 'vite dev' || true
+	@pkill -f 'uvicorn app.main:app' || true
+	@echo "Ports reclaimed."
 
 deploy: deploy-backend deploy-frontend
 

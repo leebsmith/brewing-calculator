@@ -27,7 +27,7 @@ const auth = firebaseApp ? firebase.auth() : null;
 
 // Connect to local Auth emulator if running on localhost or 127.0.0.1
 if (auth && typeof window !== 'undefined' && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')) {
-  auth.useEmulator('http://127.0.0.1:9099');
+  auth.useEmulator(`http://127.0.0.1:${BREW_CONSTANTS.AUTH_EMULATOR_PORT}`); // Use constant for port
 }
 
 /**
@@ -36,12 +36,16 @@ if (auth && typeof window !== 'undefined' && (window.location.hostname === '127.
  * and attaches Bearer ID token if authenticated.
  */
 async function apiFetch(path, options = {}) {
-  const isLocalEmulator =
-    typeof window !== 'undefined' &&
-    (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') &&
-    window.location.port === '5000';
+  // Detect if running in a local development environment (e.g., Vite dev server on any port)
+  // Added '0.0.0.0' as it's commonly used for local development servers.
+  const isLocalDev = typeof window !== 'undefined' &&
+                     (window.location.hostname === '127.0.0.1' ||
+                      window.location.hostname === 'localhost' ||
+                      window.location.hostname === '0.0.0.0'); // Added this condition
 
-  const baseUrl = isLocalEmulator ? 'http://127.0.0.1:8000' : '';
+  // If running locally, explicitly target the backend on the configured API URL.
+  // If not local, use relative path (which Firebase Hosting rewrites handle in production).
+  const baseUrl = isLocalDev ? BREW_CONSTANTS.BACKEND_API_URL : '';
   const url = `${baseUrl}${path}`;
 
   const headers = new Headers(options.headers || {});

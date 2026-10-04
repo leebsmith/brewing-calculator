@@ -30,6 +30,10 @@ export const BREW_CONSTANTS = {
   // Drawer / Custom Profile Defaults
   DEFAULT_CUSTOM_PROFILE_NAME: 'My Custom Profile',
 
+  // Emulator Ports & URLs
+  AUTH_EMULATOR_PORT: 9199,
+  BACKEND_API_URL: 'http://localhost:8000',
+
   // Unit System Constants & Presets
   UNIT_PRESET_METRIC: 'metric',
   UNIT_PRESET_IMPERIAL: 'imperial',
