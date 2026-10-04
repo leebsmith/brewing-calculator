@@ -9,7 +9,12 @@ CLOUD_RUN_REGION := us-east4
 # Frontend build output directory (matches vite.config.js).
 FRONTEND_PUBLIC_DIR := public
 
-.PHONY: local local-dev clean deploy deploy-backend deploy-frontend destroy
+.PHONY: local local-dev clean deploy deploy-backend deploy-frontend destroy seeds
+
+# Target to build seed databases
+seeds:
+	@echo "Makeing 'seeds' database files"
+	cd backend && uv run python ../scripts/build_fermentables.py
 
 # Target to start local emulators and development servers using concurrently
 local-dev:
