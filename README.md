@@ -81,7 +81,7 @@ From the repository root:
 firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data
 \`\`\`
 *   **Hosting UI:** \`http://localhost:5000\` (or \`4000\`)
-*   **Auth Emulator:** \`http://localhost:9099\`
+*   **Auth Emulator:** \`http://localhost:9199\`
 *   **Firestore Emulator:** \`http://localhost:8080\`
 
 **Terminal 2: Start Backend API**
