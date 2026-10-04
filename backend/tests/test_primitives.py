@@ -17,7 +17,7 @@ def test_malt_primitive_defaults_notes_to_none():
         category=MaltCategory.BASE,
         potential_sg=1.037,
         potential_dry_basis=0.80,
-        color_srm=1.8,
+        color_lovibond=1.8,
     )
     assert malt.notes is None
     assert malt.moisture_pct == 0.04
@@ -33,10 +33,11 @@ def test_malt_primitive_accepts_custom_notes():
         category=MaltCategory.BASE,
         potential_sg=1.038,
         potential_dry_basis=0.81,
-        color_srm=1.7,
+        color_lovibond=1.7,
         notes="Clean, bready, traditional floor-malted character.",
     )
     assert malt.notes == "Clean, bready, traditional floor-malted character."
+
     dumped = malt.model_dump()
     assert dumped["notes"] == "Clean, bready, traditional floor-malted character."
 
@@ -48,7 +49,7 @@ def test_malt_primitive_requires_mandatory_fields():
             id="bad_malt",
             name="Incomplete Malt",
             category=MaltCategory.CRYSTAL,
-            color_srm=40.0,
+            color_lovibond=40.0,
         )
 
 
@@ -90,7 +91,7 @@ def test_sugar_primitive_notes():
         id="dextrose",
         name="Corn Sugar (Dextrose)",
         potential_sg=1.046,
-        color_srm=0.0,
+        color_lovibond=0.0,
         notes="100% fermentable simple sugar for priming or kettle additions.",
     )
     assert sugar.notes == "100% fermentable simple sugar for priming or kettle additions."

@@ -26,19 +26,22 @@ def mock_user():
 
 @pytest.fixture
 def client(mock_db, mock_user):
-    """Yields an authenticated TestClient with both database and auth overridden."""
+    """Yields an authenticated TestClient with both database and auth overridden, executing lifespan."""
     app.dependency_overrides[get_db] = lambda: mock_db
     app.dependency_overrides[get_current_user] = lambda: mock_user
     
-    yield TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client
     
     app.dependency_overrides.clear()
 
 @pytest.fixture
 def unauthenticated_client(mock_db):
-    """Yields a TestClient with only database overridden, preserving real auth dependency."""
+    """Yields a TestClient with only database overridden, preserving real auth dependency and executing lifespan."""
     app.dependency_overrides[get_db] = lambda: mock_db
     
-    yield TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client
     
     app.dependency_overrides.clear()
+

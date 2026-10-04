@@ -58,6 +58,28 @@ def test_get_equipment_profiles_unauthenticated(unauthenticated_client):
     assert response.status_code in (401, 403)
 
 
+def test_get_equipment_profiles_with_valid_token(unauthenticated_client):
+    """
+    Verifies that requests with a valid Bearer token succeed on /api/equipment-profiles
+    without needing the get_db dependency.
+    """
+    mock_claims = {
+        "uid": "verified_uid_456",
+        "email": "alice@example.com",
+        "name": "Alice Example",
+        "picture": "https://example.com/alice.png",
+    }
+    with patch("firebase_admin.auth.verify_id_token", return_value=mock_claims):
+        response = unauthenticated_client.get(
+            "/api/equipment-profiles",
+            headers={"Authorization": "Bearer valid_jwt_token"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "profiles" in data
+        assert len(data["profiles"]) >= 4
+
+
 def test_custom_profile_crud_lifecycle(client, monkeypatch):
     """
     Verifies creating, listing, and deleting a custom equipment profile

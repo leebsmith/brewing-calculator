@@ -73,31 +73,46 @@ npm install # or pnpm install or yarn install
 
 ### 2. Start Services
 
-You will need three terminals open:
+**Recommended: All-in-One Orchestration (`Makefile`)**
+
+Run all services concurrently using the Makefile:
+
+\`\`\`bash
+make local-dev
+\`\`\`
+
+This automatically starts Vite (`:5173`), Firebase Emulators (Auth `:9099`, Firestore `:8080`, Hosting `:5000`), and FastAPI (`:8000`) with `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` and `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080` pre-configured.
+
+**Alternative: Manual Multi-Terminal Workflow**
+
+If running services in separate terminals:
 
 **Terminal 1: Start Firebase Emulators**
 From the repository root:
 \`\`\`bash
 firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data
 \`\`\`
+
 *   **Hosting UI:** \`http://localhost:5000\` (or \`4000\`)
-*   **Auth Emulator:** \`http://localhost:9199\`
+*   **Auth Emulator:** \`http://localhost:9099\`
 *   **Firestore Emulator:** \`http://localhost:8080\`
 
 **Terminal 2: Start Backend API**
-From the \`backend/\` directory:
+From the \`backend/\` directory (ensure emulator variables are set):
 \`\`\`bash
-# Ensure your environment is set up correctly. uv run handles virtual environments.
-uv run uvicorn app.main:app --reload --port 8000
+FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 uv run uvicorn app.main:app --reload --port 8000
 \`\`\`
+
 *   **API Docs (Swagger UI):** \`http://localhost:8000/docs\`
 
 **Terminal 3: Start Frontend Dev Server**
 From the \`frontend/\` directory:
 \`\`\`bash
-npm run dev # or pnpm dev or yarn dev
+npm run dev
 \`\`\`
+
 *   **Frontend App:** Usually \`http://localhost:5173\` (Vite default)
+
 
 ### 3. Accessing the Application
 
