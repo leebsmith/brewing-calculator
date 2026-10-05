@@ -1,0 +1,19 @@
+<div class="card">
+    <h2 class="card-title">Ingredient Catalog Status</h2>
+    <p class="card-description">
+        Reference primitives loaded securely from the backend repository shim via Firebase Authentication.
+    </p>
+    <div class="catalog-status-bar">
+            <span class="status-badge status-badge-success">
+              <span class="status-dot status-dot-success"></span>
+              <span x-text="$store.catalog.malts.length + ' Malts Loaded'"></span>
+            </span>
+        <span class="status-badge status-badge-success">
+              <span class="status-dot status-dot-success"></span>
+              <span x-text="$store.catalog.sugars.length + ' Sugars Loaded'"></span>
+            </span>
+        <template x-if="$store.catalog.loading">
+            <span class="catalog-status-loading">Loading catalog...</span>
+        </template>
+    </div>
+</div>

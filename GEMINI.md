@@ -46,6 +46,12 @@ When performing complex edits, multi-line refactoring, or surgical updates to ex
 4. **Verification Checkpoints:** 
    - Following any major file modification, invoke validation or syntax check tools (such as linters or test suites) before reporting completion.
 
+### Large File & Heredoc Writing Mandate
+* **Bypass JSON File-Writers for Bulk Content:** When creating new multi-line files (such as HTML partials, templates, or configuration blocks) or performing full rewrites, strictly avoid native JSON-serialized file-writing tools that risk breaking on special characters, quotes, or indentation.
+* **Heredoc Shell Standard:** Execute file creation and bulk overwrites using a direct, quoted shell heredoc via the command runner or Makefile target:
+```
+cat << 'EOF' > path/to/target/file.html <!-- File contents here --> EOF
+```
 
 ## 4. Frontend Architecture & Conventions
 

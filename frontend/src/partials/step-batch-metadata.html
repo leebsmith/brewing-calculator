@@ -1,0 +1,166 @@
+<!-- Step 2: Batch Metadata Accordion Card (in partials) -->
+<div class="step-card" :class="{ 'is-active': activeStep === 2, 'is-completed': completedSteps.includes(2) }">
+    <div class="accordion-header">
+        <button
+                type="button"
+                class="accordion-trigger"
+                :aria-expanded="activeStep === 2"
+                aria-controls="step-panel-2"
+                id="step-trigger-2"
+                @click="setActiveStep(2)"
+        >
+            <div class="accordion-title-wrap">
+                <span class="accordion-step-num">2</span>
+                <div>
+                    <span class="accordion-title">Batch Metadata & Targets</span>
+                    <span class="accordion-subtitle">Recipe name, target volume, original gravity & boil duration</span>
+                </div>
+            </div>
+            <div class="accordion-controls">
+                <span class="accordion-status-pill" :class="getStepStatusClass(2)" x-text="getStepStatusLabel(2)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 2 ? '▲' : '▼'"></span>
+            </div>
+        </button>
+    </div>
+
+    <div
+            id="step-panel-2"
+            role="region"
+            aria-labelledby="step-trigger-2"
+            x-show="activeStep === 2"
+            x-collapse
+            class="step-card-body"
+    >
+        <!-- Batch Metadata & Boil Solver -->
+        <div class="step-card-content">
+            <!-- Batch Name -->
+            <div class="form-group">
+                <label class="form-label">Batch Name</label>
+                <input type="text" x-model="manifest.name" @input="onBatchMetaChange" class="form-input" placeholder="e.g. West Coast IPA 2026" required />
+                <span class="form-hint">Unique identifier for this brewing recipe</span>
+            </div>
+
+            <!-- Solver Mode Toggle -->
+            <div class="form-group">
+                <div class="solver-mode-header">
+                    <label class="form-label">Boil Solver Mode</label>
+                    <span class="solver-mode-hint" x-text="manifest.boil_solver_mode === 'option_b' ? 'Fixing Rate → Solving Post-Vol' : 'Fixing Post-Vol → Solving Rate'"></span>
+                </div>
+                <div class="segmented-control">
+                    <button
+                            type="button"
+                            @click="setBoilSolverMode('option_b')"
+                            class="segmented-control-item"
+                            :class="{ 'is-active': manifest.boil_solver_mode === 'option_b' }"
+                    >
+                        Hardware-Driven (Option B)
+                    </button>
+                    <button
+                            type="button"
+                            @click="setBoilSolverMode('option_a')"
+                            class="segmented-control-item"
+                            :class="{ 'is-active': manifest.boil_solver_mode === 'option_a' }"
+                    >
+                        Target-Driven (Option A)
+                    </button>
+                </div>
+            </div>
+
+            <div class="step-grid-2col">
+                <!-- Pre-Boil Volume -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span>Pre-Boil Volume</span>
+                        <button type="button" @click="$store.units.toggleField('volume', 'preboil_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('preboil_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'preboil_volume_l')" title="Click to toggle unit"></button>
+                    </label>
+                    <input type="number" step="0.5" min="1" :value="volDisplay(manifest.preboil_volume_l, 'preboil_volume_l')" @input="setVolDisplay(manifest, 'preboil_volume_l', $event.target.value, 'preboil_volume_l')" class="form-input tabular-nums" required />
+                    <span class="form-hint">Total wort collected in kettle prior to boil</span>
+                </div>
+
+                <!-- Pre-Boil Gravity -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span>Pre-Boil Gravity</span>
+                        <button type="button" @click="$store.units.toggleField('gravity', 'preboil_gravity')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('preboil_gravity') }" x-text="$store.units.getFieldUnit('gravity', 'preboil_gravity')" title="Click to toggle gravity unit"></button>
+                    </label>
+                    <input type="number" step="0.001" min="1.000" max="1.200" :value="gravityDisplay(manifest.preboil_gravity, 'preboil_gravity')" @input="setGravityDisplay(manifest, 'preboil_gravity', $event.target.value, 'preboil_gravity')" class="form-input tabular-nums" required />
+                    <span class="form-hint">Specific gravity or Plato measured before boil</span>
+                </div>
+
+                <!-- Boil Time -->
+                <div class="form-group">
+                    <label class="form-label">Boil Time (min)</label>
+                    <input type="number" step="5" min="0" max="180" x-model.number="manifest.boil_time_min" @input="onBatchMetaChange" class="form-input tabular-nums" required />
+                    <span class="form-hint">Duration of wort boil</span>
+                </div>
+
+                <!-- Boil-Off Rate -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span>Boil-Off Rate</span>
+                        <button type="button" @click="$store.units.toggleField('volume', 'boil_off_rate_l_per_hr')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('boil_off_rate_l_per_hr') }" x-text="$store.units.getFieldUnit('volume', 'boil_off_rate_l_per_hr') + '/hr'" title="Click to toggle unit"></button>
+                    </label>
+                    <input type="number" step="0.1" min="0.1" max="15" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'boil_off_rate_l_per_hr')" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value, 'boil_off_rate_l_per_hr')" :disabled="manifest.boil_solver_mode === 'option_a'" class="form-input tabular-nums" required />
+                    <span class="form-hint" x-text="manifest.boil_solver_mode === 'option_a' ? 'Solved automatically from pre/post volumes' : 'Evaporation rate per hour (PID duty cycle)'"></span>
+                </div>
+
+                <!-- Post-Boil Volume -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span>Post-Boil Volume</span>
+                        <button type="button" @click="$store.units.toggleField('volume', 'postboil_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('postboil_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'postboil_volume_l')" title="Click to toggle unit"></button>
+                    </label>
+                    <input type="number" step="0.5" min="1" :value="volDisplay(manifest.postboil_volume_l, 'postboil_volume_l')" @input="setVolDisplay(manifest, 'postboil_volume_l', $event.target.value, 'postboil_volume_l')" :disabled="manifest.boil_solver_mode === 'option_b'" class="form-input tabular-nums" required />
+                    <span class="form-hint" x-text="manifest.boil_solver_mode === 'option_b' ? 'Derived from pre-boil volume minus boil-off' : 'Hot wort volume at flameout'"></span>
+                </div>
+
+                <!-- Target Packaged Volume (Result) -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span>Target Packaged Volume</span>
+                        <button type="button" @click="$store.units.toggleField('volume', 'target_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('target_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'target_volume_l')" title="Click to toggle unit"></button>
+                    </label>
+                    <input type="number" step="0.5" min="1" :value="volDisplay(manifest.target_volume_l, 'target_volume_l')" readonly disabled class="form-input tabular-nums" />
+                    <span class="form-hint">Derived: Post-boil minus trub loss & cooling shrinkage</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Synthesized Output Summary Card -->
+        <div class="synthesized-card">
+            <div class="synthesized-header">
+                <span class="synthesized-title">Synthesized Target Kettle Extract (S<sub>kettle</sub>)</span>
+                <span class="status-badge status-badge-success text-xs">Mass Balance Validated</span>
+            </div>
+            <div class="metric-strip">
+                <div class="metric-cell">
+                    <span class="metric-cell-label">Pre-Boil Vol / SG</span>
+                    <span class="metric-cell-val" x-text="manifest.preboil_volume_l + ' L (' + manifest.preboil_gravity + ')'"></span>
+                </div>
+                <div class="metric-cell">
+                    <span class="metric-cell-label">Post-Boil Vol / OG</span>
+                    <span class="metric-cell-val" x-text="manifest.postboil_volume_l + ' L (' + manifest.target_og + ')'"></span>
+                </div>
+                <div class="metric-cell">
+                    <span class="metric-cell-label">Target Packaged Vol</span>
+                    <span class="metric-cell-val" x-text="targetVolumeDisplay + ' ' + $store.units.preferences.volume.unit"></span>
+                </div>
+                <div class="metric-cell">
+                    <span class="metric-cell-label">Target Total Extract</span>
+                    <span class="metric-cell-val" x-text="targetKettleExtract + ' L·°'"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step Action Button -->
+        <div class="step-actions">
+            <button
+                    type="button"
+                    @click="markStepComplete(2)"
+                    class="btn btn-primary"
+            >
+                Next: Grain Bill →
+            </button>
+        </div>
+    </div>
+</div>

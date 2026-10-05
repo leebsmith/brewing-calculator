@@ -1,0 +1,119 @@
+<!-- Step 3: Fermentables (Grain Bill & Hamilton Proportional Allocator) (in partials) -->
+<div class="step-card" :class="{ 'is-active': activeStep === 3, 'is-completed': completedSteps.includes(3) }">
+    <div class="accordion-header">
+        <button
+                type="button"
+                class="accordion-trigger"
+                :aria-expanded="activeStep === 3"
+                aria-controls="step-panel-3"
+                id="step-trigger-3"
+                @click="setActiveStep(3)"
+        >
+            <div class="accordion-title-wrap">
+                <span class="accordion-step-num">3</span>
+                <div>
+                    <span class="accordion-title">Fermentables & Grist Bill</span>
+                    <span class="accordion-subtitle">Major structural malts (proportional parts) & trace additions</span>
+                </div>
+            </div>
+            <div class="accordion-controls">
+                <span class="status-badge text-xs" :class="$store.maltGrid.validationStatus.class" x-text="$store.maltGrid.validationStatus.label"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(1)" x-text="getStepStatusLabel(1)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 3 ? '▲' : '▼'"></span>
+            </div>
+        </button>
+    </div>
+
+    <div
+            id="step-panel-3"
+            role="region"
+            aria-labelledby="step-trigger-3"
+            x-show="activeStep === 3"
+            x-collapse
+            class="step-card-body"
+    >
+        <!-- Collapsed Static Card Summary Table -->
+        <div class="step-card-content">
+            <div class="table-header-toolbar">
+                <div>
+                    <h3 class="modal-drawer-title">Major Grist Contributors</h3>
+                    <p class="table-header-meta">Normalized via Hamilton Largest Remainder algorithm (summing to 100.0%)</p>
+                </div>
+                <button
+                        type="button"
+                        @click="$store.maltGrid.openModal()"
+                        class="btn btn-primary text-xs"
+                >
+                    <span>Configure Malts ⚙</span>
+                </button>
+            </div>
+
+            <!-- Summary Table -->
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>Malt Name</th>
+                        <th>Category</th>
+                        <th class="align-right">Parts</th>
+                        <th class="align-right">Malt %</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <template x-for="row in $store.maltGrid.majorMalts" :key="row.row_id">
+                        <tr>
+                            <td>
+                                <span class="font-medium" x-text="row.name"></span>
+                                <template x-if="row.is_custom">
+                                    <span class="status-badge status-badge-info text-nano">Custom</span>
+                                </template>
+                            </td>
+                            <td x-text="row.category"></td>
+                            <td class="align-right tabular-nums" x-text="row.parts"></td>
+                            <td class="align-right tabular-nums font-bold" :class="$store.maltGrid.isTrace(row.pct) ? 'table-pct-value is-trace' : 'table-pct-value'" x-text="row.pct.toFixed(1) + '%'"></td>
+                        </tr>
+                    </template>
+                    <template x-if="$store.maltGrid.majorMalts.length === 0">
+                        <tr>
+                            <td colspan="4" class="table-empty-cell">
+                                No malts added yet. Click 'Configure Malts' to build your grain bill.
+                            </td>
+                        </tr>
+                    </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Bottom Summary Footer Card -->
+            <div class="card" style="margin-top: var(--space-4); padding: var(--space-4); background-color: var(--sys-surface-subtle);">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4);">
+                    <div style="display: flex; align-items: center; gap: var(--space-6);">
+                        <div>
+                            <span class="text-xs text-muted block">Weighted Grist Color</span>
+                            <span class="text-base font-bold tabular-nums" x-text="$store.maltGrid.weightedColorDisplay + ' ' + $store.maltGrid.weightedColorUnit"></span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-muted block">Est. Grist Extract Potential</span>
+                            <span class="text-base font-bold tabular-nums" x-text="$store.maltGrid.weightedPotentialDisplay + ' ' + $store.maltGrid.weightedPotentialUnit"></span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-muted" style="max-width: 28rem; line-height: var(--line-height-snug);">
+                        * Subject to change with trace additions, mash efficiency, and extraction adjustments.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step Action Button -->
+        <div class="step-actions">
+            <button
+                    type="button"
+                    @click="markStepComplete(3)"
+                    class="btn btn-primary"
+                    :disabled="$store.maltGrid.validationStatus.type !== 'balanced'"
+            >
+                Next: Mash Profile →
+            </button>
+        </div>
+    </div>
+</div>
