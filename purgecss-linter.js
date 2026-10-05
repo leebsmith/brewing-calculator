@@ -9,7 +9,12 @@ async function runPurgeCSSLint() {
   const purgeCSS = new PurgeCSS();
   
   const results = await purgeCSS.purge({
-    content: ['frontend/index.html', 'frontend/script.js'],
+    content: [
+		'frontend/index.html', 
+		'frontend/script.js',
+		'./frontend/src/partials/**/*.html',
+		'./frontend/**/*.js'
+	],
     css: ['frontend/style.css'],
     rejected: true,
     defaultExtractor: content => content.match(/[A-Za-z0-9_-]+/g) || [],

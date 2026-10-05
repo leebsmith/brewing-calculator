@@ -23,6 +23,7 @@
 </head>
 <body class="app-shell" x-data>
   <!-- Top Navigation Bar -->
+  <!-- BEGIN: Site Header. Move to 'src/partials/site-header.html' -->
   <header class="site-header">
     <div class="header-inner">
       <div class="brand">
@@ -168,8 +169,10 @@
       </div>
     </div>
   </header>
+  <!-- END: Site Header -->
 
   <!-- Main Content Container: Alpine.data Component -->
+  <!-- BEGIN: Main Content Container. Move to 'src/partials/main-content.html' -->
   <main class="main-content" x-data="app">
     <div class="content-stack">
       <!-- Auth Status Banner / Guest State Gate -->
@@ -184,7 +187,7 @@
         </p>
       </div>
 
-      <!-- Authenticated Workspace -->
+      <!-- BEGIN: Authenticated Workspace. Move to 'src/partials/authenticated-workspace.html' -->
       <div
         x-cloak
         x-show="!$store.auth.loading && $store.auth.user"
@@ -207,7 +210,7 @@
         <!-- Step 3: Fermentables (Grain Bill & Hamilton Proportional Allocator) (in index) -->
         <load src="./src/partials/step-fermentables.html" />
 
-        <!-- Modal Editor Workspace (Popped Out) -->
+        <!-- BEGIN: Grain Bill Editor Modal. Move to 'src/partials/grain-bill-editor-modal.html' -->
         <div
           x-show="$store.maltGrid.modalOpen"
           x-transition.opacity.duration.200ms
@@ -218,7 +221,7 @@
           <div
             @click.outside=""
             class="modal-dialog modal-dialog-workspace"
-          >
+        >
             <!-- Modal Header -->
             <div class="modal-workspace-header">
               <div class="modal-workspace-header-title">
@@ -532,7 +535,7 @@
           </div>
         </div>
 
-        <!-- Slide-Over CRUD Drawer for Equipment Profiles -->
+        <!-- BEGIN: Equipment Profile Drawer. Move to 'src/partials/equipment-profile-drawer.html' -->
         <div
           x-show="showProfileDrawer"
           x-transition.opacity.duration.200ms
@@ -543,7 +546,7 @@
           <div
             @click.outside="closeProfileDrawer()"
             class="drawer-panel"
-          >
+        >
             <div class="drawer-header">
               <h2 class="drawer-title" x-text="drawerMode === 'list' ? 'Equipment Profile Library' : (drawerMode === 'create' ? 'Create Custom Profile' : 'Edit Profile')"></h2>
               <button type="button" @click="closeProfileDrawer()" class="btn-close">✕</button>
@@ -655,11 +658,14 @@
             </div>
           </div>
         </div>
+        <!-- END: Equipment Profile Drawer -->
       </div>
+      <!-- END: Authenticated Workspace -->
     </div>
   </main>
+  <!-- END: Main Content Container -->
 
-  <!-- Global Toast Notification Container -->
+  <!-- BEGIN: Global Toast Notification Container. Move to 'src/partials/toast-container.html' -->
   <div class="toast-container">
     <template x-for="toast in $store.ui.toasts" :key="toast.id">
       <div
@@ -674,13 +680,12 @@
       </div>
     </template>
   </div>
+  <!-- END: Global Toast Notification Container -->
+  <!-- END: Equipment Profile Drawer -->
+  <!-- END: Grain Bill Editor Modal -->
 
-  <!-- Footer -->
-  <footer class="site-footer">
-    <div>
-      Decoupled SPA / Headless FastAPI Architecture
-    </div>
-  </footer>
+  <!-- Site Footer. (in index) -->
+  <load src="src/partials/site-footer.html" />
 
   <!-- Option C Custom Override Prompt Modal -->
   <div
