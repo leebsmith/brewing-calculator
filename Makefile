@@ -18,14 +18,14 @@ seeds:
 
 # Target to start local emulators and development servers using concurrently
 local-dev:
-	@echo "Starting local emulators and development servers with concurrently..."
+	@echo "Starting local emulators and development servers sequentially..."
 	@echo "When finished, access the app at http://localhost:5173"
-	@./frontend/node_modules/.bin/concurrently \
-	  --names "VITE,FIREBASE,UV" \
-	  --prefix-colors "blue,yellow,green" \
-	  "cd frontend && npx vite dev" \
-	  "npx firebase emulators:start" \
-	  "cd backend && FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 uv run uvicorn app.main:app --reload --port 8000"
+	@echo "Starting Vite dev server..."
+	cd frontend && npm run dev &
+	@echo "Starting Firebase emulators..."
+	npx firebase emulators:start &
+	@echo "Starting backend server..."
+	cd backend && FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 uv run uvicorn app.main:app --reload --port 8000
 
 
 # Target to clean up local environment: stop processes and close ports.
