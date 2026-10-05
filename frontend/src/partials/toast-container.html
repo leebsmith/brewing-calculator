@@ -1,0 +1,15 @@
+<!-- Global Toast Notification Container. (in partials)-->
+<div class="toast-container">
+    <template x-for="toast in $store.ui.toasts" :key="toast.id">
+        <div
+                x-transition
+                class="toast"
+                :class="toast.type === 'success' ? 'toast-success' :
+                toast.type === 'error' ? 'toast-error' :
+                'toast-info'"
+        >
+            <span x-text="toast.message"></span>
+            <button @click="$store.ui.remove(toast.id)" class="toast-close" aria-label="Close notification">✕</button>
+        </div>
+    </template>
+</div>

@@ -28,7 +28,6 @@
   <load src="./src/partials/site-header.html" />
 
   <!-- Main Content Container: Alpine.data Component -->
-  <!-- BEGIN: Main Content Container. Move to 'src/partials/main-content.html' -->
   <main class="main-content" x-data="app">
     <div class="content-stack">
       <!-- Auth Status Banner / Guest State Gate -->
@@ -43,7 +42,6 @@
         </p>
       </div>
 
-      <!-- BEGIN: Authenticated Workspace. Move to 'src/partials/authenticated-workspace.html' -->
       <div
         x-cloak
         x-show="!$store.auth.loading && $store.auth.user"
@@ -66,7 +64,6 @@
         <!-- Step 3: Fermentables (Grain Bill & Hamilton Proportional Allocator) (in index) -->
         <load src="./src/partials/step-fermentables.html" />
 
-        <!-- BEGIN: Grain Bill Editor Modal. Move to 'src/partials/grain-bill-editor-modal.html' -->
         <div
           x-show="$store.maltGrid.modalOpen"
           x-transition.opacity.duration.200ms
@@ -391,7 +388,6 @@
           </div>
         </div>
 
-        <!-- BEGIN: Equipment Profile Drawer. Move to 'src/partials/equipment-profile-drawer.html' -->
         <div
           x-show="showProfileDrawer"
           x-transition.opacity.duration.200ms
@@ -514,31 +510,12 @@
             </div>
           </div>
         </div>
-        <!-- END: Equipment Profile Drawer -->
       </div>
-      <!-- END: Authenticated Workspace -->
     </div>
   </main>
-  <!-- END: Main Content Container -->
 
-  <!-- BEGIN: Global Toast Notification Container. Move to 'src/partials/toast-container.html' -->
-  <div class="toast-container">
-    <template x-for="toast in $store.ui.toasts" :key="toast.id">
-      <div
-        x-transition
-        class="toast"
-        :class="toast.type === 'success' ? 'toast-success' : 
-                toast.type === 'error' ? 'toast-error' : 
-                'toast-info'"
-      >
-        <span x-text="toast.message"></span>
-        <button @click="$store.ui.remove(toast.id)" class="toast-close" aria-label="Close notification">✕</button>
-      </div>
-    </template>
-  </div>
-  <!-- END: Global Toast Notification Container -->
-  <!-- END: Equipment Profile Drawer -->
-  <!-- END: Grain Bill Editor Modal -->
+  <!-- Global Toast Notification Container. in (index) -->
+  <load src="src/partials/toast-container.html" />
 
   <!-- Site Footer. (in index) -->
   <load src="src/partials/site-footer.html" />
