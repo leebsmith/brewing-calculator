@@ -69,9 +69,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Max Kettle Volume</span>
-                    <button type="button" @click="$store.units.toggleField('volume', 'max_kettle_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('max_kettle_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'max_kettle_volume_l')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_max_kettle_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_max_kettle_volume_l') }" x-text="$store.units.getLabel('step1_max_kettle_volume_l')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_kettle_volume_l, 'max_kettle_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_kettle_volume_l', $event.target.value, 'max_kettle_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_kettle_volume_l, 'step1_max_kettle_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_kettle_volume_l', $event.target.value, 'step1_max_kettle_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Boil kettle brim capacity</span>
             </div>
 
@@ -79,9 +79,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Max Mash Tun Volume</span>
-                    <button type="button" @click="$store.units.toggleField('volume', 'max_mash_tun_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('max_mash_tun_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'max_mash_tun_volume_l')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_max_mash_tun_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_max_mash_tun_volume_l') }" x-text="$store.units.getLabel('step1_max_mash_tun_volume_l')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_mash_tun_volume_l, 'max_mash_tun_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_mash_tun_volume_l', $event.target.value, 'max_mash_tun_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_mash_tun_volume_l, 'step1_max_mash_tun_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_mash_tun_volume_l', $event.target.value, 'step1_max_mash_tun_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Mash vessel overflow limit</span>
             </div>
 
@@ -89,9 +89,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Max HLT Volume</span>
-                    <button type="button" @click="$store.units.toggleField('volume', 'max_hlt_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('max_hlt_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'max_hlt_volume_l')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_max_hlt_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_max_hlt_volume_l') }" x-text="$store.units.getLabel('step1_max_hlt_volume_l')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.max_hlt_volume_l, 'max_hlt_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_hlt_volume_l', $event.target.value, 'max_hlt_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.max_hlt_volume_l, 'step1_max_hlt_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_hlt_volume_l', $event.target.value, 'step1_max_hlt_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Hot Liquor Tank initial fill capacity</span>
             </div>
 
@@ -99,9 +99,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>HLT Min Coil Floor</span>
-                    <button type="button" @click="$store.units.toggleField('volume', 'hlt_min_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('hlt_min_volume_l') }" x-text="$store.units.getFieldUnit('volume', 'hlt_min_volume_l')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_hlt_min_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_hlt_min_volume_l') }" x-text="$store.units.getLabel('step1_hlt_min_volume_l')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.hlt_min_volume_l, 'hlt_min_volume_l')" @input="setVolDisplay(manifest.equipment, 'hlt_min_volume_l', $event.target.value, 'hlt_min_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.hlt_min_volume_l, 'step1_hlt_min_volume_l')" @input="setVolDisplay(manifest.equipment, 'hlt_min_volume_l', $event.target.value, 'step1_hlt_min_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">HERMS coil submersion floor</span>
             </div>
 
@@ -109,9 +109,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Mash Dead Space</span>
-                    <button type="button" @click="$store.units.toggleField('volume', 'mash_dead_space_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('mash_dead_space_l') }" x-text="$store.units.getFieldUnit('volume', 'mash_dead_space_l')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_mash_dead_space_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_mash_dead_space_l') }" x-text="$store.units.getLabel('step1_mash_dead_space_l')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.mash_dead_space_l, 'mash_dead_space_l')" @input="setVolDisplay(manifest.equipment, 'mash_dead_space_l', $event.target.value, 'mash_dead_space_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.mash_dead_space_l, 'step1_mash_dead_space_l')" @input="setVolDisplay(manifest.equipment, 'mash_dead_space_l', $event.target.value, 'step1_mash_dead_space_l'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Unrecoverable mash plumbing loss</span>
             </div>
 
@@ -119,9 +119,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Trub Loss</span>
-                    <button type="button" @click="$store.units.toggleField('volume', 'trub_loss_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('trub_loss_l') }" x-text="$store.units.getFieldUnit('volume', 'trub_loss_l')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_trub_loss_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_trub_loss_l') }" x-text="$store.units.getLabel('step1_trub_loss_l')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.trub_loss_l, 'trub_loss_l')" @input="setVolDisplay(manifest.equipment, 'trub_loss_l', $event.target.value, 'trub_loss_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.trub_loss_l, 'step1_trub_loss_l')" @input="setVolDisplay(manifest.equipment, 'trub_loss_l', $event.target.value, 'step1_trub_loss_l'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Kettle bottom sediment loss</span>
             </div>
 
@@ -129,9 +129,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Boil-Off Rate (/hr)</span>
-                    <button type="button" @click="$store.units.toggleField('volume', 'boil_off_rate_l_per_hr')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('boil_off_rate_l_per_hr') }" x-text="$store.units.getFieldUnit('volume', 'boil_off_rate_l_per_hr')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_boil_off_rate_l_per_hr')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_boil_off_rate_l_per_hr') }" x-text="$store.units.getLabel('step1_boil_off_rate_l_per_hr')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.1" min="0.1" max="15" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'boil_off_rate_l_per_hr')" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value, 'boil_off_rate_l_per_hr'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.1" min="0.1" max="15" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'step1_boil_off_rate_l_per_hr')" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value, 'step1_boil_off_rate_l_per_hr'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Evaporation rate per hour</span>
             </div>
 
@@ -139,9 +139,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Grain Absorption Factor</span>
-                    <button type="button" @click="$store.units.toggleCompound('grain_absorption')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('grain_absorption') }" x-text="$store.units.getFieldUnit('compound', 'grain_absorption')" title="Click to toggle compound unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_grain_absorption')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_grain_absorption') }" x-text="$store.units.getLabel('step1_grain_absorption')" title="Click to toggle compound unit"></button>
                 </label>
-                <input type="number" step="0.01" min="0.5" max="3.0" :value="compoundDisplay(manifest.equipment.grain_absorption_factor_l_per_kg, 'grain_absorption')" @input="setCompoundDisplay(manifest.equipment, 'grain_absorption_factor_l_per_kg', $event.target.value, 'grain_absorption'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.01" min="0.5" max="3.0" :value="compoundDisplay(manifest.equipment.grain_absorption_factor_l_per_kg, 'step1_grain_absorption')" @input="setCompoundDisplay(manifest.equipment, 'grain_absorption_factor_l_per_kg', $event.target.value, 'step1_grain_absorption'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Wort retained per unit mass of dry malt</span>
             </div>
 
@@ -149,9 +149,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Conversion Efficiency (Ce)</span>
-                    <button type="button" @click="$store.units.togglePercentage('conversion_efficiency')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('conversion_efficiency') }" x-text="$store.units.getFieldUnit('percentage', 'conversion_efficiency')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_conversion_efficiency')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_conversion_efficiency') }" x-text="$store.units.getLabel('step1_conversion_efficiency')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="1" min="0" max="100" :value="percentageDisplay(manifest.equipment.conversion_efficiency, 'conversion_efficiency')" @input="setPercentageDisplay(manifest.equipment, 'conversion_efficiency', $event.target.value, 'conversion_efficiency'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="1" min="0" max="100" :value="percentageDisplay(manifest.equipment.conversion_efficiency, 'step1_conversion_efficiency')" @input="setPercentageDisplay(manifest.equipment, 'conversion_efficiency', $event.target.value, 'step1_conversion_efficiency'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Starch conversion efficiency</span>
             </div>
 
@@ -159,9 +159,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Cooling Shrinkage</span>
-                    <button type="button" @click="$store.units.togglePercentage('shrinkage_pct')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isFieldCustomized('shrinkage_pct') }" x-text="$store.units.getFieldUnit('percentage', 'shrinkage_pct')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_shrinkage_pct')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_shrinkage_pct') }" x-text="$store.units.getLabel('step1_shrinkage_pct')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.5" min="0" max="20" :value="percentageDisplay(manifest.equipment.shrinkage_pct, 'shrinkage_pct')" @input="setPercentageDisplay(manifest.equipment, 'shrinkage_pct', $event.target.value, 'shrinkage_pct'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="0" max="20" :value="percentageDisplay(manifest.equipment.shrinkage_pct, 'step1_shrinkage_pct')" @input="setPercentageDisplay(manifest.equipment, 'shrinkage_pct', $event.target.value, 'step1_shrinkage_pct'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Hot-to-cold contraction factor</span>
             </div>
         </div>

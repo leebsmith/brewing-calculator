@@ -509,56 +509,56 @@ export function createEquipmentManager() {
   };
 }
 
-// Global Units Store with Option C toggle support & per-field overrides
+// Global Units Store with Binary Invariant & Sparse Exceptions
 Alpine.store('units', {
-  activePreset: BREW_CONSTANTS.UNIT_PRESET_METRIC, // 'metric' | 'imperial' | 'custom'
-  domainDefaults: {
-    volume: 'L',
-    mass: 'kg',
-    hopMass: 'g',
-    temperature: 'C',
-    gravity: 'SG',
-    percentage: '%',
-    compound: 'L/kg',
-    extract_potential: 'L·°/kg',
-    color: 'SRM',
-    grist_potential_unit: 'L·°/kg'
-  },
-  preferences: {
-    // domain-level fallbacks
-    volume: { unit: 'L', is_customized: false },
-    mass: { unit: 'kg', is_customized: false },
-    hopMass: { unit: 'g', is_customized: false },
-    temperature: { unit: 'C', is_customized: false },
-    gravity: { unit: 'SG', is_customized: false },
-    percentage: { unit: '%', is_customized: false },
-    compound: { unit: 'L/kg', is_customized: false },
-    extract_potential: { unit: 'L·°/kg', is_customized: false },
-    color: { unit: 'SRM', is_customized: false },
-    grist_potential_unit: { unit: 'L·°/kg', is_customized: false }
-  },
-  fieldPreferences: {
-    // fieldKey -> { unit, is_customized }
-  },
-  promptModalOpen: false,
-  pendingPreset: null,
+  globalMode: BREW_CONSTANTS.UNIT_MODES.METRIC,
+  overrides: {},
 
   // Bi-Directional Hydration Coordinator State
   isReady: false,
   isSaving: false,
   error: { message: null },
 
+  get overrideCount() {
+    return Object.keys(this.overrides).filter(key => key in BREW_CONSTANTS.FIELD_REGISTRY).length;
+  },
+
+  get isPure() {
+    return this.overrideCount === 0;
+  },
+
+  get isMixed() {
+    return this.overrideCount > 0;
+  },
+
+  isPureMetric() {
+    return this.globalMode === BREW_CONSTANTS.UNIT_MODES.METRIC && this.isPure;
+  },
+
+  isMixedMetric() {
+    return this.globalMode === BREW_CONSTANTS.UNIT_MODES.METRIC && this.isMixed;
+  },
+
+  isPureImperial() {
+    return this.globalMode === BREW_CONSTANTS.UNIT_MODES.IMPERIAL && this.isPure;
+  },
+
+  isMixedImperial() {
+    return this.globalMode === BREW_CONSTANTS.UNIT_MODES.IMPERIAL && this.isMixed;
+  },
+
   sanitize(raw) {
-    if (!raw || typeof raw !== 'object') return {};
-    const sanitized = {};
-    if (raw.activePreset && typeof raw.activePreset === 'string') {
-      sanitized.activePreset = raw.activePreset;
-    }
-    if (raw.preferences && typeof raw.preferences === 'object') {
-      sanitized.preferences = raw.preferences;
-    }
-    if (raw.fieldPreferences && typeof raw.fieldPreferences === 'object') {
-      sanitized.fieldPreferences = raw.fieldPreferences;
+    if (!raw || typeof raw !== 'object') return { globalMode: BREW_CONSTANTS.UNIT_MODES.METRIC, overrides: {} };
+    const sanitized = {
+      globalMode: (raw.globalMode === BREW_CONSTANTS.UNIT_MODES.IMPERIAL) ? BREW_CONSTANTS.UNIT_MODES.IMPERIAL : BREW_CONSTANTS.UNIT_MODES.METRIC,
+      overrides: {}
+    };
+    if (raw.overrides && typeof raw.overrides === 'object') {
+      for (const [key, value] of Object.entries(raw.overrides)) {
+        if (key in BREW_CONSTANTS.FIELD_REGISTRY && (value === 0 || value === 1)) {
+          sanitized.overrides[key] = value;
+        }
+      }
     }
     return sanitized;
   },
@@ -568,10 +568,11 @@ Alpine.store('units', {
     this.error.message = null;
     try {
       const raw = await providerFn();
-      const sanitized = this.sanitize(raw);
-      if (sanitized.activePreset) this.activePreset = sanitized.activePreset;
-      if (sanitized.preferences) this.preferences = { ...this.preferences, ...sanitized.preferences };
-      if (sanitized.fieldPreferences) this.fieldPreferences = { ...sanitized.fieldPreferences };
+      if (raw) {
+        const sanitized = this.sanitize(raw);
+        this.globalMode = sanitized.globalMode;
+        this.overrides = sanitized.overrides;
+      }
     } catch (err) {
       this.error.message = err.message || BREW_CONSTANTS.MSG_UNIT_PREFERENCES_LOAD_FAILED;
       console.warn('Hydration coordinator error:', err);
@@ -598,27 +599,6 @@ Alpine.store('units', {
     this.error.message = null;
   },
 
-  isPureMetric() {
-    const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
-    const isMetricBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'L');
-    return isMetricBase && !hasCustom;
-  },
-  isMixedMetric() {
-    const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
-    const isMetricBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_METRIC || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'L');
-    return isMetricBase && hasCustom;
-  },
-  isPureImperial() {
-    const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
-    const isImperialBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'gal');
-    return isImperialBase && !hasCustom;
-  },
-  isMixedImperial() {
-    const hasCustom = Object.values(this.preferences).some(p => p.is_customized) || Object.keys(this.fieldPreferences).length > 0;
-    const isImperialBase = this.activePreset === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL || (this.activePreset === BREW_CONSTANTS.UNIT_PRESET_CUSTOM && this.preferences.volume.unit === 'gal');
-    return isImperialBase && hasCustom;
-  },
-
   init() {
     this.hydrate(async () => {
       const saved = localStorage.getItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES);
@@ -628,144 +608,109 @@ Alpine.store('units', {
 
   saveToStorage() {
     this.commit({
-      activePreset: this.activePreset,
-      preferences: this.preferences,
-      fieldPreferences: this.fieldPreferences
+      globalMode: this.globalMode,
+      overrides: this.overrides
     }, async (payload) => {
       localStorage.setItem(BREW_CONSTANTS.STORAGE_KEY_UNIT_PREFERENCES, JSON.stringify(payload));
     });
   },
 
-  setPreset(presetName) {
-    const hasCustomOverrides = Object.values(this.preferences).some(p => p.is_customized) ||
-      Object.values(this.fieldPreferences).some(p => p.is_customized);
-    if (hasCustomOverrides && presetName !== this.activePreset) {
-      this.pendingPreset = presetName;
-      this.promptModalOpen = true;
-      return;
+  getFieldBit(fieldKey) {
+    const domain = BREW_CONSTANTS.FIELD_REGISTRY[fieldKey];
+    if (!domain) return this.globalMode; // Unknown field defaults to global
+
+    if (fieldKey in this.overrides) {
+      return this.overrides[fieldKey];
     }
-    this.applyPreset(presetName, true);
+    // Percentages are invariant (always default to bit 0 '%')
+    if (domain === BREW_CONSTANTS.UNIT_DOMAIN_PERCENTAGE) {
+      return 0;
+    }
+    return this.globalMode;
   },
 
-  applyPreset(presetName, overwriteAll = true) {
-    this.activePreset = presetName;
-    this.promptModalOpen = false;
-
-    const newUnits = presetName === BREW_CONSTANTS.UNIT_PRESET_IMPERIAL
-      ? { volume: 'gal', mass: 'lb', hopMass: 'oz', temperature: 'F', gravity: 'SG', percentage: '%', color: 'SRM', extract_potential: 'gal·°/lb' }
-      : { volume: 'L', mass: 'kg', hopMass: 'g', temperature: 'C', gravity: 'SG', percentage: '%', color: 'ECB', extract_potential: 'L·°/kg' };
-
-    const updatedPrefs = { ...this.preferences };
-    for (const [domain, unit] of Object.entries(newUnits)) {
-      if (overwriteAll || !updatedPrefs[domain]?.is_customized) {
-        updatedPrefs[domain] = { unit, is_customized: false };
-      }
+  getFieldUnit(fieldKey) {
+    // If not provided or not in registry, look up by domain as a fallback
+    // (This supports legacy domain-only lookups like getFieldUnit('color') used elsewhere)
+    let domain = BREW_CONSTANTS.FIELD_REGISTRY[fieldKey];
+    let isDomainLookup = false;
+    
+    if (!domain) {
+      domain = fieldKey;
+      isDomainLookup = true;
     }
-    this.preferences = updatedPrefs;
+    
+    const tuple = BREW_CONSTANTS.DOMAIN_BINARY_PAIRS[domain];
+    if (!tuple) return '';
+    
+    const bit = isDomainLookup ? 
+      (domain === BREW_CONSTANTS.UNIT_DOMAIN_PERCENTAGE ? 0 : this.globalMode) : 
+      this.getFieldBit(fieldKey);
+      
+    return tuple[bit] || tuple[0];
+  },
 
-    if (overwriteAll) {
-      this.fieldPreferences = {};
+  getLabel(fieldKey) {
+    return this.getFieldUnit(fieldKey);
+  },
+
+  isCustomized(fieldKey) {
+    const domain = BREW_CONSTANTS.FIELD_REGISTRY[fieldKey];
+    const defaultBit = (domain === BREW_CONSTANTS.UNIT_DOMAIN_PERCENTAGE) ? 0 : this.globalMode;
+    return this.getFieldBit(fieldKey) !== defaultBit;
+  },
+
+  toggle(fieldKey) {
+    if (!(fieldKey in BREW_CONSTANTS.FIELD_REGISTRY)) return;
+    const domain = BREW_CONSTANTS.FIELD_REGISTRY[fieldKey];
+    const currentBit = this.getFieldBit(fieldKey);
+    const nextBit = 1 - currentBit; // bit flip
+
+    const defaultBit = (domain === BREW_CONSTANTS.UNIT_DOMAIN_PERCENTAGE) ? 0 : this.globalMode;
+
+    if (nextBit === defaultBit) {
+      delete this.overrides[fieldKey];
     } else {
-      const updatedFields = { ...this.fieldPreferences };
-      for (const [fieldKey, pref] of Object.entries(updatedFields)) {
-        if (!pref.is_customized) {
-          delete updatedFields[fieldKey];
-        }
-      }
-      this.fieldPreferences = updatedFields;
+      this.overrides[fieldKey] = nextBit;
     }
     this.saveToStorage();
   },
 
-  getFieldUnit(domain, fieldKey) {
-    if (fieldKey && this.fieldPreferences[fieldKey] && this.fieldPreferences[fieldKey].is_customized) {
-      return this.fieldPreferences[fieldKey].unit;
-    }
-    return this.preferences[domain]?.unit || this.domainDefaults[domain] || 'L';
+  resetOverrides() {
+    this.overrides = {};
+    this.saveToStorage();
   },
 
-  isFieldCustomized(fieldKey) {
-    return !!this.fieldPreferences[fieldKey]?.is_customized;
-  },
-
-  toggleField(domain, fieldKey) {
-    const current = this.getFieldUnit(domain, fieldKey);
-    let next = current;
-    if (domain === 'volume') {
-      next = current === 'L' ? 'gal' : 'L';
-    } else if (domain === 'mass' || domain === 'hopMass') {
-      next = current === 'kg' ? 'lb' : 'kg';
-    } else if (domain === 'temperature') {
-      next = current === 'C' ? 'F' : 'C';
-    } else if (domain === 'gravity') {
-      next = current === 'SG' ? 'Plato' : 'SG';
-    } else if (domain === 'percentage') {
-      next = current === 'fraction' ? '%' : 'fraction';
-    }
-
-    const defaultUnit = this.activePreset === 'imperial'
-      ? (domain === 'mass' || domain === 'hopMass' ? 'lb' : (domain === 'volume' ? 'gal' : (domain === 'temperature' ? 'F' : (domain === 'gravity' ? 'SG' : (domain === 'percentage' ? '%' : 'fraction')))))
-      : (domain === 'mass' || domain === 'hopMass' ? 'kg' : (domain === 'volume' ? 'L' : (domain === 'temperature' ? 'C' : (domain === 'gravity' ? 'SG' : (domain === 'percentage' ? '%' : 'fraction')))));
-
-    const isCustom = next !== defaultUnit;
-    this.activePreset = 'custom';
-
-    if (fieldKey) {
-      if (isCustom) {
-        this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
+  handleModeClick(targetMode) {
+    if (targetMode === this.globalMode) {
+      if (this.isPure) {
+        // Case A: No-op
+        return;
       } else {
-        delete this.fieldPreferences[fieldKey];
+        // Case B: Reset overrides
+        this.resetOverrides();
       }
     } else {
-      this.preferences[domain] = { unit: next, is_customized: isCustom };
+      // Case C: Switch modes
+      this.globalMode = targetMode;
+      this.overrides = {};
+      this.saveToStorage();
     }
-    this.saveToStorage();
-  },
-
-  toggleCompound(fieldKey) {
-    const current = this.getFieldUnit('compound', fieldKey);
-    const next = current === 'L/kg' ? 'qt/lb' : 'L/kg';
-    const isCustom = next !== 'L/kg';
-    this.activePreset = 'custom';
-    if (isCustom) {
-      this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
-    } else {
-      delete this.fieldPreferences[fieldKey];
-    }
-    this.saveToStorage();
-  },
-
-  toggleExtractPotential(fieldKey) {
-    const current = this.getFieldUnit('extract_potential', fieldKey);
-    const next = current === 'L·°/kg' ? 'gal·°/lb' : 'L·°/kg';
-    const isCustom = next !== 'L·°/kg';
-    this.activePreset = 'custom';
-    if (isCustom) {
-      this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
-    } else {
-      delete this.fieldPreferences[fieldKey];
-    }
-    this.saveToStorage();
-  },
-
-  togglePercentage(fieldKey) {
-    const current = this.getFieldUnit('percentage', fieldKey);
-    const next = current === 'fraction' ? '%' : 'fraction';
-    const isCustom = next !== '%';
-    this.activePreset = 'custom';
-    if (isCustom) {
-      this.fieldPreferences[fieldKey] = { unit: next, is_customized: true };
-    } else {
-      delete this.fieldPreferences[fieldKey];
-    }
-    this.saveToStorage();
   },
 
   toDisplay(domain, baseValue, fieldKey) {
     if (baseValue == null || isNaN(baseValue)) return 0;
     const domainDef = UNIT_REGISTRY[domain];
     if (!domainDef) return baseValue;
-    const pref = this.getFieldUnit(domain, fieldKey);
+    
+    let pref;
+    if (fieldKey && fieldKey in BREW_CONSTANTS.FIELD_REGISTRY) {
+        pref = this.getFieldUnit(fieldKey);
+    } else {
+        const tuple = BREW_CONSTANTS.DOMAIN_BINARY_PAIRS[domain];
+        pref = tuple ? tuple[domain === BREW_CONSTANTS.UNIT_DOMAIN_PERCENTAGE ? 0 : this.globalMode] : null;
+    }
+    
     const unitDef = domainDef.units[pref];
     if (!unitDef) return baseValue;
 
@@ -782,7 +727,15 @@ Alpine.store('units', {
     if (displayValue == null || isNaN(displayValue)) return 0;
     const domainDef = UNIT_REGISTRY[domain];
     if (!domainDef) return displayValue;
-    const pref = this.getFieldUnit(domain, fieldKey);
+    
+    let pref;
+    if (fieldKey && fieldKey in BREW_CONSTANTS.FIELD_REGISTRY) {
+        pref = this.getFieldUnit(fieldKey);
+    } else {
+        const tuple = BREW_CONSTANTS.DOMAIN_BINARY_PAIRS[domain];
+        pref = tuple ? tuple[domain === BREW_CONSTANTS.UNIT_DOMAIN_PERCENTAGE ? 0 : this.globalMode] : null;
+    }
+    
     const unitDef = domainDef.units[pref];
     if (!unitDef) return displayValue;
 

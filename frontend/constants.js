@@ -34,11 +34,44 @@ export const BREW_CONSTANTS = {
   AUTH_EMULATOR_PORT: 9199,
   BACKEND_API_URL: 'http://localhost:8000',
 
-  // Unit System Constants & Presets
-  UNIT_PRESET_METRIC: 'metric',
-  UNIT_PRESET_IMPERIAL: 'imperial',
-  UNIT_PRESET_CUSTOM: 'custom',
+  // Unit System Constants & Registry
   STORAGE_KEY_UNIT_PREFERENCES: 'brew_unit_preferences',
+
+  UNIT_MODES: {
+    METRIC: 0,
+    IMPERIAL: 1
+  },
+
+  DOMAIN_BINARY_PAIRS: {
+    volume: ['L', 'gal'],
+    mass: ['kg', 'lb'],
+    hopMass: ['g', 'oz'],
+    temperature: ['C', 'F'],
+    gravity: ['Plato', 'SG'],
+    compound: ['L/kg', 'qt/lb'],
+    extract_potential: ['L·°/kg', 'gal·°/lb'],
+    color: ['EBC', 'SRM'],
+    percentage: ['%', 'fraction']
+  },
+
+  FIELD_REGISTRY: {
+    // Step 1: Equipment Profile
+    'step1_max_kettle_volume_l': 'volume',
+    'step1_max_mash_tun_volume_l': 'volume',
+    'step1_max_hlt_volume_l': 'volume',
+    'step1_hlt_min_volume_l': 'volume',
+    'step1_mash_dead_space_l': 'volume',
+    'step1_trub_loss_l': 'volume',
+    'step1_boil_off_rate_l_per_hr': 'volume',
+    'step1_grain_absorption': 'compound',
+    'step1_conversion_efficiency': 'percentage',
+    'step1_shrinkage_pct': 'percentage',
+    // Step 2: Batch Metadata
+    'step2_preboil_volume_l': 'volume',
+    'step2_postboil_volume_l': 'volume',
+    'step2_target_volume_l': 'volume',
+    'step2_preboil_gravity': 'gravity'
+  },
 
   UNIT_DOMAIN_MASS: 'mass',
   UNIT_DOMAIN_VOLUME: 'volume',

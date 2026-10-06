@@ -11,27 +11,27 @@
             <div class="tri-state-group">
                 <button
                         type="button"
-                        @click="$store.units.setPreset('metric')"
+                        @click="$store.units.handleModeClick(0)"
                         class="tri-state-pill"
                         :class="{
               'tri-state-pill-solid': $store.units.isPureMetric(),
               'tri-state-pill-tinted': $store.units.isMixedMetric(),
               'tri-state-pill-ghost': !$store.units.isPureMetric() && !$store.units.isMixedMetric()
             }"
-                        :aria-pressed="$store.units.activePreset === 'metric'"
+                        :aria-pressed="$store.units.isPureMetric() || $store.units.isMixedMetric()"
                 >
                     Metric (L)
                 </button>
                 <button
                         type="button"
-                        @click="$store.units.setPreset('imperial')"
+                        @click="$store.units.handleModeClick(1)"
                         class="tri-state-pill"
                         :class="{
               'tri-state-pill-solid': $store.units.isPureImperial(),
               'tri-state-pill-tinted': $store.units.isMixedImperial(),
               'tri-state-pill-ghost': !$store.units.isPureImperial() && !$store.units.isMixedImperial()
             }"
-                        :aria-pressed="$store.units.activePreset === 'imperial'"
+                        :aria-pressed="$store.units.isPureImperial() || $store.units.isMixedImperial()"
                 >
                     Imperial (gal)
                 </button>
