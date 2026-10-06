@@ -179,12 +179,15 @@ When rendering any numerical input field, the unit is resolved via a strict fall
 
 ### 3.6 Reactive Unit Store & Backend Persistence Pattern
 To support seamless per-field and per-domain unit customization across sessions without sacrificing UI performance:
+
 * **Alpine Reactive Store (`Alpine.store('units', ...)`):** All unit preferences are held in a centralized reactive store, making every `UnitInput` component instantly reactive across all wizard steps and modals.
-* **Startup Hydration:** Upon initial application authentication and bootstrap, the store fetches the user's unit preference map from their Firestore profile document (with a robust fallback to `localStorage` or default metric base).
-* **On-Change Background Synchronization:** When a user toggles a unit on any field or domain (e.g., switching hop mass from `g` to `oz`), the store immediately updates local UI reactivity and triggers a lightweight asynchronous background request (`PATCH /api/user/preferences`) to persist the preference map, ensuring cross-device continuity for infrequent preference updates.
-* **Global Toggle vs. Granular Overrides (Option C):** When a user triggers the global master unit toggle (e.g., switching between Metric and US Imperial), the store checks for active per-field custom overrides (`is_customized: true`). If overrides exist, a lightweight clarification prompt is surfaced offering two distinct actions:
-  1. **"Apply to All":** Overwrites custom modifications, resetting all domains to the selected global preset.
-  2. **"Update Unmodified Only":** Preserves intentional custom overrides (e.g., maintaining hop mass in grams) while updating all unmodded domains to the new preset.
+* **Universal Field Registry (`FIELD_REGISTRY`):** Declared in `frontend/constants.js`, providing an explicit allowlist of supported unit-aware fields across Steps 1 and 2 to eliminate override sprawl and simplify template bindings to `$store.units.toggle(fieldKey)`.
+* **Binary Global Mode Invariant:** Global mode is strictly binary ($0 = \text{Metric}$, $1 = \text{Imperial}$). The active mode button renders tri-state visual styling: **Solid** (Pure, $0$ overrides), **Tinted** (Mixed, $> 0$ overrides), or **Ghost** (Inactive).
+* **Deterministic Interaction Lifecycle:**
+  * **Solid Click (Case A):** No-op (system already pure).
+  * **Tinted Click (Case B):** Deterministic reset of all overrides to the active global mode (returns to Solid).
+  * **Ghost Click (Case C):** Deterministic switch flipping the global bit and resetting all overrides to the new global mode (becomes Solid). Obsolete modal confirmation prompts are eliminated.
+* **Startup Hydration & Sparse Exception Persistence:** The store persists only the binary global bit and a sparse map of active deviations (`overrides: { [fieldKey]: unitBit }`) to `localStorage`, guaranteeing zero state rot from deprecated keys.
 
 
 ---
