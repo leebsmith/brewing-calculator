@@ -135,15 +135,15 @@
             <div class="metric-strip">
                 <div class="metric-cell">
                     <span class="metric-cell-label">Pre-Boil Vol / SG</span>
-                    <span class="metric-cell-val" x-text="manifest.preboil_volume_l + ' L (' + manifest.preboil_gravity + ')'"></span>
+                    <span class="metric-cell-val" x-text="volDisplay(manifest.preboil_volume_l, 'step2_preboil_volume_l') + ' ' + $store.units.getLabel('step2_preboil_volume_l') + ' (' + gravityDisplay(manifest.preboil_gravity, 'step2_preboil_gravity') + ' ' + $store.units.getLabel('step2_preboil_gravity') + ')'"></span>
                 </div>
                 <div class="metric-cell">
                     <span class="metric-cell-label">Post-Boil Vol / OG</span>
-                    <span class="metric-cell-val" x-text="manifest.postboil_volume_l + ' L (' + manifest.target_og + ')'"></span>
+                    <span class="metric-cell-val" x-text="volDisplay(manifest.postboil_volume_l, 'step2_postboil_volume_l') + ' ' + $store.units.getLabel('step2_postboil_volume_l') + ' (' + gravityDisplay(manifest.target_og) + ' ' + $store.units.getLabel('gravity') + ')'"></span>
                 </div>
                 <div class="metric-cell">
                     <span class="metric-cell-label">Target Packaged Vol</span>
-                    <span class="metric-cell-val" x-text="targetVolumeDisplay + ' ' + $store.units.preferences.volume.unit"></span>
+                    <span class="metric-cell-val" x-text="volDisplay(manifest.target_volume_l, 'step2_target_volume_l') + ' ' + $store.units.getLabel('step2_target_volume_l')"></span>
                 </div>
                 <div class="metric-cell">
                     <span class="metric-cell-label">Target Total Extract</span>

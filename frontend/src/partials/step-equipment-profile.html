@@ -175,19 +175,19 @@
             <div class="metric-strip">
                 <div class="metric-cell">
                     <span class="metric-cell-label">Kettle Limit</span>
-                    <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.max_kettle_volume_l) + ' ' + $store.units.preferences.volume.unit"></span>
-                </div>
-                <div class="metric-cell">
-                    <span class="metric-cell-label">Fixed Losses</span>
-                    <span class="metric-cell-val" x-text="volDisplay((parseFloat(manifest.equipment.mash_dead_space_l) || 0) + (parseFloat(manifest.equipment.trub_loss_l) || 0)) + ' ' + $store.units.preferences.volume.unit"></span>
-                </div>
-                <div class="metric-cell">
-                    <span class="metric-cell-label">Boil-Off Rate</span>
-                    <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.boil_off_rate_l_per_hr) + ' ' + $store.units.preferences.volume.unit + '/hr'"></span>
-                </div>
-                <div class="metric-cell">
-                    <span class="metric-cell-label">HERMS Coil Floor</span>
-                    <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.hlt_min_volume_l) + ' ' + $store.units.preferences.volume.unit"></span>
+                    <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.max_kettle_volume_l, 'step1_max_kettle_volume_l') + ' ' + $store.units.getLabel('step1_max_kettle_volume_l')"></span>
+                    </div>
+                    <div class="metric-cell">
+                    <span class="metric-cell-label">System Dead Space</span>
+                    <span class="metric-cell-val" x-text="volDisplay((parseFloat(manifest.equipment.mash_dead_space_l) || 0) + (parseFloat(manifest.equipment.trub_loss_l) || 0), 'step1_mash_dead_space_l') + ' ' + $store.units.getLabel('step1_mash_dead_space_l')"></span>
+                    </div>
+                    <div class="metric-cell">
+                    <span class="metric-cell-label">Hourly Evaporation</span>
+                    <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'step1_boil_off_rate_l_per_hr') + ' ' + $store.units.getLabel('step1_boil_off_rate_l_per_hr') + '/hr'"></span>
+                    </div>
+                    <div class="metric-cell">
+                    <span class="metric-cell-label">HLT Coil Floor</span>
+                    <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.hlt_min_volume_l, 'step1_hlt_min_volume_l') + ' ' + $store.units.getLabel('step1_hlt_min_volume_l')"></span>
                 </div>
             </div>
         </div>

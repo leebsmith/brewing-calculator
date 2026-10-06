@@ -1393,29 +1393,7 @@ Alpine.data('wizard', () => {
       ThermodynamicSolver.solveBoil(this.manifest);
     },
 
-    // Step 1 Synthesized Outputs (delegated to ThermodynamicSolver)
-    get fixedSystemLoss() {
-      const eq = this.manifest.equipment;
-      return ThermodynamicSolver.calculateFixedLoss(eq.mash_dead_space_l, eq.trub_loss_l);
-    },
-
-    get hourlyEvaporation() {
-      return (parseFloat(this.manifest.equipment.boil_off_rate_l_per_hr) || 0).toFixed(2);
-    },
-
-    get kettleCapacity() {
-      return (parseFloat(this.manifest.equipment.max_kettle_volume_l) || 0).toFixed(1);
-    },
-
-    get hltCoilFloor() {
-      return (parseFloat(this.manifest.equipment.hlt_min_volume_l) || 0).toFixed(1);
-    },
-
     // Step 2 Synthesized Outputs (delegated to ThermodynamicSolver)
-    get targetVolumeDisplay() {
-      return (parseFloat(this.manifest.target_volume_l) || 0).toFixed(1);
-    },
-
     get targetOgPoints() {
       return ThermodynamicSolver.calculateOgPoints(this.manifest.target_og);
     },
