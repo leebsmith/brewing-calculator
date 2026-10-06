@@ -6,14 +6,11 @@ PROJECT_ID := batch-brewing-calculator
 CLOUD_RUN_SERVICE := batch-brewing-calculator-backend
 CLOUD_RUN_REGION := us-east4
 
-# Frontend build output directory (matches vite.config.js and firebase.json).
-FRONTEND_PUBLIC_DIR := frontend/dist
-
-.PHONY: local local-dev clean deploy deploy-backend deploy-frontend destroy seeds
+.PHONY: local-dev clean deploy deploy-backend deploy-frontend destroy seeds
 
 # Target to build seed databases
 seeds:
-	@echo "Makeing 'seeds' database files"
+	@echo "Making 'seeds' database files"
 	cd backend && uv run python ../scripts/build_fermentables.py
 
 # Target to start local emulators and development servers using concurrently
@@ -42,7 +39,7 @@ deploy: deploy-backend deploy-frontend
 
 deploy-backend:
 	@echo "Exporting uv dependencies for Cloud Buildpacks..."
-	cd backend && uv pip compile pyproject.toml -o requirements.txt
+	cd backend && uv export --frozen --no-dev -o requirements.txt
 	@echo "Deploying backend to Cloud Run via Buildpacks..."
 	gcloud run deploy $(CLOUD_RUN_SERVICE) \
 		--source backend/ \

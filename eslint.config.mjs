@@ -9,10 +9,21 @@ import globals from "globals";
  * Analyzes JS logic, Alpine.js constructs, and HTML markup integrity.
  */
 export default [
+  // Global Ignores
+  {
+    ignores: [
+      "**/node_modules/**",
+      "frontend/dist/**",
+      "dist/**",
+      "frontend/tests/**",
+      "purgecss-linter.js",
+      "emulator-data/**"
+    ]
+  },
+
   // 1. JavaScript Rules
   {
     files: ["frontend/**/*.js"],
-    ignores: ["node_modules/**", "purgecss-linter.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",

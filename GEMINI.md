@@ -15,6 +15,13 @@ This project is a mono-repo containing vanilla JavaScript with Alpine.js and pur
 * Always formulate backend commands as `uv run <command>`, `uv add <package>`, or `uv sync`.
 * The frontend utilizes Node.js, npm/npx, and Vite for its build toolchain. Package management is handled by npm, and build scripts are defined in `package.json` and orchestrated via a Makefile.
 
+### ESLint Invocation Scope (Flat Config)
+
+* `eslint.config.mjs` sits at the repository root, so its `files:` globs (`frontend/**/*.js`, `frontend/**/*.html`) resolve relative to the repository root, not the current working directory (`cwd`).
+* **Root Execution Mandate:** Always lint from the repository root via `npm run lint`. Running `eslint` from inside `frontend/` leaves `frontend/**` unmatched—ESLint reports 0 errors, exits 0, and remains silent about inspecting nothing, producing a false clean.
+* **No Nested Configs:** Do not add a nested ESLint configuration inside `frontend/`.
+* **Diagnostic Tell:** If `eslint --print-config <file>` shows built-in defaults (default `ecmaVersion`, empty `"rules"`) instead of the matching block's settings, the file path matched no `files:` block—meaning the glob missed, not that no rules are configured.
+
 ### Git Command Standards & Security Protocols (MANDATORY)
 
 To prevent security guard blocks, pager formatting errors (`delta`), and shell interpretation faults in the agentic CLI, strictly adhere to these patterns:
@@ -75,22 +82,24 @@ The Python backend enforces strict module boundaries using `Tach`. You MUST resp
 2. `app.auth`: Token verification and authentication dependencies.
 3. `app.service`: Business logic and orchestration.
 4. `app.repositories`: Data access layer (Firestore).
-5. `app.schemas`: Pydantic data transfer objects.
-6. `app.database`: Firebase client initialization.
+5. `app.seeds`: Seed data fixtures and loaders.
+6. `app.schemas`: Pydantic data transfer objects.
+7. `app.database`: Firebase client initialization.
 
 **Strict Import Rules (Tach Contracts):**
 
 * `app.main` MAY ONLY import from `app.auth`, `app.service`, `app.schemas`, `app.database`, and standard libraries/frameworks. It injects dependencies into route handlers.
 * `app.auth` MAY ONLY import from `app.schemas`, `firebase_admin`, and standard/framework libraries. It MUST NOT import from `app.main`, `app.service`, `app.repositories`, or `app.database`.
 * `app.service` MAY ONLY import from `app.repositories`, `app.schemas`, and standard libraries. It MUST NOT import from `app.auth`, `app.database`, or `firebase_admin`.
-* `app.repositories` MAY ONLY import from `app.schemas`, `firebase_admin`, and standard libraries. It MUST NOT import from `app.main`, `app.auth`, `app.service`, or `app.database`.
+* `app.repositories` MAY ONLY import from `app.schemas`, `app.seeds`, `firebase_admin`, and standard libraries. It MUST NOT import from `app.main`, `app.auth`, `app.service`, or `app.database`.
+* `app.seeds` MAY ONLY import from `app.schemas` and standard libraries.
 * `app.database` MAY ONLY import `firebase_admin` and standard libraries. It MUST NOT import internal modules.
 * `app.schemas` MUST NOT import from ANY other internal module.
 
 ## 6. Hybrid Networking & CORS Rules
 
 * **Production:** Firebase Hosting rewrites `/api/**` to Cloud Run, operating under a unified single origin (`https://<project>.web.app`). CORS is eliminated; all client requests must use relative paths (e.g., `/api/...`).
-* **Local Development:** The frontend runs on the Hosting emulator (`http://127.0.0.1:5000`) and the backend runs natively (`http://127.0.0.1:8000`). FastAPI enables development-scoped `CORSMiddleware` for port 5000 origins.
+* **Local Development:** The frontend runs via Vite (`http://127.0.0.1:5173`) during interactive development and can also be served by the Hosting emulator (`http://127.0.0.1:5000`). The backend runs natively (`http://127.0.0.1:8000`). FastAPI enables development-scoped `CORSMiddleware` for both Vite (port 5173) and Hosting emulator (port 5000) origins.
 
 ## 7. Local Emulation & Testing
 
