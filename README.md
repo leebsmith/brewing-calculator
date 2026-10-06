@@ -161,12 +161,17 @@ The backend adheres to strict architectural boundaries enforced by `tach`.
 
 ### 2. Deploy Backend to Cloud Run
 
-Run this command from the \`backend/\` directory:
-\`\`\`bash
-# Build and deploy the Docker image to Cloud Run
-gcloud run deploy api-backend --source . --region us-east4 --allow-unauthenticated
-\`\`\`
-*Note: The \`Dockerfile\` in the \`backend/\` directory should be set up to serve the application using \`uvicorn\` on the port specified by the \`PORT\` environment variable.*
+You can deploy directly using the Makefile from the project root:
+```bash
+make deploy-backend
+```
+
+Or manually run `gcloud` from the `backend/` directory:
+```bash
+# Build and deploy to Cloud Run
+gcloud run deploy batch-brewing-calculator-backend --source . --region us-east4 --allow-unauthenticated
+```
+*Note: The `Dockerfile` in the `backend/` directory should be set up to serve the application using `uvicorn` on the port specified by the `PORT` environment variable.*
 
 ### 3. Deploy Frontend to Firebase Hosting
 

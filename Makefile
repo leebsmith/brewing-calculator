@@ -6,8 +6,8 @@ PROJECT_ID := batch-brewing-calculator
 CLOUD_RUN_SERVICE := batch-brewing-calculator-backend
 CLOUD_RUN_REGION := us-east4
 
-# Frontend build output directory (matches vite.config.js).
-FRONTEND_PUBLIC_DIR := public
+# Frontend build output directory (matches vite.config.js and firebase.json).
+FRONTEND_PUBLIC_DIR := frontend/dist
 
 .PHONY: local local-dev clean deploy deploy-backend deploy-frontend destroy seeds
 
@@ -18,14 +18,15 @@ seeds:
 
 # Target to start local emulators and development servers using concurrently
 local-dev:
-	@echo "Starting local emulators and development servers sequentially..."
+	@echo "Starting local emulators and development servers with concurrently..."
 	@echo "When finished, access the app at http://localhost:5173"
-	@echo "Starting Vite dev server..."
-	cd frontend && npm run dev &
-	@echo "Starting Firebase emulators..."
-	npx firebase emulators:start &
-	@echo "Starting backend server..."
-	cd backend && FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 uv run uvicorn app.main:app --reload --port 8000
+	@npx concurrently \
+		--kill-others \
+		--names "VITE,FIREBASE,UV" \
+		--prefix-colors "blue,yellow,green" \
+		"npm run dev" \
+		"npx firebase emulators:start" \
+		"cd backend && FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 uv run uvicorn app.main:app --reload --port 8000"
 
 
 # Target to clean up local environment: stop processes and close ports.
@@ -51,7 +52,7 @@ deploy-backend:
 
 deploy-frontend:
 	@echo "Building frontend..."
-	cd frontend && npx vite build
+	npm run build
 	@echo "Deploying frontend to Firebase Hosting..."
 	npx firebase deploy --only hosting --project $(PROJECT_ID)
 
