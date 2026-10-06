@@ -105,14 +105,14 @@
                 <span class="form-hint">HERMS coil submersion floor</span>
             </div>
 
-            <!-- Mash Dead Space -->
+            <!-- Unrecoverable Mash Loss -->
             <div class="form-group">
                 <label class="form-label">
-                    <span>Mash Dead Space</span>
+                    <span>Unrecoverable Mash Loss</span>
                     <button type="button" @click="$store.units.toggle('step1_mash_dead_space_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_mash_dead_space_l') }" x-text="$store.units.getLabel('step1_mash_dead_space_l')" title="Click to toggle unit"></button>
                 </label>
                 <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.mash_dead_space_l, 'step1_mash_dead_space_l')" @input="setVolDisplay(manifest.equipment, 'mash_dead_space_l', $event.target.value, 'step1_mash_dead_space_l'); onEquipmentChange()" class="form-input tabular-nums" />
-                <span class="form-hint">Unrecoverable mash plumbing loss</span>
+                <span class="form-hint">Total of dead space, pump, and hose loss</span>
             </div>
 
             <!-- Trub Loss -->
@@ -163,32 +163,6 @@
                 </label>
                 <input type="number" step="0.5" min="0" max="20" :value="percentageDisplay(manifest.equipment.shrinkage_pct, 'step1_shrinkage_pct')" @input="setPercentageDisplay(manifest.equipment, 'shrinkage_pct', $event.target.value, 'step1_shrinkage_pct'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Hot-to-cold contraction factor</span>
-            </div>
-        </div>
-
-        <!-- Synthesized Output Summary Card -->
-        <div class="synthesized-card">
-            <div class="synthesized-header">
-                <span class="synthesized-title">Synthesized Hardware Summary</span>
-                <span class="status-badge status-badge-success text-xs">DAG Entry Validated</span>
-            </div>
-            <div class="metric-strip">
-                <div class="metric-cell">
-                    <span class="metric-cell-label">Kettle Limit</span>
-                    <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.max_kettle_volume_l, 'step1_max_kettle_volume_l') + ' ' + $store.units.getLabel('step1_max_kettle_volume_l')"></span>
-                    </div>
-                    <div class="metric-cell">
-                    <span class="metric-cell-label">System Dead Space</span>
-                    <span class="metric-cell-val" x-text="volDisplay((parseFloat(manifest.equipment.mash_dead_space_l) || 0) + (parseFloat(manifest.equipment.trub_loss_l) || 0), 'step1_mash_dead_space_l') + ' ' + $store.units.getLabel('step1_mash_dead_space_l')"></span>
-                    </div>
-                    <div class="metric-cell">
-                    <span class="metric-cell-label">Hourly Evaporation</span>
-                    <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'step1_boil_off_rate_l_per_hr') + ' ' + $store.units.getLabel('step1_boil_off_rate_l_per_hr') + '/hr'"></span>
-                    </div>
-                    <div class="metric-cell">
-                    <span class="metric-cell-label">HLT Coil Floor</span>
-                    <span class="metric-cell-val" x-text="volDisplay(manifest.equipment.hlt_min_volume_l, 'step1_hlt_min_volume_l') + ' ' + $store.units.getLabel('step1_hlt_min_volume_l')"></span>
-                </div>
             </div>
         </div>
 

@@ -250,13 +250,12 @@ The primary calculation workspace is a progressive 12-step accordion that functi
   * `max_mash_tun_volume` (`UnitInput`, volume) — Mash vessel overflow limit.
   * `max_hlt_volume` (`UnitInput`, volume) — HLT initial fill capacity for underletting strike water.
   * `hlt_min_volume` (`UnitInput`, volume) — HERMS coil submersion floor.
-  * `mash_dead_space` (`UnitInput`, volume) — Unrecoverable wort in mash plumbing.
+  * `mash_dead_space` (`UnitInput`, volume) — Unrecoverable Mash Loss (total of dead space, pump, and hose loss).
   * `trub_loss` (`UnitInput`, volume) — Kettle bottom sediment loss.
   * `boil_off_rate` (`UnitInput`, volume per hour).
   * `grain_absorption_factor` (`UnitInput`, L/kg, default $0.96$).
   * `conversion_efficiency` ($C_e$, percentage, default $95\%$).
   * `shrinkage_pct` (Percentage, default $4\%$) — Cooling contraction factor.
-* **Synthesized Output:** Visual diagram/summary card showing vessel capacities (Kettle, Mash Tun, HLT, Coil floor) and fixed system loss totals.
 
 #### Step 2: Batch Metadata & Boil Solver
 * **Purpose:** Establishes core recipe targets, pre-boil/post-boil checkpoints, boil duration, boil-off rate, and equipment loss bridges.
