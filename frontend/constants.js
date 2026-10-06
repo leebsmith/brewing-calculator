@@ -31,7 +31,7 @@ export const BREW_CONSTANTS = {
   DEFAULT_CUSTOM_PROFILE_NAME: 'My Custom Profile',
 
   // Emulator Ports & URLs
-  AUTH_EMULATOR_PORT: 9199,
+  AUTH_EMULATOR_PORT: 9099,
   BACKEND_API_URL: 'http://localhost:8000',
 
   // Unit System Constants & Registry
@@ -61,6 +61,7 @@ export const BREW_CONSTANTS = {
     'step1_max_hlt_volume_l': 'volume',
     'step1_hlt_min_volume_l': 'volume',
     'step1_mash_dead_space_l': 'volume',
+    'step1_kettle_dead_space_l': 'volume',
     'step1_trub_loss_l': 'volume',
     'step1_boil_off_rate_l_per_hr': 'volume',
     'step1_grain_absorption': 'compound',

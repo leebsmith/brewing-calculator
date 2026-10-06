@@ -251,6 +251,7 @@ The primary calculation workspace is a progressive 12-step accordion that functi
   * `max_hlt_volume` (`UnitInput`, volume) — HLT initial fill capacity for underletting strike water.
   * `hlt_min_volume` (`UnitInput`, volume) — HERMS coil submersion floor.
   * `mash_dead_space` (`UnitInput`, volume) — Unrecoverable Mash Loss (total of dead space, pump, and hose loss).
+  * `kettle_dead_space` (`UnitInput`, volume) — Unrecoverable Boil Kettle Loss (total of dead space, pump, and hose loss).
   * `trub_loss` (`UnitInput`, volume) — Kettle bottom sediment loss.
   * `boil_off_rate` (`UnitInput`, volume per hour).
   * `grain_absorption_factor` (`UnitInput`, L/kg, default $0.96$).

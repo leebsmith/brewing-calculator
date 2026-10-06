@@ -17,16 +17,16 @@
   },
   "emulators": {
     "auth": {
-      "port": 9199
+      "port": 9099
     },
     "firestore": {
-      "port": 8181
+      "port": 8080
     },
     "hosting": {
-      "port": 5151
+      "port": 5000
     },
     "ui": {
-      "port": 4040,
+      "port": 4000,
       "enabled": true
     },
     "singleProjectMode": true

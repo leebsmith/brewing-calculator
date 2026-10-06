@@ -4,12 +4,14 @@ from app.core.constants import (
     DEFAULT_GRAIN_ABSORPTION_L_PER_KG,
     DEFAULT_HLT_MIN_VOLUME_L,
     DEFAULT_MASH_DEAD_SPACE_L,
+    DEFAULT_KETTLE_DEAD_SPACE_L,
     DEFAULT_SHRINKAGE_PCT,
     DEFAULT_TRUB_LOSS_L,
 )
 
 
 class EquipmentProfile(BaseModel):
+    """Immutable template representing a physical brewing system's characteristics."""
     id: str = Field(..., description="Unique slug identifier")
     name: str = Field(..., description="Human-readable equipment profile name")
     description: str | None = Field(default=None, description="Optional profile description")
@@ -17,6 +19,7 @@ class EquipmentProfile(BaseModel):
     max_mash_tun_volume_l: float = Field(..., gt=0, description="Maximum capacity of mash tun in liters")
     max_hlt_volume_l: float = Field(..., gt=0, description="Maximum capacity of HLT in liters")
     mash_dead_space_l: float = Field(default=DEFAULT_MASH_DEAD_SPACE_L, ge=0, description="Unrecoverable volume in mash tun/plumbing in liters")
+    kettle_dead_space_l: float = Field(default=DEFAULT_KETTLE_DEAD_SPACE_L, ge=0, description="Unrecoverable volume in boil kettle/plumbing in liters")
     trub_loss_l: float = Field(default=DEFAULT_TRUB_LOSS_L, ge=0, description="Kettle bottom trub sediment loss in liters")
     boil_off_rate_l_per_hr: float = Field(..., gt=0, description="Evaporation rate in liters per hour")
     grain_absorption_factor_l_per_kg: float = Field(default=DEFAULT_GRAIN_ABSORPTION_L_PER_KG, gt=0, description="Grain absorption constant in L/kg")

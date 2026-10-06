@@ -25,6 +25,7 @@ def test_seed_equipment_profiles_valid():
         assert profile.max_hlt_volume_l >= 0
         assert profile.boil_off_rate_l_per_hr > 0
         assert profile.mash_dead_space_l >= 0
+        assert profile.kettle_dead_space_l >= 0
         assert profile.trub_loss_l >= 0
         assert 0.80 <= profile.conversion_efficiency <= 1.0
         assert profile.is_custom is False
@@ -98,6 +99,7 @@ def test_custom_profile_crud_lifecycle(client, monkeypatch):
             "max_mash_tun_volume_l": 80.0,
             "max_hlt_volume_l": 80.0,
             "mash_dead_space_l": 2.5,
+            "kettle_dead_space_l": 2.5,
             "trub_loss_l": 3.5,
             "boil_off_rate_l_per_hr": 5.0,
             "grain_absorption_factor_l_per_kg": 0.96,
