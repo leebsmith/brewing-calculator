@@ -268,11 +268,11 @@ The primary calculation workspace is a progressive 12-step accordion that functi
     * *Option B (Solve Post-Boil Volume & Gravity):* Pre-boil volume/gravity, boil-off rate, and boil time are fixed, yielding post-boil volume and Target OG.
   * Pre-Boil Checkpoint: `preboil_volume` (`UnitInput`), `preboil_gravity` (`UnitInput` / SG).
   * Post-Boil & Fermenter Checkpoint: `postboil_volume` (`UnitInput`), `target_og` (`UnitInput`), `boil_time` (minutes), `boil_off_rate` (`UnitInput`, L/hr).
-  * Inherited Equipment Losses: Trub Loss (from Step 1) and Cooling Shrinkage (`shrinkage_pct`, e.g. 4%).
+  * Inherited Equipment Losses: Trub Loss and Unrecoverable Boil Kettle Loss (from Step 1), and Cooling Shrinkage (`shrinkage_pct`, e.g. 4%).
 * **Mathematical Invariants & Physics Engine:**
   * **Mass Conservation (Boil):** $V_{\text{pre}} \times SG_{\text{pre}} = V_{\text{post}} \times SG_{\text{post}}$
   * **Evaporation:** $V_{\text{pre}} - V_{\text{post}} = \text{Boil-Off Rate} \times \left(\frac{\text{Boil Time}}{60}\right)$
-  * **Thermal Contraction (Chilling):** $V_{\text{target}} = (V_{\text{post}} - \text{Trub Loss}) \times (1 - \text{shrinkage\_pct})$
+  * **Thermal Contraction (Chilling):** $V_{\text{target}} = (V_{\text{post}} - \text{Trub Loss} - \text{Kettle Loss}) \times (1 - \text{shrinkage\_pct})$
   * **Concentration Adjustment:** Total extract points are conserved across chilling ($V_{\text{post}} \times (SG_{\text{post}} - 1.0) = V_{\text{target}} \times (OG - 1.0)$), ensuring $OG > SG_{\text{post}}$ due to thermal contraction.
 * **Synthesized Output:** Target Total Kettle Extract ($S_{\text{kettle}}$ in $\text{L}\cdot\degree$), Pre-boil to post-boil summary cascade, and solver status badge.
 

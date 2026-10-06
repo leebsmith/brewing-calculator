@@ -207,12 +207,13 @@ export class ThermodynamicSolver {
   }
 
   /**
-   * Calculates fixed system liquid loss (mash dead space + kettle trub loss).
+   * Calculates fixed system liquid loss (mash dead space + kettle dead space + kettle trub loss).
    */
-  static calculateFixedLoss(mashDeadSpace, trubLoss) {
+  static calculateFixedLoss(mashDeadSpace, trubLoss, kettleDeadSpace = 0) {
     const deadSpace = parseFloat(mashDeadSpace) || 0;
     const trub = parseFloat(trubLoss) || 0;
-    return (deadSpace + trub).toFixed(2);
+    const kettle = parseFloat(kettleDeadSpace) || 0;
+    return (deadSpace + trub + kettle).toFixed(2);
   }
 
   /**
@@ -241,6 +242,8 @@ export class ThermodynamicSolver {
     const eq = m.equipment || {};
     const boilTimeHrs = (parseFloat(m.boil_time_min) || 60) / 60.0;
     const trubLoss = parseFloat(eq.trub_loss_l) || 0;
+    const kettleLoss = parseFloat(eq.kettle_dead_space_l) || 0;
+    const totalKettleLoss = trubLoss + kettleLoss;
     const shrinkage = parseFloat(eq.shrinkage_pct) || 0.04;
     const vPre = parseFloat(m.preboil_volume_l) || 26.0;
     const sgPre = parseFloat(m.preboil_gravity) || 1.045;
@@ -254,7 +257,7 @@ export class ThermodynamicSolver {
       const sgPost = this.calculatePostBoilGravity(vPre, sgPre, vPost);
       m.postboil_gravity = sgPost;
 
-      const vTarget = this.calculatePackagedVolume(vPost, trubLoss, shrinkage);
+      const vTarget = this.calculatePackagedVolume(vPost, totalKettleLoss, shrinkage);
       m.target_volume_l = vTarget;
 
       const extractPointsTotal = vPre * (sgPre - 1.0);
@@ -267,7 +270,7 @@ export class ThermodynamicSolver {
       const sgPost = this.calculatePostBoilGravity(vPre, sgPre, vPost);
       m.postboil_gravity = sgPost;
 
-      const vTarget = this.calculatePackagedVolume(vPost, trubLoss, shrinkage);
+      const vTarget = this.calculatePackagedVolume(vPost, totalKettleLoss, shrinkage);
       m.target_volume_l = vTarget;
 
       const extractPointsTotal = vPre * (sgPre - 1.0);
@@ -343,6 +346,7 @@ export function createEquipmentManager() {
       max_mash_tun_volume_l: BREW_CONSTANTS.DEFAULT_MAX_MASH_TUN_VOLUME_L,
       max_hlt_volume_l: BREW_CONSTANTS.DEFAULT_MAX_HLT_VOLUME_L,
       mash_dead_space_l: BREW_CONSTANTS.DEFAULT_MASH_DEAD_SPACE_L,
+      kettle_dead_space_l: BREW_CONSTANTS.DEFAULT_KETTLE_DEAD_SPACE_L,
       trub_loss_l: BREW_CONSTANTS.DEFAULT_TRUB_LOSS_L,
       boil_off_rate_l_per_hr: BREW_CONSTANTS.DEFAULT_BOIL_OFF_RATE_L_PER_HR,
       grain_absorption_factor_l_per_kg: BREW_CONSTANTS.DEFAULT_GRAIN_ABSORPTION_L_PER_KG,
@@ -375,6 +379,7 @@ export function createEquipmentManager() {
         max_mash_tun_volume_l: current.max_mash_tun_volume_l || 35.0,
         max_hlt_volume_l: current.max_hlt_volume_l || 35.0,
         mash_dead_space_l: current.mash_dead_space_l || 0.0,
+        kettle_dead_space_l: current.kettle_dead_space_l || 0.0,
         trub_loss_l: current.trub_loss_l || 1.5,
         boil_off_rate_l_per_hr: current.boil_off_rate_l_per_hr || 3.0,
         grain_absorption_factor_l_per_kg: current.grain_absorption_factor_l_per_kg || 0.96,
@@ -395,6 +400,7 @@ export function createEquipmentManager() {
         max_mash_tun_volume_l: profile.max_mash_tun_volume_l,
         max_hlt_volume_l: profile.max_hlt_volume_l,
         mash_dead_space_l: profile.mash_dead_space_l,
+        kettle_dead_space_l: profile.kettle_dead_space_l !== undefined ? profile.kettle_dead_space_l : 0.0,
         trub_loss_l: profile.trub_loss_l,
         boil_off_rate_l_per_hr: profile.boil_off_rate_l_per_hr,
         grain_absorption_factor_l_per_kg: profile.grain_absorption_factor_l_per_kg,
@@ -423,6 +429,7 @@ export function createEquipmentManager() {
           max_mash_tun_volume_l: Number(this.drawerForm.max_mash_tun_volume_l),
           max_hlt_volume_l: Number(this.drawerForm.max_hlt_volume_l),
           mash_dead_space_l: Number(this.drawerForm.mash_dead_space_l),
+          kettle_dead_space_l: Number(this.drawerForm.kettle_dead_space_l || 0),
           trub_loss_l: Number(this.drawerForm.trub_loss_l),
           boil_off_rate_l_per_hr: Number(this.drawerForm.boil_off_rate_l_per_hr),
           grain_absorption_factor_l_per_kg: Number(this.drawerForm.grain_absorption_factor_l_per_kg),
@@ -464,6 +471,7 @@ export function createEquipmentManager() {
           max_mash_tun_volume_l: preset.max_mash_tun_volume_l,
           max_hlt_volume_l: preset.max_hlt_volume_l,
           mash_dead_space_l: preset.mash_dead_space_l,
+          kettle_dead_space_l: preset.kettle_dead_space_l !== undefined ? preset.kettle_dead_space_l : 0.0,
           trub_loss_l: preset.trub_loss_l,
           boil_off_rate_l_per_hr: preset.boil_off_rate_l_per_hr,
           grain_absorption_factor_l_per_kg: preset.grain_absorption_factor_l_per_kg,
@@ -498,6 +506,7 @@ export function createEquipmentManager() {
         Number(eq.max_mash_tun_volume_l) !== Number(preset.max_mash_tun_volume_l) ||
         Number(eq.max_hlt_volume_l) !== Number(preset.max_hlt_volume_l) ||
         Number(eq.mash_dead_space_l) !== Number(preset.mash_dead_space_l) ||
+        Number(eq.kettle_dead_space_l) !== Number(preset.kettle_dead_space_l) ||
         Number(eq.trub_loss_l) !== Number(preset.trub_loss_l) ||
         Number(eq.boil_off_rate_l_per_hr) !== Number(preset.boil_off_rate_l_per_hr) ||
         Number(eq.grain_absorption_factor_l_per_kg) !== Number(preset.grain_absorption_factor_l_per_kg) ||
@@ -1286,6 +1295,7 @@ Alpine.data('wizard', () => {
         max_mash_tun_volume_l: 38.0,
         max_hlt_volume_l: 38.0,
         mash_dead_space_l: 1.5,
+        kettle_dead_space_l: 1.0,
         trub_loss_l: 2.0,
         boil_off_rate_l_per_hr: 3.5,
         grain_absorption_factor_l_per_kg: 0.96,
