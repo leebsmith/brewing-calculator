@@ -148,7 +148,7 @@
             <!-- Mash Transfer Loss -->
             <div class="form-group">
                 <label class="form-label">
-                    <span>Mash Transfer Loss</span>
+                    <span>Mash to Kettle Transfer Loss</span>
                     <button type="button" @click="$store.units.toggle('step1_mash_transfer_loss_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_mash_transfer_loss_l') }" x-text="$store.units.getLabel('step1_mash_transfer_loss_l')" title="Click to toggle unit"></button>
                 </label>
                 <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.mash_transfer_loss_l, 'step1_mash_transfer_loss_l')" @input="setVolDisplay(manifest.equipment, 'mash_transfer_loss_l', $event.target.value, 'step1_mash_transfer_loss_l'); onEquipmentChange()" class="form-input tabular-nums" />
@@ -168,7 +168,7 @@
             <!-- Kettle Transfer Loss -->
             <div class="form-group">
                 <label class="form-label">
-                    <span>Kettle Transfer Loss</span>
+                    <span>Kettle to Fermenter Transfer Loss</span>
                     <button type="button" @click="$store.units.toggle('step1_kettle_transfer_loss_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_kettle_transfer_loss_l') }" x-text="$store.units.getLabel('step1_kettle_transfer_loss_l')" title="Click to toggle unit"></button>
                 </label>
                 <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.kettle_transfer_loss_l, 'step1_kettle_transfer_loss_l')" @input="setVolDisplay(manifest.equipment, 'kettle_transfer_loss_l', $event.target.value, 'step1_kettle_transfer_loss_l'); onEquipmentChange()" class="form-input tabular-nums" />
