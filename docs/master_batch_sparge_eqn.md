@@ -19,6 +19,13 @@ It elegantly breaks down brewing into two distinct physical phases: the total su
 
 The equation uses two separate fractions to represent the liquid left behind at each step. Because sugar is dissolved uniformly in the water, the fraction of liquid left behind equals the fraction of sugar left behind.
 
+Both fractions share the same numerator, $Loss_{equip} + (M \times A_{f})$, which represents the **total liquid that does not drain** at each step:
+
+* $Loss_{equip}$ — liquid trapped in the mash tun's dead space (below the false bottom, in hoses, etc.). This is the *same* value in both fractions, because the same physical equipment is present at both drains.
+* $M \times A_{f}$ — liquid absorbed by the grain itself. This stays with the grain bed and never drains, regardless of how much sparge water you add.
+
+> **Unit note:** $\text{moisture}\%$ must be expressed as a **decimal fraction** (e.g., $0.04$ for $4\%$), not as a percentage. Likewise, $\rho_{water}$ must be in the same mass units as $M$ (e.g., $8.32\ \text{lbs/gal}$ if $M$ is in pounds, or $1.0\ \text{kg/L}$ if $M$ is in kilograms).
+
 * **First Runnings Loss Fraction:**
   $$\frac{Loss_{equip} + (M \times A_{f})}{V_{strike} + \frac{M \times \text{moisture}\%}{\rho_{water}}}$$
   * **Numerator:** The volume of liquid permanently trapped in the mash tun (equipment dead space plus water absorbed by the grain).
@@ -50,12 +57,14 @@ The formula for total efficiency into the kettle ($E_{kettle}$, often called mas
    $$E_{kettle,actual} = \frac{S_{kettle}}{P \times M}$$
 
 2. **The Mechanical Expansion:**
-   For calculating predicted efficiency, pre brewday:
-   $$E_{kettle,theoretical} = C_{e} \times \left[ 1 - \left( \frac{Loss_{equip} + (M \times A_{f})}{V_{strike} + \frac{M \times \text{moisture}\%}{\rho_{water}}} \right) \times \left( \frac{Loss_{equip} + (M \times A_{f})}{Loss_{equip} + (M \times A_{f}) + V_{2}} \right) \right]$$
+   For calculating predicted efficiency, pre brewday, substitute the master equation for $S_{kettle}$ into the output ratio above. The $P \times M$ terms cancel, leaving only the lauter-efficiency bracket scaled by $C_{e}$:
+   $$E_{kettle,theoretical} = \frac{S_{kettle}}{P \times M} = C_{e} \times \left[ 1 - \left( \frac{Loss_{equip} + (M \times A_{f})}{V_{strike} + \frac{M \times \text{moisture}\%}{\rho_{water}}} \right) \times \left( \frac{Loss_{equip} + (M \times A_{f})}{Loss_{equip} + (M \times A_{f}) + V_{2}} \right) \right]$$
 
 3. **Adjusting $C_{e}$ For Next Brewday:**
    If both $E_{kettle,actual}$ and $E_{kettle,theoretical}$ are known, we can calculate a new $C_{e,new}$ for next brewday:
    $$C_{e,new} = C_{e} \times (E_{kettle,actual} / E_{kettle,theoretical})$$
+
+   > **Caveat:** This correction assumes the entire discrepancy between actual and theoretical efficiency is attributable to conversion efficiency. In practice, lauter losses ($Loss_{equip}$, $A_{f}$) also vary brew-to-brew. Treat $C_{e,new}$ as a first-order correction, not an exact calibration.
 
 ### Path 1: Known Liquor-to-Grist Ratio (LGR)
 
@@ -67,8 +76,12 @@ This cascade determines the required water volumes when you start with a fixed L
 2. **Calculate First Runnings Volume ($V_{1}$):** This calculates the liquid that successfully drains out, factoring in the inherent grain moisture ($\text{moisture}\%$) and the water permanently trapped by equipment dead-space ($Loss_{equip}$) and grain absorption ($A_{f}$).
    $$V_{1} = V_{strike} + \left( \frac{M \times \text{moisture}\%}{\rho_{water}} \right) - [Loss_{equip} + (M \times A_{f})]$$
 
+   > **Warning:** If $V_{strike}$ is too small (an under-watered mash), $V_{1}$ can go negative — meaning the grain absorbs more than the strike water provides. In practice this indicates an infeasible LGR; increase $V_{strike}$.
+
 3. **Calculate Sparge Water ($V_{2}$):** Subtract the collected first runnings from your total target pre-boil volume.
    $$V_{2} = V_{wort} - V_{1}$$
+
+   > **Invariant:** Throughout this document, $V_{wort} = V_{1} + V_{2}$ — the total pre-boil volume is exactly the sum of the two runnings.
 
 ### Path 2: Known Runnings Ratio
 
@@ -78,7 +91,7 @@ This cascade determines the required strike volume and LGR when you start with a
    $$V_{1} = V_{wort} \times \text{Target Fraction}$$
    (Your sparge water is then simply the remainder: $V_{2} = V_{wort} - V_{1}$)
 
-2. **Calculate Required Strike Water ($V_{strike}$):** Work backward by adding the trapped system losses back to your target first runnings volume and subtracting the grain moisture contribution.
+2. **Calculate Required Strike Water ($V_{strike}$):** Work backward by adding the trapped system losses back to your target first runnings volume and subtracting the grain moisture contribution. (This is the algebraic inverse of Path 1, Step 2.)
    $$V_{strike} = V_{1} + [Loss_{equip} + (M \times A_{f})] - \left( \frac{M \times \text{moisture}\%}{\rho_{water}} \right)$$
 
 3. **Calculate Required LGR:** Divide the calculated required strike water by your known grain mass ($M$).
@@ -89,14 +102,14 @@ This cascade determines the required strike volume and LGR when you start with a
 | Variable | Definition | Typical Homebrew Value |
 | :--- | :--- | :--- |
 | $S_{kettle}$ | Total sugar/extract in the kettle | Target varies by recipe |
-| $P$ | Malt potential | $\sim 36-38 \text{ ppg}$ (points/pound/gallon) or decimal potential fraction $(\sim 0.85)^{1}$ or $L^{\circ}/kg$ $(LDK)^{2}$ |
+| $P$ | Malt potential (choose one unit system and use it consistently) | $\sim 36-38 \text{ ppg}$ (points/pound/gallon) or decimal potential fraction $(\sim 0.85)^{1}$ or $L^{\circ}/kg$ $(LDK)^{2}$ |
 | $M$ | Mass of the grain bill | Varies |
 | $C_{e}$ | Conversion efficiency | $90\% - 100\%$ |
 | $Loss_{equip}$ | Liquid left in hoses/tun dead-space | $0.1 - 0.5 \text{ gallons}$ |
 | $A_{f}$ | Grain absorption factor | $\sim 0.1 - 0.125 \text{ gal/lb}$ |
 | $V_{strike}$ | Initial strike water volume | Varies |
-| $\text{moisture}\%$ | Grain moisture weight percentage | $\sim 4\%$ |
-| $\rho_{water}$ | Density of water | $8.32 \text{ lbs/gal}$ |
+| $\text{moisture}\%$ | Grain moisture weight **fraction** (not percent) | $\sim 0.04$ |
+| $\rho_{water}$ | Density of water (must match mass units of $M$) | $8.32 \text{ lbs/gal}$ or $1.0 \text{ kg/L}$ |
 | $V_{2}$ | Sparge water volume (second addition) | Varies |
 | $V_{wort}$ | Target pre-boil wort volume | Target varies by recipe |
 | $V_{1}$ | First runnings volume | Varies |
