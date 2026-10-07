@@ -1,1 +1,47 @@
 <!-- Step 4: Mash Profile -->
+<section
+  class="step-card"
+  :class="{
+    'is-active': activeStep === 4,
+    'is-completed': completedSteps.includes(4),
+    'is-locked': activeStep < 4 && !completedSteps.includes(4)
+  }"
+>
+  <h2 class="accordion-header">
+    <button
+      type="button"
+      class="accordion-trigger"
+      @click="setActiveStep(4)"
+      :aria-expanded="(activeStep === 4).toString()"
+    >
+      <span class="accordion-title-wrap">
+        <span class="accordion-step-num">4</span>
+        <span>
+          <span class="accordion-title">Mash Profile</span>
+          <span class="accordion-subtitle">Define mash steps, temperatures, and rests.</span>
+        </span>
+      </span>
+      <span
+        class="accordion-status-pill"
+        :class="getStepStatusClass(4)"
+        x-text="getStepStatusLabel(4)"
+      ></span>
+    </button>
+  </h2>
+
+  <div class="step-card-body" x-show="activeStep === 4" x-collapse>
+    <div class="step-card-content">
+      <!-- Mash profile content will go here -->
+    </div>
+
+    <div class="step-actions">
+      <button
+        type="button"
+        class="btn btn-primary text-xs"
+        @click="markStepComplete(4)"
+      >
+        Save &amp; Continue
+      </button>
+    </div>
+  </div>
+</section>
