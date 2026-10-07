@@ -1,19 +1,19 @@
-# Master Batch Sparge Eqn.
+# Master Two-Stage Batch Sparge Equation
 
 $$S_{kettle} = (P \times M \times C_{e}) \times \left[ 1 - \left( \frac{Loss_{equip} + (M \times A_{f})}{V_{strike} + \frac{M \times \text{moisture}\%}{\rho_{water}}} \right) \times \left( \frac{Loss_{equip} + (M \times A_{f})}{Loss_{equip} + (M \times A_{f}) + V_{2}} \right) \right]$$
 
 This equation models $S_{kettle}$ - the total amount of fermentable sugar (extract) collected in the boil kettle during a two-stage batch sparge brewing process.
 
-It elegantly breaks down brewing into two distinct physical phases: the total sugar created during the mash, and the percentage of that sugar you successfully rinse into the kettle (lauter efficiency).
+It factors into two multiplicative terms: the total sugar created during the mash, and the fraction of that sugar you successfully rinse into the kettle (lauter efficiency).
 
-## The Two Halves of the Equation
+## The Two Factors of the Equation
 
-1. **Total Converted Sugar:** $(P \times M \times C_{e})$ This first chunk represents the absolute maximum amount of sugar available in the mash tun before any draining occurs.
+1. **Total Converted Sugar:** $(P \times M \times C_{e})$ This first factor represents the absolute maximum amount of sugar available in the mash tun before any draining occurs.
    * $P$: Potential extract of the malt (the maximum theoretical yield).
    * $M$: Mass of the grain bill.
    * $C_{e}$: Conversion efficiency (how successfully the mash enzymes converted starches into sugars).
 
-2. **Lauter Efficiency:** $\left[1 - (Loss_{1}) \times (Loss_{2})\right]$ This large bracket calculates how much of that converted sugar is successfully washed into the kettle. In a batch sparge, you drain the tun twice. The equation calculates the fraction of sugar left behind after the first drain, multiplies it by the fraction left behind after the second drain, and subtracts that combined loss from $1$ ($100\%$).
+2. **Lauter Efficiency:** $\left[1 - (Loss_{1}) \times (Loss_{2})\right]$ This bracket calculates how much of that converted sugar is successfully washed into the kettle. In a batch sparge, you drain the tun twice. The equation calculates the fraction of sugar left behind after the first drain, multiplies it by the fraction left behind after the second drain, and subtracts that combined loss from $1$ ($100\%$). Note that this is a *product* of two sequential drain-loss fractions, not two independent physical phases.
 
 ## Understanding the Drain Losses
 
@@ -114,6 +114,46 @@ This cascade determines the required strike volume and LGR when you start with a
 | $V_{wort}$ | Target pre-boil wort volume | Target varies by recipe |
 | $V_{1}$ | First runnings volume | Varies |
 | $E_{kettle}$ | Efficiency into the kettle | $< C_{e}$ |
+
+## Worked Example
+
+A concrete numeric example to anchor the algebra. All values in metric.
+
+**Given:**
+
+| Parameter | Value |
+| :--- | :--- |
+| $M$ (grain mass) | $5.0\ \text{kg}$ |
+| $P$ (malt potential) | $0.80$ (dimensionless fraction) |
+| $C_{e}$ (conversion efficiency) | $0.95$ |
+| $LGR$ (liquor-to-grist ratio) | $3.0\ \text{L/kg}$ |
+| $A_{f}$ (grain absorption) | $0.96\ \text{L/kg}$ |
+| $Loss_{equip}$ (mash tun dead space) | $0.95\ \text{L}$ |
+| $\text{moisture}\%$ | $0.04$ |
+| $\rho_{water}$ | $1.0\ \text{kg/L}$ |
+| $V_{wort}$ (target pre-boil volume) | $28.0\ \text{L}$ |
+
+**Step 1 — Strike water (Path 1):**
+$$V_{strike} = LGR \times M = 3.0 \times 5.0 = 15.0\ \text{L}$$
+
+**Step 2 — First runnings:**
+$$V_{1} = 15.0 + \left( \frac{5.0 \times 0.04}{1.0} \right) - [0.95 + (5.0 \times 0.96)] = 15.0 + 0.2 - 5.75 = 9.45\ \text{L}$$
+
+**Step 3 — Sparge water:**
+$$V_{2} = V_{wort} - V_{1} = 28.0 - 9.45 = 18.55\ \text{L}$$
+
+**Step 4 — Lauter efficiency:**
+$$\text{Loss}_{1} = \frac{0.95 + 4.8}{15.0 + 0.2} = \frac{5.75}{15.2} \approx 0.3783$$
+$$\text{Loss}_{2} = \frac{0.95 + 4.8}{0.95 + 4.8 + 18.55} = \frac{5.75}{24.3} \approx 0.2366$$
+$$\text{Lauter Efficiency} = 1 - (0.3783 \times 0.2366) \approx 1 - 0.0895 = 0.9105$$
+
+**Step 5 — Total kettle extract:**
+$$S_{kettle} = (0.80 \times 5.0 \times 0.95) \times 0.9105 \approx 3.80 \times 0.9105 \approx 3.46\ \text{kg of extract}$$
+
+**Step 6 — Efficiency into the kettle:**
+$$E_{kettle,theoretical} = \frac{S_{kettle}}{P \times M} = \frac{3.46}{4.0} \approx 0.865\ (86.5\%)$$
+
+Note that $E_{kettle,theoretical} < C_{e}$ ($86.5\% < 95\%$), as expected — the difference is the lauter loss.
 
 ## Notes
 
