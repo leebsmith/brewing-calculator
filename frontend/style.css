@@ -1049,6 +1049,18 @@ pre {
   border-bottom: none;
 }
 
+.data-table tfoot tr {
+  border-top: 2px solid var(--sys-border-default);
+  background-color: var(--sys-surface-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.data-table tfoot td {
+  padding: var(--space-3);
+  vertical-align: middle;
+}
+
 .data-table tr.is-selected {
   background-color: var(--sys-surface-selected);
 }

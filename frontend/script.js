@@ -1257,6 +1257,28 @@ Alpine.store('maltGrid', {
     return unitsStore ? unitsStore.toDisplay('extract_potential', weightedBase) : Number(weightedBase.toFixed(1));
   },
 
+  get totalParts() {
+    const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
+    return rows.reduce((sum, r) => sum + (parseFloat(r.parts) || 0), 0);
+  },
+
+  get totalWeightedContributionDisplay() {
+    const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
+    const unitsStore = Alpine.store('units');
+    const isImperial = unitsStore ? (unitsStore.globalMode === BREW_CONSTANTS.UNIT_MODES.IMPERIAL) : false;
+
+    const total = rows.reduce((sum, r) => {
+      const frac = parseFloat(r.potential_fraction) || 0.75;
+      const share = (parseFloat(r.pct) || 0) / 100.0;
+      const baseVal = isImperial
+        ? grainYieldToImperialGallonPointsPerPound(frac)
+        : calculateMetricLiterDegreesPerKg(frac);
+      return sum + (baseVal * share);
+    }, 0);
+
+    return unitsStore ? unitsStore.toDisplay('extract_potential', total) : Number(total.toFixed(1));
+  },
+
   get validationStatus() {
     const total = Number(this.totalPct.toFixed(1));
     if (total === 100.0) return { type: 'balanced', label: '100.0% Balanced', class: 'badge-success' };

@@ -154,6 +154,17 @@
                 </tr>
               </template>
             </tbody>
+            <tfoot>
+              <tr class="table-summary-row">
+                <td colspan="2" class="font-sans font-bold text-primary">Totals</td>
+                <td class="text-right tabular-nums font-bold" x-text="$store.maltGrid.weightedColorDisplay"></td>
+                <td class="text-right tabular-nums font-bold" x-text="$store.maltGrid.weightedPotentialDisplay"></td>
+                <td class="text-right tabular-nums font-bold" x-text="$store.maltGrid.totalWeightedContributionDisplay"></td>
+                <td class="text-right tabular-nums font-bold" x-text="$store.maltGrid.totalParts.toFixed(1)"></td>
+                <td class="text-right tabular-nums font-bold" x-text="$store.maltGrid.totalPct.toFixed(1) + '%'"></td>
+                <td></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
