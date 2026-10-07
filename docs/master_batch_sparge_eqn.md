@@ -115,6 +115,87 @@ This cascade determines the required strike volume and LGR when you start with a
 3. **Calculate Required LGR:** Divide the calculated required strike water by your known grain mass ($M$).
    $$LGR = \frac{V_{strike}}{M}$$
 
+## Fermentation Solver (ABV-Centric Design)
+
+Recipe designers think in terms of **ABV** (the product) and **apparent attenuation** (the yeast's behavior), not in terms of OG/FG (which are intermediate measurements). The fermentation solver inverts this relationship: given a target ABV and an expected attenuation, it derives the required OG and FG.
+
+### The Four Variables
+
+| Variable | Definition | Typical Range |
+| :--- | :--- | :--- |
+| $OE$ | Original Extract (°Plato) | $8 - 20\ ^\circ\text{P}$ |
+| $AE$ | Apparent Extract (°Plato) | $0 - 8\ ^\circ\text{P}$ |
+| $ABV$ | Alcohol by Volume (%) | $3 - 12\%$ |
+| $AA$ | Apparent Attenuation (fraction) | $0.65 - 0.85$ |
+
+These four variables are linked by **two independent equations**, giving a 2-DOF system: any two determine the other two.
+
+### The Forward Equations (Cutaia, Reid & Speers, 2009)
+
+**1. Alcohol by Weight (ABW):**
+$$ABW = (0.372 + 0.00357 \times OE) \times (OE - AE)$$
+
+The $0.00357 \times OE$ term captures the fact that higher-gravity worts yield more alcohol per unit of extract consumed — a real physical effect that the linear $131.25$ approximation misses.
+
+**2. Alcohol by Volume (ABV):**
+$$ABV = ABW \times \frac{SG_{final}}{0.7907}$$
+
+where $0.7907$ is the density of ethanol (g/mL). This term accounts for the volumetric expansion of ethanol relative to the water it displaces.
+
+**3. Apparent Attenuation (AA):**
+$$AA = \frac{OE - AE}{OE}$$
+
+**4. Real Extract (RE) and Real Degree of Fermentation (RDF):**
+$$RE = 0.49681569 \times ABW + 1.0015341 \times AE - 0.00059105 \times (ABW \times AE) - 0.00029431 \times AE^2$$
+$$RDF = \frac{OE - RE}{OE}$$
+
+RDF is the *actual* attenuation, accounting for the fact that ethanol contributes to apparent gravity but is not extract. It is the correct metric for mouthfeel and body modeling.
+
+### Plato ↔ Specific Gravity Conversion
+
+Two ASBC empirical polynomials are used:
+
+**Plato → SG (ASBC 3rd-order):**
+$$SG = 1.0000131 + 0.00386777 \times P + 1.27447 \times 10^{-5} \times P^2 + 6.34964 \times 10^{-8} \times P^3$$
+
+**SG → Plato (ASBC Table 1 cubic):**
+$$P = -616.868 + 1111.14 \times SG - 630.272 \times SG^2 + 135.997 \times SG^3$$
+
+> **Note:** These are two *different* empirical fits, not exact inverses. Round-tripping $P \to SG \to P$ drifts by ~$0.01 - 0.05\ ^\circ\text{P}$, well below measurement precision. Do not assume exactness.
+
+### Inverse Pathway 1: Target ABV + Target AA → OE, AE
+
+Given a target ABV and an expected apparent attenuation, solve for the required OE and AE:
+
+1. Express $AE$ in terms of $OE$: $AE = OE \times (1 - AA)$.
+2. Define the objective: $g(OE) = ABV(OE, AE(OE)) - ABV_{target}$.
+3. Root-find $OE$ via Brent's method on $g(OE) = 0$, bracketed between $1.0\ ^\circ\text{P}$ (session wort) and $40.0\ ^\circ\text{P}$ (extreme gravity).
+4. Back out $AE = OE \times (1 - AA)$.
+
+This is the **primary design pathway**: the brewer specifies the beer they want (ABV + attenuation), and the solver derives the gravity targets.
+
+### Inverse Pathway 2: Known OE + Target ABV → AE, AA
+
+Given a measured or chosen OE and a target ABV, solve for the required AE and the attenuation it implies:
+
+1. Compute the theoretical maximum ABV at full attenuation ($AE = 0$). If $ABV_{target}$ exceeds this, the target is infeasible.
+2. Define the objective: $g(AE) = ABV(OE, AE) - ABV_{target}$.
+3. Root-find $AE$ via Brent's method on $g(AE) = 0$, bracketed between $0.0\ ^\circ\text{P}$ and $OE$.
+4. Back out $AA = (OE - AE) / OE$.
+
+This is the **diagnostic pathway**: the brewer has a wort of known gravity and asks "what attenuation do I need to hit my ABV target?"
+
+### Coupling to the Lauter Solver
+
+The fermentation solver's output feeds the Lauter solver via the extract budget:
+
+$$S_{fermenter,target} = (OG_{target} - 1) \times V_{packaged}$$
+$$S_{kettle,target} = S_{fermenter,target} - S_{late}$$
+
+where $V_{packaged}$ comes from the boil solver's downstream bridge, and $S_{late}$ comes from the Late Additions step. $S_{kettle,target}$ is then the RHS of the master sparge equation, which the Lauter solver inverts to find $M$.
+
+> **Note:** $S_{late}$ *reduces* the grain bill. Adding fermentable late additions means less base malt is needed to hit the same OG — a physically correct and useful property.
+
 ## Variable Glossary
 
 | Variable | Definition | Typical Homebrew Value |
