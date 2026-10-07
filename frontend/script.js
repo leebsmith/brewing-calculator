@@ -1628,22 +1628,22 @@ Alpine.data('wizard', () => {
       name: BREW_CONSTANTS.DEFAULT_BATCH_NAME,
       equipment_profile_id: BREW_CONSTANTS.DEFAULT_EQUIPMENT_PROFILE_ID,
       equipment: {
-        max_kettle_volume_l: 38.0,
-        max_mash_tun_volume_l: 38.0,
-        max_hlt_volume_l: 38.0,
-        mash_dead_space_l: 0.946,          // 0.25 gal false-bottom loss
-        mash_transfer_loss_l: 0.946,       // 0.25 gal hose/pump loss
-        kettle_dead_space_l: 1.249,        // 0.33 gal unrecoverable kettle wort
-        kettle_transfer_loss_l: 0.946,     // 0.25 gal hose/pump loss
-        hlt_dead_space_l: 0.946,           // 0.25 gal hose/pump loss
-        hlt_transfer_loss_l: 0.946,        // 0.25 gal hose/pump loss
-        trub_loss_l: 2.0,
-        boil_off_rate_l_per_hr: 3.5,
-        grain_absorption_factor_l_per_kg: 0.96,
-        conversion_efficiency: 0.90,
-        shrinkage_pct: 0.04,
-        hlt_coil_floor_l: 12.0,
-        hlt_starting_volume_l: 38.0,
+        max_kettle_volume_l: BREW_CONSTANTS.DEFAULT_MAX_KETTLE_VOLUME_L,
+        max_mash_tun_volume_l: BREW_CONSTANTS.DEFAULT_MAX_MASH_TUN_VOLUME_L,
+        max_hlt_volume_l: BREW_CONSTANTS.DEFAULT_MAX_HLT_VOLUME_L,
+        mash_dead_space_l: BREW_CONSTANTS.DEFAULT_MASH_DEAD_SPACE_L,
+        mash_transfer_loss_l: BREW_CONSTANTS.DEFAULT_MASH_TRANSFER_LOSS_L,
+        kettle_dead_space_l: BREW_CONSTANTS.DEFAULT_KETTLE_DEAD_SPACE_L,
+        kettle_transfer_loss_l: BREW_CONSTANTS.DEFAULT_KETTLE_TRANSFER_LOSS_L,
+        hlt_dead_space_l: BREW_CONSTANTS.DEFAULT_HLT_DEAD_SPACE_L,
+        hlt_transfer_loss_l: BREW_CONSTANTS.DEFAULT_HLT_TRANSFER_LOSS_L,
+        trub_loss_l: BREW_CONSTANTS.DEFAULT_TRUB_LOSS_L,
+        boil_off_rate_l_per_hr: BREW_CONSTANTS.DEFAULT_BOIL_OFF_RATE_L_PER_HR,
+        grain_absorption_factor_l_per_kg: BREW_CONSTANTS.DEFAULT_GRAIN_ABSORPTION_L_PER_KG,
+        conversion_efficiency: BREW_CONSTANTS.DEFAULT_CONVERSION_EFFICIENCY,
+        shrinkage_pct: BREW_CONSTANTS.DEFAULT_SHRINKAGE_PCT,
+        hlt_coil_floor_l: BREW_CONSTANTS.DEFAULT_HLT_COIL_FLOOR_L,
+        hlt_starting_volume_l: BREW_CONSTANTS.DEFAULT_HLT_STARTING_VOLUME_L,
       },
       target_volume_l: BREW_CONSTANTS.DEFAULT_TARGET_VOLUME_L,
       target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
