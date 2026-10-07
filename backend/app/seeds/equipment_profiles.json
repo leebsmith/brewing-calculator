@@ -66,6 +66,28 @@
     "is_custom": false
   },
   {
+    "id": "custom-15G",
+    "name": "15G Custom System",
+    "description": "15-gallon system with HERMS coil floor of 8 gal.",
+    "max_kettle_volume_l": 56.78,
+    "max_mash_tun_volume_l": 56.78,
+    "max_hlt_volume_l": 56.78,
+    "mash_dead_space_l": 0.946,
+    "mash_transfer_loss_l": 0.0,
+    "kettle_dead_space_l": 1.249,
+    "kettle_transfer_loss_l": 0.0,
+    "hlt_dead_space_l": 1.249,
+    "hlt_transfer_loss_l": 0.946,
+    "trub_loss_l": 2.006,
+    "boil_off_rate_l_per_hr": 3.785,
+    "grain_absorption_factor_l_per_kg": 1.0,
+    "conversion_efficiency": 0.90,
+    "shrinkage_pct": 0.04,
+    "hlt_coil_floor_l": 30.28,
+    "hlt_starting_volume_l": 56.78,
+    "is_custom": false
+  },
+  {
     "id": "cooler-mash-20l",
     "name": "20L Stovetop / Cooler Mash",
     "description": "Traditional insulated beverage cooler mash tun with stovetop or propane boil kettle.",
