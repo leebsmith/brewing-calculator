@@ -1674,10 +1674,14 @@ Alpine.data('wizard', () => {
         }
       });
 
-      // Auto-load matching preset once equipment profiles are available
+      // Auto-load matching preset once equipment profiles are available.
+      // Always re-sync the manifest from the selected profile (falling back to
+      // the first available profile) so the manifest can never hold stale
+      // equipment values from a previous session or an older seed revision.
       this.$watch('$store.equipment.profiles', (profiles) => {
-        if (profiles && profiles.length > 0 && !this.manifest.equipment_profile_id) {
-          this.selectProfile(profiles[0].id);
+        if (profiles && profiles.length > 0) {
+          const targetId = this.manifest.equipment_profile_id || profiles[0].id;
+          this.selectProfile(targetId);
           this.runBoilSolver();
         }
       });
