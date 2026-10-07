@@ -48,7 +48,6 @@
         class="wizard-stack"
         x-data="wizard"
       >
-				
         <!-- Test Minimum Working Example Include -->
         <load src="./src/partials/hello.html" />
 
@@ -74,7 +73,7 @@
           <div
             @click.outside=""
             class="modal-dialog modal-dialog-workspace"
-        >
+          >
             <!-- Modal Header -->
             <div class="modal-workspace-header">
               <div class="modal-workspace-header-title">
@@ -243,7 +242,7 @@
                   <template x-if="$store.maltGrid.drawerMode === 'search'">
                     <div class="catalog-drawer-list">
                       <span class="table-header-meta">Select a malt from the catalog cache to add to your grist.</span>
-                      
+
                       <!-- Real-time Full-Text Search Input -->
                       <div class="catalog-search-wrapper" style="position: relative; margin-top: var(--space-3); margin-bottom: var(--space-2);">
                         <input
@@ -398,7 +397,7 @@
           <div
             @click.outside="closeProfileDrawer()"
             class="drawer-panel"
-        >
+          >
             <div class="drawer-header">
               <h2 class="drawer-title" x-text="drawerMode === 'list' ? 'Equipment Profile Library' : (drawerMode === 'create' ? 'Create Custom Profile' : 'Edit Profile')"></h2>
               <button type="button" @click="closeProfileDrawer()" class="btn-close">✕</button>
