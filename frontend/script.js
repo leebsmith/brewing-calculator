@@ -152,6 +152,16 @@ const UNIT_REGISTRY = {
       'pts·gal/lb': { label: 'pts·gal/lb', to_base: (v) => v, from_base: (v) => v, precision: 2 }
     }
   },
+  total_extract: {
+    // Total kettle extract S_kettle = V2 * G2, a volume x gravity-points
+    // product. Base unit is L·° (liter-degrees); imperial is gal·pts
+    // (gallon-points). 1 gal = 3.785411784 L, so 1 gal·pts = 3.785411784 L·°.
+    base_unit: 'L·°',
+    units: {
+      'L·°':     { label: 'L·°',     to_base: (v) => v, from_base: (v) => v, precision: 1 },
+      'gal·pts': { label: 'gal·pts', to_base: (v) => v * 3.785411784, from_base: (v) => v / 3.785411784, precision: 1 }
+    }
+  },
   color: {
     base_unit: 'SRM',
     units: {
@@ -1681,17 +1691,17 @@ Alpine.data('wizard', () => {
     },
 
     get targetKettleExtractDisplay() {
-      // Convert the base L·° value into the active extract-potential display
-      // unit (L·°/kg in metric, gal·°/lb in imperial) so the summary card
-      // tracks the global unit mode.
+      // Convert the base L·° value into the active total-extract display unit
+      // (L·° in metric, gal·pts in imperial) so the summary card tracks the
+      // global unit mode.
       const baseVal = parseFloat(this.targetKettleExtract) || 0;
       const unitsStore = Alpine.store('units');
-      return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : baseVal;
+      return unitsStore ? unitsStore.toDisplay('total_extract', baseVal) : baseVal;
     },
 
     get targetKettleExtractUnit() {
       const unitsStore = Alpine.store('units');
-      return unitsStore ? unitsStore.getFieldUnit('extract_potential') : 'L·°/kg';
+      return unitsStore ? unitsStore.getFieldUnit('total_extract') : 'L·°';
     },
 
     // Step Validation Override for Wizard Workflow

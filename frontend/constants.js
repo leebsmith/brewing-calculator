@@ -53,6 +53,7 @@ export const BREW_CONSTANTS = {
     gravity: ['Plato', 'SG'],
     compound: ['L/kg', 'qt/lb'],
     extract_potential: ['L·°/kg', 'gal·°/lb'],
+    total_extract: ['L·°', 'gal·pts'],
     color: ['EBC', 'SRM'],
     percentage: ['%', 'fraction']
   },
@@ -86,6 +87,7 @@ export const BREW_CONSTANTS = {
   UNIT_DOMAIN_PERCENTAGE: 'percentage',
   UNIT_DOMAIN_COMPOUND: 'compound',
   UNIT_DOMAIN_EXTRACT_POTENTIAL: 'extract_potential',
+  UNIT_DOMAIN_TOTAL_EXTRACT: 'total_extract',
 
   // UI Messages & Labels
   MSG_KETTLE_VOLUME_REQUIRED: 'Maximum kettle volume must be greater than zero.',
