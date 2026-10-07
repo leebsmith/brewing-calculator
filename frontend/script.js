@@ -1609,8 +1609,25 @@ Alpine.data('wizard', () => {
         return;
       }
 
+      // The solver core operates exclusively on base storage units:
+      //   volume -> L, gravity -> SG, time -> hours.
+      // The manifest stores gravity in SG, but the UI may display it in Plato,
+      // so we must normalize any display-unit inputs to SG before solving.
+      const units = Alpine.store('units');
+      const toSg = (val, fieldKey) => {
+        if (val == null || isNaN(val)) return 1.0;
+        return units ? units.toBase('gravity', parseFloat(val), fieldKey) : parseFloat(val);
+      };
+
+      // Snapshot the manifest with gravity normalized to SG for the solver.
+      const solverManifest = {
+        ...this.manifest,
+        preboil_gravity: toSg(this.manifest.preboil_gravity, 'step2_preboil_gravity'),
+        postboil_gravity: toSg(this.manifest.postboil_gravity, 'step2_postboil_gravity'),
+      };
+
       const [a, b] = this.solverOutputs;
-      const result = ThermodynamicSolver.solve2DOF(this.manifest, a, b);
+      const result = ThermodynamicSolver.solve2DOF(solverManifest, a, b);
       this.solverError = result.ok ? null : result.error;
 
       if (result.ok) {
@@ -1632,6 +1649,7 @@ Alpine.data('wizard', () => {
       const vTarget = ThermodynamicSolver.calculatePackagedVolume(vPost, trubLoss + kettleLoss, shrinkage);
       this.manifest.target_volume_l = vTarget;
 
+      // manifest.preboil_gravity is stored in SG (base unit), so this is safe.
       const extractPointsTotal = (parseFloat(this.manifest.preboil_volume_l) || 0) *
         ((parseFloat(this.manifest.preboil_gravity) || 1.0) - 1.0);
       this.manifest.target_og = ThermodynamicSolver.calculateTargetOg(
