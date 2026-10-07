@@ -22,6 +22,9 @@ export const BREW_CONSTANTS = {
   DEFAULT_HLT_COIL_FLOOR_L: 0.0,
   DEFAULT_HLT_STARTING_VOLUME_L: 35.0,
 
+  // Grist Bill Limits
+  MAX_MAJOR_MALTS: 8,
+
   // Default Batch Manifest Settings
   DEFAULT_BATCH_NAME: 'Untitled Batch',
   DEFAULT_EQUIPMENT_PROFILE_ID: 'herms-30l',

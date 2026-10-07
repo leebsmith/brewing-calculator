@@ -48,6 +48,8 @@
             type="button"
             @click="$store.maltGrid.openSearchDrawer()"
             class="btn btn-primary text-xs"
+            :disabled="$store.maltGrid.isAtMajorMaltLimit"
+            :title="$store.maltGrid.isAtMajorMaltLimit ? 'Maximum of ' + $store.maltGrid.maxMajorMalts + ' major malts reached' : ''"
           >
             <span>+ Add Malt from Catalog</span>
           </button>
@@ -130,6 +132,7 @@
                         type="button"
                         @click="$store.maltGrid.cloneAndEdit(row.row_id)"
                         class="btn-action-icon"
+                        :disabled="$store.maltGrid.isAtMajorMaltLimit"
                         title="Clone & Edit"
                       >
                         <span>📋</span>
@@ -296,6 +299,7 @@
                       type="button"
                       @click="$store.maltGrid.addMajorMalt(item); $store.maltGrid.closeDrawer();"
                       class="btn btn-primary text-xs"
+                      :disabled="$store.maltGrid.isAtMajorMaltLimit"
                     >
                       + Add
                     </button>
