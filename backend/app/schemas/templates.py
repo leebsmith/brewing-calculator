@@ -1,18 +1,20 @@
+from typing import Final
+
 from pydantic import BaseModel, Field
-from app.core.constants import (
-    DEFAULT_CONVERSION_EFFICIENCY,
-    DEFAULT_GRAIN_ABSORPTION_L_PER_KG,
-    DEFAULT_HLT_COIL_FLOOR_L,
-    DEFAULT_HLT_DEAD_SPACE_L,
-    DEFAULT_HLT_STARTING_VOLUME_L,
-    DEFAULT_HLT_TRANSFER_LOSS_L,
-    DEFAULT_MASH_DEAD_SPACE_L,
-    DEFAULT_MASH_TRANSFER_LOSS_L,
-    DEFAULT_KETTLE_DEAD_SPACE_L,
-    DEFAULT_KETTLE_TRANSFER_LOSS_L,
-    DEFAULT_SHRINKAGE_PCT,
-    DEFAULT_TRUB_LOSS_L,
-)
+
+# Default equipment profile parameters & physical constants.
+DEFAULT_CONVERSION_EFFICIENCY: Final[float] = 0.90
+DEFAULT_GRAIN_ABSORPTION_L_PER_KG: Final[float] = 0.96
+DEFAULT_SHRINKAGE_PCT: Final[float] = 0.04
+DEFAULT_MASH_DEAD_SPACE_L: Final[float] = 0.946          # 0.25 gal false-bottom loss
+DEFAULT_MASH_TRANSFER_LOSS_L: Final[float] = 0.946       # 0.25 gal hose/pump loss
+DEFAULT_KETTLE_DEAD_SPACE_L: Final[float] = 1.249        # 0.33 gal unrecoverable kettle wort
+DEFAULT_KETTLE_TRANSFER_LOSS_L: Final[float] = 0.946     # 0.25 gal hose/pump loss
+DEFAULT_HLT_DEAD_SPACE_L: Final[float] = 0.946           # 0.25 gal hose/pump loss
+DEFAULT_HLT_TRANSFER_LOSS_L: Final[float] = 0.946        # 0.25 gal hose/pump loss
+DEFAULT_TRUB_LOSS_L: Final[float] = 1.5
+DEFAULT_HLT_COIL_FLOOR_L: Final[float] = 0.0
+DEFAULT_HLT_STARTING_VOLUME_L: Final[float] = 35.0
 
 
 class EquipmentProfile(BaseModel):
