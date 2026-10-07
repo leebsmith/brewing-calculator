@@ -99,9 +99,9 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>HLT Min Coil Floor</span>
-                    <button type="button" @click="$store.units.toggle('step1_hlt_min_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_hlt_min_volume_l') }" x-text="$store.units.getLabel('step1_hlt_min_volume_l')" title="Click to toggle unit"></button>
+                    <button type="button" @click="$store.units.toggle('step1_hlt_coil_floor_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_hlt_coil_floor_l') }" x-text="$store.units.getLabel('step1_hlt_coil_floor_l')" title="Click to toggle unit"></button>
                 </label>
-                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.hlt_min_volume_l, 'step1_hlt_min_volume_l')" @input="setVolDisplay(manifest.equipment, 'hlt_min_volume_l', $event.target.value, 'step1_hlt_min_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.hlt_coil_floor_l, 'step1_hlt_coil_floor_l')" @input="setVolDisplay(manifest.equipment, 'hlt_coil_floor_l', $event.target.value, 'step1_hlt_coil_floor_l'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">HERMS coil submersion floor</span>
             </div>
 
