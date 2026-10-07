@@ -118,7 +118,6 @@ export const BREW_CONSTANTS = {
   MSG_SOLVER_SAME_VARIABLE: 'Cannot select the same variable twice.',
   MSG_SOLVER_UNKNOWN_VARIABLE: 'Unknown variable identifier.',
 };
-````
 
 Now update `script.js` to consume those constants instead of the inline array, and to use the shared blacklist in `validateOutputPair`.
 
