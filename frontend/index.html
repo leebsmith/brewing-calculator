@@ -7,7 +7,9 @@
 
   <!-- Prevent FOUC with Alpine x-cloak -->
   <style>
-    [x-cloak] { display: none !important; }
+    [x-cloak] {
+      display: none !important;
+    }
   </style>
 
   <!-- Design System Tokens & Modular Vanilla Stylesheets -->
@@ -73,7 +75,11 @@
             <div class="modal-workspace-header">
               <div class="modal-workspace-header-title">
                 <h2 class="modal-workspace-title">Grain Bill Editor (Major Contributors)</h2>
-                <span class="status-badge text-xs" :class="$store.maltGrid.validationStatus.class" x-text="$store.maltGrid.validationStatus.label"></span>
+                <span
+                  class="status-badge text-xs"
+                  :class="$store.maltGrid.validationStatus.class"
+                  x-text="$store.maltGrid.validationStatus.label"
+                ></span>
               </div>
               <div class="modal-workspace-header-actions">
                 <button
@@ -99,7 +105,9 @@
               <!-- Left/Center: Main Grid Workspace -->
               <div class="modal-workspace-main">
                 <div class="table-header-toolbar">
-                  <span class="table-header-meta">Enter relative proportional parts. Hamilton algorithm normalizes total to exactly 100.0%.</span>
+                  <span class="table-header-meta">
+                    Enter relative proportional parts. Hamilton algorithm normalizes total to exactly 100.0%.
+                  </span>
                   <button
                     type="button"
                     @click="$store.maltGrid.openSearchDrawer()"
@@ -113,13 +121,13 @@
                 <div class="data-table-container">
                   <table class="data-table is-fixed">
                     <colgroup>
-                      <col style="width: 28%;">
-                      <col style="width: 14%;">
-                      <col style="width: 12%;">
-                      <col style="width: 12%;">
-                      <col style="width: 12%;">
-                      <col style="width: 12%;">
-                      <col style="width: 10%;">
+                      <col style="width: 28%;" />
+                      <col style="width: 14%;" />
+                      <col style="width: 12%;" />
+                      <col style="width: 12%;" />
+                      <col style="width: 12%;" />
+                      <col style="width: 12%;" />
+                      <col style="width: 10%;" />
                     </colgroup>
                     <thead>
                       <tr>
@@ -162,10 +170,15 @@
                                 x-text="row.pct.toFixed(1) + '%'"
                               ></span>
                               <template x-if="$store.maltGrid.isTrace(row.pct)">
-                                <span class="table-pct-badge is-trace"><span>✗</span> <span>Trace (&lt;2%)</span></span>
+                                <span class="table-pct-badge is-trace">
+                                  <span>✗</span>
+                                  <span>Trace (&lt;2%)</span>
+                                </span>
                               </template>
                               <template x-if="!$store.maltGrid.isTrace(row.pct)">
-                                <span class="table-pct-badge is-valid"><span>✓</span></span>
+                                <span class="table-pct-badge is-valid">
+                                  <span>✓</span>
+                                </span>
                               </template>
                             </div>
                           </td>
@@ -227,8 +240,17 @@
               >
                 <!-- Drawer Header -->
                 <div class="modal-drawer-header">
-                  <h3 class="modal-drawer-title" x-text="$store.maltGrid.drawerMode === 'search' ? 'Malt Catalog Browser' : 'Row Inspector'"></h3>
-                  <button type="button" @click="$store.maltGrid.closeDrawer()" class="btn-close text-xs">✕</button>
+                  <h3
+                    class="modal-drawer-title"
+                    x-text="$store.maltGrid.drawerMode === 'search' ? 'Malt Catalog Browser' : 'Row Inspector'"
+                  ></h3>
+                  <button
+                    type="button"
+                    class="btn-close text-xs"
+                    @click="$store.maltGrid.closeDrawer()"
+                  >
+                    ✕
+                  </button>
                 </div>
 
                 <!-- Drawer Body -->
@@ -236,7 +258,9 @@
                   <!-- Search / Catalog Mode -->
                   <template x-if="$store.maltGrid.drawerMode === 'search'">
                     <div class="catalog-drawer-list">
-                      <span class="table-header-meta">Select a malt from the catalog cache to add to your grist.</span>
+                      <span class="table-header-meta">
+                        Select a malt from the catalog cache to add to your grist.
+                      </span>
 
                       <!-- Real-time Full-Text Search Input -->
                       <div class="catalog-search-wrapper" style="margin-top: var(--space-3); margin-bottom: var(--space-2);">
@@ -299,14 +323,21 @@
                       </div>
 
                       <!-- Live Result Counter -->
-                      <div class="catalog-result-counter text-xs" aria-live="polite" x-text="`Showing ${$store.maltGrid.catalogResultCount} available malts`"></div>
+                      <div
+                        class="catalog-result-counter text-xs"
+                        aria-live="polite"
+                        x-text="`Showing ${$store.maltGrid.catalogResultCount} available malts`"
+                      ></div>
 
                       <div class="catalog-drawer-list">
                         <template x-for="item in $store.maltGrid.filteredCatalog" :key="item.id">
                           <div class="catalog-item-card">
                             <div>
                               <div class="catalog-item-name" x-text="item.name"></div>
-                              <div class="catalog-item-meta" x-text="item.category + ' • Lovibond: ' + item.color_lovibond + (item.notes ? ' • ' + item.notes : '')"></div>
+                              <div
+                                class="catalog-item-meta"
+                                x-text="item.category + ' • Lovibond: ' + item.color_lovibond + (item.notes ? ' • ' + item.notes : '')"
+                              ></div>
                             </div>
                             <button
                               type="button"
@@ -321,7 +352,9 @@
                           <div class="table-empty-cell">Loading malt catalog...</div>
                         </template>
                         <template x-if="$store.catalog.loaded && $store.maltGrid.filteredCatalog.length === 0">
-                          <div class="table-empty-cell">No matching malts found. Adjust search query or category filters.</div>
+                          <div class="table-empty-cell">
+                            No matching malts found. Adjust search query or category filters.
+                          </div>
                         </template>
                       </div>
                     </div>
@@ -331,7 +364,10 @@
                   <template x-if="$store.maltGrid.drawerMode === 'inspect'">
                     <div class="inspector-form">
                       <template x-if="$store.maltGrid.draftMajorMalts.find(r => r.row_id === $store.maltGrid.activeRowId)">
-                        <div class="inspector-form" x-data="{ row: $store.maltGrid.draftMajorMalts.find(r => r.row_id === $store.maltGrid.activeRowId) }">
+                        <div
+                          class="inspector-form"
+                          x-data="{ row: $store.maltGrid.draftMajorMalts.find(r => r.row_id === $store.maltGrid.activeRowId) }"
+                        >
                           <div class="form-group">
                             <label class="form-label text-xs">Malt Name</label>
                             <input type="text" x-model="row.name" class="form-input text-xs" />
@@ -349,19 +385,46 @@
                           <div class="inspector-grid-2col">
                             <div class="form-group">
                               <label class="form-label text-xs">Extract Yield (%)</label>
-                              <input type="number" step="0.01" min="0.5" max="1.0" x-model.number="row.potential_fraction" class="form-input text-xs font-mono" />
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0.5"
+                                max="1.0"
+                                class="form-input text-xs font-mono"
+                                x-model.number="row.potential_fraction"
+                              />
                             </div>
                             <div class="form-group">
                               <label class="form-label text-xs">Color (Lovibond)</label>
-                              <input type="number" step="0.1" min="0" x-model.number="row.color_lovibond" class="form-input text-xs font-mono" />
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                class="form-input text-xs font-mono"
+                                x-model.number="row.color_lovibond"
+                              />
                             </div>
                             <div class="form-group">
                               <label class="form-label text-xs">Moisture (%)</label>
-                              <input type="number" step="0.005" min="0" max="0.2" x-model.number="row.moisture_pct" class="form-input text-xs font-mono" />
+                              <input
+                                type="number"
+                                step="0.005"
+                                min="0"
+                                max="0.2"
+                                class="form-input text-xs font-mono"
+                                x-model.number="row.moisture_pct"
+                              />
                             </div>
                             <div class="form-group">
                               <label class="form-label text-xs">Distilled pH</label>
-                              <input type="number" step="0.01" min="4.0" max="7.0" x-model.number="row.di_ph" class="form-input text-xs font-mono" />
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="4.0"
+                                max="7.0"
+                                class="form-input text-xs font-mono"
+                                x-model.number="row.di_ph"
+                              />
                             </div>
                           </div>
                           <div class="form-group">
@@ -385,10 +448,13 @@
           style="display: none;"
           @keydown.escape.window="closeProfileDrawer()"
         >
-          <div @click.outside="closeProfileDrawer()" class="drawer-panel">
+          <div class="drawer-panel" @click.outside="closeProfileDrawer()">
             <div class="drawer-header">
-              <h2 class="drawer-title" x-text="drawerMode === 'list' ? 'Equipment Profile Library' : (drawerMode === 'create' ? 'Create Custom Profile' : 'Edit Profile')"></h2>
-              <button type="button" @click="closeProfileDrawer()" class="btn-close">✕</button>
+              <h2
+                class="drawer-title"
+                x-text="drawerMode === 'list' ? 'Equipment Profile Library' : (drawerMode === 'create' ? 'Create Custom Profile' : 'Edit Profile')"
+              ></h2>
+              <button type="button" class="btn-close" @click="closeProfileDrawer()">✕</button>
             </div>
 
             <div class="drawer-body">
@@ -400,8 +466,16 @@
               <template x-if="drawerMode === 'list'">
                 <div class="profile-drawer-list-view">
                   <div class="table-header-toolbar">
-                    <span class="text-xs text-muted">Select preset or create custom hardware profile.</span>
-                    <button type="button" @click="startCreateProfile()" class="btn btn-primary text-xs">+ New Profile</button>
+                    <span class="text-xs text-muted">
+                      Select preset or create custom hardware profile.
+                    </span>
+                    <button
+                      type="button"
+                      class="btn btn-primary text-xs"
+                      @click="startCreateProfile()"
+                    >
+                      + New Profile
+                    </button>
                   </div>
                   <div class="profile-roster">
                     <template x-for="p in $store.equipment.profiles" :key="p.id">
@@ -416,11 +490,29 @@
                           <div class="profile-card-meta" x-text="p.description || 'No description'"></div>
                         </div>
                         <div class="profile-card-actions">
-                          <button type="button" @click="selectProfile(p.id); closeProfileDrawer();" class="btn btn-secondary text-xs">Load</button>
+                          <button
+                            type="button"
+                            class="btn btn-secondary text-xs"
+                            @click="selectProfile(p.id); closeProfileDrawer();"
+                          >
+                            Load
+                          </button>
                           <template x-if="p.is_custom">
                             <div class="profile-card-custom-actions">
-                              <button type="button" @click="editProfile(p)" class="btn btn-secondary text-xs">Edit</button>
-                              <button type="button" @click="removeCustomProfile(p.id)" class="btn btn-danger-outline text-xs">Delete</button>
+                              <button
+                                type="button"
+                                class="btn btn-secondary text-xs"
+                                @click="editProfile(p)"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                class="btn btn-danger-outline text-xs"
+                                @click="removeCustomProfile(p.id)"
+                              >
+                                Delete
+                              </button>
                             </div>
                           </template>
                         </div>
@@ -435,65 +527,152 @@
                 <form @submit.prevent="submitDrawerProfile()" class="profile-drawer-form">
                   <div class="form-group">
                     <label class="form-label">Profile Identifier (Slug)</label>
-                    <input type="text" x-model="drawerForm.id" :disabled="drawerMode === 'edit'" class="form-input" required />
+                    <input
+                      type="text"
+                      class="form-input"
+                      x-model="drawerForm.id"
+                      :disabled="drawerMode === 'edit'"
+                      required
+                    />
                   </div>
                   <div class="form-group">
                     <label class="form-label">Profile Name</label>
-                    <input type="text" x-model="drawerForm.name" class="form-input" required />
+                    <input
+                      type="text"
+                      class="form-input"
+                      x-model="drawerForm.name"
+                      required
+                    />
                   </div>
                   <div class="form-group">
                     <label class="form-label">Description</label>
-                    <textarea x-model="drawerForm.description" class="form-input" rows="2"></textarea>
+                    <textarea
+                      class="form-input"
+                      x-model="drawerForm.description"
+                      rows="2"
+                    ></textarea>
                   </div>
                   <div class="step-grid-2col">
                     <div class="form-group">
                       <label class="form-label">Max Kettle (L)</label>
-                      <input type="number" step="0.5" x-model.number="drawerForm.max_kettle_volume_l" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.5"
+                        class="form-input"
+                        x-model.number="drawerForm.max_kettle_volume_l"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Max Mash Tun (L)</label>
-                      <input type="number" step="0.5" x-model.number="drawerForm.max_mash_tun_volume_l" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.5"
+                        class="form-input"
+                        x-model.number="drawerForm.max_mash_tun_volume_l"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Max HLT (L)</label>
-                      <input type="number" step="0.5" x-model.number="drawerForm.max_hlt_volume_l" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.5"
+                        class="form-input"
+                        x-model.number="drawerForm.max_hlt_volume_l"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">HLT Coil Floor (L)</label>
-                      <input type="number" step="0.5" x-model.number="drawerForm.hlt_min_volume_l" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.5"
+                        class="form-input"
+                        x-model.number="drawerForm.hlt_min_volume_l"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Unrecoverable Mash Loss (L)</label>
-                      <input type="number" step="0.1" x-model.number="drawerForm.mash_dead_space_l" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.1"
+                        class="form-input"
+                        x-model.number="drawerForm.mash_dead_space_l"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Unrecoverable Boil Kettle Loss (L)</label>
-                      <input type="number" step="0.1" x-model.number="drawerForm.kettle_dead_space_l" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.1"
+                        class="form-input"
+                        x-model.number="drawerForm.kettle_dead_space_l"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Trub Loss (L)</label>
-                      <input type="number" step="0.1" x-model.number="drawerForm.trub_loss_l" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.1"
+                        class="form-input"
+                        x-model.number="drawerForm.trub_loss_l"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Boil-Off (L/hr)</label>
-                      <input type="number" step="0.1" x-model.number="drawerForm.boil_off_rate_l_per_hr" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.1"
+                        class="form-input"
+                        x-model.number="drawerForm.boil_off_rate_l_per_hr"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Grain Absorption (L/kg)</label>
-                      <input type="number" step="0.01" x-model.number="drawerForm.grain_absorption_factor_l_per_kg" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.01"
+                        class="form-input"
+                        x-model.number="drawerForm.grain_absorption_factor_l_per_kg"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Conversion Efficiency (Ce)</label>
-                      <input type="number" step="0.01" x-model.number="drawerForm.conversion_efficiency" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.01"
+                        class="form-input"
+                        x-model.number="drawerForm.conversion_efficiency"
+                        required
+                      />
                     </div>
                     <div class="form-group">
                       <label class="form-label">Shrinkage (%)</label>
-                      <input type="number" step="0.005" x-model.number="drawerForm.shrinkage_pct" class="form-input" required />
+                      <input
+                        type="number"
+                        step="0.005"
+                        class="form-input"
+                        x-model.number="drawerForm.shrinkage_pct"
+                        required
+                      />
                     </div>
                   </div>
 
                   <div class="drawer-footer-actions">
-                    <button type="button" @click="drawerMode = 'list'" class="btn btn-secondary">Cancel</button>
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      @click="drawerMode = 'list'"
+                    >
+                      Cancel
+                    </button>
                     <button type="submit" class="btn btn-primary">Save Profile</button>
                   </div>
                 </form>
