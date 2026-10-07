@@ -22,9 +22,7 @@
   <script type="module" src="/script.js"></script>
 </head>
 <body class="app-shell" x-data>
-  <!-- Top Navigation Bar -->
-
-  <!-- Site Header (in index) -->
+  <!-- Site Header -->
   <load src="./src/partials/site-header.html" />
 
   <!-- Main Content Container: Alpine.data Component -->
@@ -54,13 +52,13 @@
         <!-- Ingredient Catalog Status Card -->
         <load src="./src/partials/ingredient-status-card.html" />
 
-        <!-- Step 1: Equipment Profile Accordion Card (in index) -->
+        <!-- Step 1: Equipment Profile Accordion Card -->
         <load src="./src/partials/step-equipment-profile.html" />
 
-        <!-- Step 2: Batch Metadata Accordion Card (in index) -->
+        <!-- Step 2: Batch Metadata Accordion Card -->
         <load src="./src/partials/step-batch-metadata.html" />
 
-        <!-- Step 3: Fermentables (Grain Bill & Hamilton Proportional Allocator) (in index) -->
+        <!-- Step 3: Fermentables (Grain Bill & Hamilton Proportional Allocator) -->
         <load src="./src/partials/step-fermentables.html" />
 
         <div
@@ -70,10 +68,7 @@
           style="display: none;"
           @keydown.escape.window="$store.maltGrid.cancelModal()"
         >
-          <div
-            @click.outside=""
-            class="modal-dialog modal-dialog-workspace"
-          >
+          <div class="modal-dialog modal-dialog-workspace">
             <!-- Modal Header -->
             <div class="modal-workspace-header">
               <div class="modal-workspace-header-title">
@@ -244,7 +239,7 @@
                       <span class="table-header-meta">Select a malt from the catalog cache to add to your grist.</span>
 
                       <!-- Real-time Full-Text Search Input -->
-                      <div class="catalog-search-wrapper" style="position: relative; margin-top: var(--space-3); margin-bottom: var(--space-2);">
+                      <div class="catalog-search-wrapper" style="margin-top: var(--space-3); margin-bottom: var(--space-2);">
                         <input
                           type="text"
                           x-model.debounce.50ms="$store.maltGrid.catalogSearchQuery"
@@ -323,14 +318,10 @@
                           </div>
                         </template>
                         <template x-if="!$store.catalog.loaded">
-                          <div class="table-empty-cell">
-                            Loading malt catalog...
-                          </div>
+                          <div class="table-empty-cell">Loading malt catalog...</div>
                         </template>
                         <template x-if="$store.catalog.loaded && $store.maltGrid.filteredCatalog.length === 0">
-                          <div class="table-empty-cell">
-                            No matching malts found. Adjust search query or category filters.
-                          </div>
+                          <div class="table-empty-cell">No matching malts found. Adjust search query or category filters.</div>
                         </template>
                       </div>
                     </div>
@@ -394,10 +385,7 @@
           style="display: none;"
           @keydown.escape.window="closeProfileDrawer()"
         >
-          <div
-            @click.outside="closeProfileDrawer()"
-            class="drawer-panel"
-          >
+          <div @click.outside="closeProfileDrawer()" class="drawer-panel">
             <div class="drawer-header">
               <h2 class="drawer-title" x-text="drawerMode === 'list' ? 'Equipment Profile Library' : (drawerMode === 'create' ? 'Create Custom Profile' : 'Edit Profile')"></h2>
               <button type="button" @click="closeProfileDrawer()" class="btn-close">✕</button>
@@ -517,10 +505,10 @@
     </div>
   </main>
 
-  <!-- Global Toast Notification Container. in (index) -->
+  <!-- Global Toast Notification Container -->
   <load src="src/partials/toast-container.html" />
 
-  <!-- Site Footer. (in index) -->
+  <!-- Site Footer -->
   <load src="src/partials/site-footer.html" />
 </body>
 </html>
