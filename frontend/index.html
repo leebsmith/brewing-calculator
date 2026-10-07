@@ -592,12 +592,22 @@
                         type="number"
                         step="0.5"
                         class="form-input"
-                        x-model.number="drawerForm.hlt_min_volume_l"
+                        x-model.number="drawerForm.hlt_coil_floor_l"
                         required
                       />
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Unrecoverable Mash Loss (L)</label>
+                      <label class="form-label">HLT Starting Volume (L)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        class="form-input"
+                        x-model.number="drawerForm.hlt_starting_volume_l"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Mash Tun Dead Space (L)</label>
                       <input
                         type="number"
                         step="0.1"
@@ -607,12 +617,52 @@
                       />
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Unrecoverable Boil Kettle Loss (L)</label>
+                      <label class="form-label">Mash Tun Transfer Loss (L)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        class="form-input"
+                        x-model.number="drawerForm.mash_transfer_loss_l"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Boil Kettle Dead Space (L)</label>
                       <input
                         type="number"
                         step="0.1"
                         class="form-input"
                         x-model.number="drawerForm.kettle_dead_space_l"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Boil Kettle Transfer Loss (L)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        class="form-input"
+                        x-model.number="drawerForm.kettle_transfer_loss_l"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">HLT Dead Space (L)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        class="form-input"
+                        x-model.number="drawerForm.hlt_dead_space_l"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">HLT Transfer Loss (L)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        class="form-input"
+                        x-model.number="drawerForm.hlt_transfer_loss_l"
                         required
                       />
                     </div>

@@ -8,14 +8,19 @@ export const BREW_CONSTANTS = {
   DEFAULT_CONVERSION_EFFICIENCY: 0.90,
   DEFAULT_GRAIN_ABSORPTION_L_PER_KG: 0.96,
   DEFAULT_SHRINKAGE_PCT: 0.04,
-  DEFAULT_MASH_DEAD_SPACE_L: 0.0,
-  DEFAULT_KETTLE_DEAD_SPACE_L: 0.0,
+  DEFAULT_MASH_DEAD_SPACE_L: 0.946,          // 0.25 gal false-bottom loss
+  DEFAULT_MASH_TRANSFER_LOSS_L: 0.946,       // 0.25 gal hose/pump loss
+  DEFAULT_KETTLE_DEAD_SPACE_L: 1.249,        // 0.33 gal unrecoverable kettle wort
+  DEFAULT_KETTLE_TRANSFER_LOSS_L: 0.946,     // 0.25 gal hose/pump loss
   DEFAULT_TRUB_LOSS_L: 1.5,
+  DEFAULT_HLT_DEAD_SPACE_L: 0.946,           // 0.25 gal hose/pump loss
+  DEFAULT_HLT_TRANSFER_LOSS_L: 0.946,        // 0.25 gal hose/pump loss
   DEFAULT_BOIL_OFF_RATE_L_PER_HR: 3.0,
   DEFAULT_MAX_KETTLE_VOLUME_L: 35.0,
   DEFAULT_MAX_MASH_TUN_VOLUME_L: 35.0,
   DEFAULT_MAX_HLT_VOLUME_L: 35.0,
-  DEFAULT_HLT_MIN_VOLUME_L: 0.0,
+  DEFAULT_HLT_COIL_FLOOR_L: 0.0,
+  DEFAULT_HLT_STARTING_VOLUME_L: 35.0,
 
   // Default Batch Manifest Settings
   DEFAULT_BATCH_NAME: 'Untitled Batch',
@@ -63,9 +68,14 @@ export const BREW_CONSTANTS = {
     'step1_max_kettle_volume_l': 'volume',
     'step1_max_mash_tun_volume_l': 'volume',
     'step1_max_hlt_volume_l': 'volume',
-    'step1_hlt_min_volume_l': 'volume',
+    'step1_hlt_coil_floor_l': 'volume',
+    'step1_hlt_starting_volume_l': 'volume',
     'step1_mash_dead_space_l': 'volume',
+    'step1_mash_transfer_loss_l': 'volume',
     'step1_kettle_dead_space_l': 'volume',
+    'step1_kettle_transfer_loss_l': 'volume',
+    'step1_hlt_dead_space_l': 'volume',
+    'step1_hlt_transfer_loss_l': 'volume',
     'step1_trub_loss_l': 'volume',
     'step1_boil_off_rate_l_per_hr': 'volume',
     'step1_grain_absorption': 'compound',
