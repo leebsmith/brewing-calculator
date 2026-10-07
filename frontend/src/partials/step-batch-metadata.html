@@ -137,6 +137,27 @@
                     <span class="form-hint" x-text="isSolverOutput('V2') ? '⚙️ Solved' : 'Hot wort volume at flameout'"></span>
                 </div>
 
+                <!-- Post-Boil Gravity -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <span>Post-Boil Gravity</span>
+                        <button type="button" @click="$store.units.toggle('step2_postboil_gravity')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step2_postboil_gravity') }" x-text="$store.units.getLabel('step2_postboil_gravity')" title="Click to toggle gravity unit"></button>
+                    </label>
+                    <input
+                        type="number"
+                        step="0.001"
+                        min="1.000"
+                        max="1.200"
+                        :value="gravityDisplay(manifest.postboil_gravity, 'step2_postboil_gravity')"
+                        @input="setGravityDisplay(manifest, 'postboil_gravity', $event.target.value, 'step2_postboil_gravity')"
+                        class="form-input tabular-nums"
+                        :class="{ 'form-input-solved': isSolverOutput('G2') }"
+                        :readonly="isSolverOutput('G2')"
+                        required
+                    />
+                    <span class="form-hint" x-text="isSolverOutput('G2') ? '⚙️ Solved' : 'Specific gravity or Plato measured after boil'"></span>
+                </div>
+
                 <!-- Boil Time -->
                 <div class="form-group">
                     <label class="form-label">Boil Time (min)</label>

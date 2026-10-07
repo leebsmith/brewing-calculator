@@ -72,7 +72,8 @@ export const BREW_CONSTANTS = {
     'step2_preboil_volume_l': 'volume',
     'step2_postboil_volume_l': 'volume',
     'step2_target_volume_l': 'volume',
-    'step2_preboil_gravity': 'gravity'
+    'step2_preboil_gravity': 'gravity',
+    'step2_postboil_gravity': 'gravity'
   },
 
   UNIT_DOMAIN_MASS: 'mass',
