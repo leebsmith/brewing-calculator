@@ -3,30 +3,31 @@
  * @description Unit tests for pureFunctions.js
  */
 
+import { test, describe, beforeEach, mock } from 'node:test';
+import assert from 'node:assert';
+
 // Import the functions to be tested
 import {
   grainYieldToImperialGallonPointsPerPound,
   calculateMetricLiterDegreesPerKg,
   LDKFromPPG,
   PPGFromLDK
-} from '../src/utils/pureFunctions'; // Adjust path as necessary based on actual project structure
+} from '../src/utils/pureFunctions.js';
 
-// Mocking BREW_CONSTANTS for isolated testing if direct import is complex
-// In a real project, you would ensure the constants are correctly imported or available.
+// Mirror of the constants used by the module under test.
 const BREW_CONSTANTS = {
   IMPERIAL_POTENTIAL_SCALING_FACTOR: 46.21,
   METRIC_POTENTIAL_SCALING_FACTOR: 386.4,
   LDK_PPG_CONVERSION_FACTOR: 8.345
 };
 
-// Mocking console.error for tests that check for invalid input
-const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+// Spy on console.error so invalid-input tests can assert on the message.
+let consoleErrorSpy;
 
 describe('Pure Functions Tests', () => {
 
-  // Reset mock before each test to ensure isolation
   beforeEach(() => {
-    consoleErrorSpy.mockClear();
+    consoleErrorSpy = mock.method(console, 'error', () => {});
   });
 
   // Tests for grainYieldToImperialGallonPointsPerPound
