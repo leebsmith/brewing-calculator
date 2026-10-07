@@ -198,10 +198,10 @@ export class ThermodynamicSolver {
    */
   static calculatePostBoilGravity(preVolume, preGravity, postVolume) {
     const vPre = parseFloat(preVolume) || 0;
-    const sgPre = parseFloat(preGravity) || 1.0;
     const vPost = parseFloat(postVolume) || 0;
-    const extractPointsTotal = vPre * (sgPre - 1.0);
-    return vPost > 0 ? Number((1.0 + (extractPointsTotal / vPost)).toFixed(3)) : 1.050;
+    // Work in gravity points (linear concentration), then convert back to SG.
+    const extractPointsTotal = vPre * this.sgToPoints(preGravity);
+    return vPost > 0 ? Number(this.pointsToSg(extractPointsTotal / vPost).toFixed(3)) : 1.050;
   }
 
   /**
@@ -236,11 +236,32 @@ export class ThermodynamicSolver {
   }
 
   /**
+   * Converts specific gravity to gravity points (e.g. 1.055 -> 55.0).
+   * Gravity points are the LINEAR concentration unit required by the
+   * solute-conservation equation V1 * C1 = V2 * C2. SG itself is NOT linear
+   * (it carries a +1.0 offset), so all extract math must go through here.
+   */
+  static sgToPoints(sg) {
+    const value = parseFloat(sg);
+    if (isNaN(value)) return 0;
+    return (value - 1.0) * 1000;
+  }
+
+  /**
+   * Converts gravity points back to specific gravity (e.g. 55.0 -> 1.055).
+   * Exact inverse of sgToPoints().
+   */
+  static pointsToSg(points) {
+    const value = parseFloat(points);
+    if (isNaN(value)) return 1.0;
+    return 1.0 + (value / 1000);
+  }
+
+  /**
    * Extracts gravity points from specific gravity (e.g. 1.055 -> 55.0).
    */
   static calculateOgPoints(og) {
-    const sg = parseFloat(og) || 1.000;
-    return Math.max(0, (sg - 1.0) * 1000).toFixed(1);
+    return Math.max(0, this.sgToPoints(og)).toFixed(1);
   }
 
   /**
@@ -248,8 +269,7 @@ export class ThermodynamicSolver {
    */
   static calculateKettleExtract(volume, og) {
     const vol = parseFloat(volume) || 0;
-    const sg = parseFloat(og) || 1.000;
-    const points = Math.max(0, (sg - 1.0) * 1000);
+    const points = Math.max(0, this.sgToPoints(og));
     return (vol * points).toFixed(1);
   }
 
@@ -298,11 +318,8 @@ export class ThermodynamicSolver {
     // NOT specific gravity itself (which carries a +1.0 offset). We therefore
     // convert SG -> gravity points on entry, solve in points, and convert
     // points -> SG on exit. The manifest continues to store SG (base unit).
-    const sgToPoints = (sg) => (parseFloat(sg) || 1.0) - 1.0;
-    const pointsToSg = (pts) => 1.0 + (parseFloat(pts) || 0);
-
-    const G1 = sgToPoints(m.preboil_gravity);
-    const G2 = sgToPoints(m.postboil_gravity);
+    const G1 = this.sgToPoints(m.preboil_gravity);
+    const G2 = this.sgToPoints(m.postboil_gravity);
 
     const pair = [var1, var2].sort().join(':');
     const solved = {};
@@ -1649,11 +1666,10 @@ Alpine.data('wizard', () => {
         const s = result.solved;
         // Solved gravity values are in gravity points; convert back to SG
         // (the manifest's base storage unit) before writing.
-        const pointsToSg = (pts) => 1.0 + (parseFloat(pts) || 0);
         if (s.V1 !== undefined) this.manifest.preboil_volume_l = Number(s.V1.toFixed(2));
-        if (s.G1 !== undefined) this.manifest.preboil_gravity = Number(pointsToSg(s.G1).toFixed(4));
+        if (s.G1 !== undefined) this.manifest.preboil_gravity = Number(ThermodynamicSolver.pointsToSg(s.G1).toFixed(4));
         if (s.V2 !== undefined) this.manifest.postboil_volume_l = Number(s.V2.toFixed(2));
-        if (s.G2 !== undefined) this.manifest.postboil_gravity = Number(pointsToSg(s.G2).toFixed(4));
+        if (s.G2 !== undefined) this.manifest.postboil_gravity = Number(ThermodynamicSolver.pointsToSg(s.G2).toFixed(4));
         if (s.R_boil !== undefined) this.manifest.equipment.boil_off_rate_l_per_hr = Number(s.R_boil.toFixed(2));
         if (s.t !== undefined) this.manifest.boil_time_min = Number((s.t * 60).toFixed(1));
       }
@@ -1667,10 +1683,10 @@ Alpine.data('wizard', () => {
       const vTarget = ThermodynamicSolver.calculatePackagedVolume(vPost, trubLoss + kettleLoss, shrinkage);
       this.manifest.target_volume_l = vTarget;
 
-      // Total extract in gravity-point-liters: V1 * (SG1 - 1.0) * 1000.
+      // Total extract in gravity-point-liters: V1 * sgToPoints(SG1).
       // (calculateTargetOg expects points and divides by volume * 1000.)
       const extractPointsTotal = (parseFloat(this.manifest.preboil_volume_l) || 0) *
-        ((parseFloat(this.manifest.preboil_gravity) || 1.0) - 1.0) * 1000;
+        ThermodynamicSolver.sgToPoints(this.manifest.preboil_gravity);
       this.manifest.target_og = ThermodynamicSolver.calculateTargetOg(
         extractPointsTotal, vTarget, parseFloat(this.manifest.postboil_gravity) || 1.050
       );
