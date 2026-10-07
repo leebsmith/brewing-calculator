@@ -1345,7 +1345,22 @@ Alpine.store('maltGrid', {
     return isTracePercentage(pct);
   },
 
+  get maxMajorMalts() {
+    return BREW_CONSTANTS.MAX_MAJOR_MALTS;
+  },
+
+  get isAtMajorMaltLimit() {
+    return this.draftMajorMalts.length >= BREW_CONSTANTS.MAX_MAJOR_MALTS;
+  },
+
   addMajorMalt(catalogItem) {
+    if (this.draftMajorMalts.length >= BREW_CONSTANTS.MAX_MAJOR_MALTS) {
+      Alpine.store('ui').add(
+        `Maximum of ${BREW_CONSTANTS.MAX_MAJOR_MALTS} major malts reached.`,
+        'error'
+      );
+      return;
+    }
     const newRow = {
       row_id: 'row_' + Math.random().toString(36).substring(2, 11),
       catalog_id: catalogItem.id || null,
@@ -1375,6 +1390,13 @@ Alpine.store('maltGrid', {
   },
 
   cloneAndEdit(rowId) {
+    if (this.draftMajorMalts.length >= BREW_CONSTANTS.MAX_MAJOR_MALTS) {
+      Alpine.store('ui').add(
+        `Maximum of ${BREW_CONSTANTS.MAX_MAJOR_MALTS} major malts reached.`,
+        'error'
+      );
+      return;
+    }
     const row = this.draftMajorMalts.find(r => r.row_id === rowId);
     if (!row) return;
     const clone = JSON.parse(JSON.stringify(row));
