@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --test frontend/tests/",
+    "test:watch": "node --test --watch frontend/tests/"
   },
   "dependencies": {
     "@alpinejs/collapse": "^3.17.4",
