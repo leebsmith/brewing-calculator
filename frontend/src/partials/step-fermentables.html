@@ -85,8 +85,13 @@
                 </table>
             </div>
 
-            <!-- Bottom Summary Footer Card -->
-            <div class="card" style="margin-top: var(--space-4); padding: var(--space-4); background-color: var(--sys-surface-subtle);">
+            <!-- Bottom Summary Footer Card (hidden when grist is empty) -->
+            <div
+                class="card"
+                x-show="$store.maltGrid.majorMalts.length > 0"
+                x-cloak
+                style="margin-top: var(--space-4); padding: var(--space-4); background-color: var(--sys-surface-subtle);"
+            >
                 <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4);">
                     <div style="display: flex; align-items: center; gap: var(--space-6);">
                         <div>
