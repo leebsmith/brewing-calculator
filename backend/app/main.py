@@ -6,8 +6,9 @@ from app.database import get_db, init_firebase
 from app.service import logic
 from app.auth import get_current_user
 from app.schemas.models import PingResponse, AuthenticatedUser, FermentablesCatalogResponse
-from app.core.constants import ERR_CANNOT_DELETE_PRESET
 from app.schemas.templates import EquipmentProfile, EquipmentProfilesResponse
+
+ERR_CANNOT_DELETE_PRESET = "Cannot delete built-in canonical equipment preset."
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
