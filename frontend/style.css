@@ -1319,8 +1319,10 @@ pre {
 
 .table-pct-cell {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1-5);
 }
 
 .table-pct-value {
