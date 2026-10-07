@@ -63,7 +63,7 @@
             </div>
         </div>
 
-        <!-- 10 Equipment Parameters Grid -->
+        <!-- Equipment Parameters Grid (capacities, vessel losses, HLT water accounting) -->
         <div class="step-grid-2col">
             <!-- Max Kettle Volume -->
             <div class="form-group">
@@ -105,24 +105,74 @@
                 <span class="form-hint">HERMS coil submersion floor</span>
             </div>
 
-            <!-- Unrecoverable Mash Loss -->
+            <!-- HLT Starting Volume -->
             <div class="form-group">
                 <label class="form-label">
-                    <span>Unrecoverable Mash Loss</span>
+                    <span>HLT Starting Volume</span>
+                    <button type="button" @click="$store.units.toggle('step1_hlt_starting_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_hlt_starting_volume_l') }" x-text="$store.units.getLabel('step1_hlt_starting_volume_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.hlt_starting_volume_l, 'step1_hlt_starting_volume_l')" @input="setVolDisplay(manifest.equipment, 'hlt_starting_volume_l', $event.target.value, 'step1_hlt_starting_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Liquor in the HLT at brew-day start</span>
+            </div>
+
+            <!-- HLT Dead Space -->
+            <div class="form-group">
+                <label class="form-label">
+                    <span>HLT Dead Space</span>
+                    <button type="button" @click="$store.units.toggle('step1_hlt_dead_space_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_hlt_dead_space_l') }" x-text="$store.units.getLabel('step1_hlt_dead_space_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.hlt_dead_space_l, 'step1_hlt_dead_space_l')" @input="setVolDisplay(manifest.equipment, 'hlt_dead_space_l', $event.target.value, 'step1_hlt_dead_space_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Liquor trapped below the HLT drain port (water accounting)</span>
+            </div>
+
+            <!-- HLT Transfer Loss -->
+            <div class="form-group">
+                <label class="form-label">
+                    <span>HLT Transfer Loss</span>
+                    <button type="button" @click="$store.units.toggle('step1_hlt_transfer_loss_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_hlt_transfer_loss_l') }" x-text="$store.units.getLabel('step1_hlt_transfer_loss_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.hlt_transfer_loss_l, 'step1_hlt_transfer_loss_l')" @input="setVolDisplay(manifest.equipment, 'hlt_transfer_loss_l', $event.target.value, 'step1_hlt_transfer_loss_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Liquor retained in HLT hose and pump (water accounting)</span>
+            </div>
+
+            <!-- Mash Dead Space -->
+            <div class="form-group">
+                <label class="form-label">
+                    <span>Mash Dead Space</span>
                     <button type="button" @click="$store.units.toggle('step1_mash_dead_space_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_mash_dead_space_l') }" x-text="$store.units.getLabel('step1_mash_dead_space_l')" title="Click to toggle unit"></button>
                 </label>
                 <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.mash_dead_space_l, 'step1_mash_dead_space_l')" @input="setVolDisplay(manifest.equipment, 'mash_dead_space_l', $event.target.value, 'step1_mash_dead_space_l'); onEquipmentChange()" class="form-input tabular-nums" />
-                <span class="form-hint">Total of dead space, pump, and hose loss</span>
+                <span class="form-hint">Wort trapped below the false bottom</span>
             </div>
 
-            <!-- Unrecoverable Boil Kettle Loss -->
+            <!-- Mash Transfer Loss -->
             <div class="form-group">
                 <label class="form-label">
-                    <span>Unrecoverable Boil Kettle Loss</span>
+                    <span>Mash Transfer Loss</span>
+                    <button type="button" @click="$store.units.toggle('step1_mash_transfer_loss_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_mash_transfer_loss_l') }" x-text="$store.units.getLabel('step1_mash_transfer_loss_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.mash_transfer_loss_l, 'step1_mash_transfer_loss_l')" @input="setVolDisplay(manifest.equipment, 'mash_transfer_loss_l', $event.target.value, 'step1_mash_transfer_loss_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Wort retained in mash tun hose and pump</span>
+            </div>
+
+            <!-- Kettle Dead Space -->
+            <div class="form-group">
+                <label class="form-label">
+                    <span>Kettle Dead Space</span>
                     <button type="button" @click="$store.units.toggle('step1_kettle_dead_space_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_kettle_dead_space_l') }" x-text="$store.units.getLabel('step1_kettle_dead_space_l')" title="Click to toggle unit"></button>
                 </label>
                 <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.kettle_dead_space_l, 'step1_kettle_dead_space_l')" @input="setVolDisplay(manifest.equipment, 'kettle_dead_space_l', $event.target.value, 'step1_kettle_dead_space_l'); onEquipmentChange()" class="form-input tabular-nums" />
-                <span class="form-hint">Total of dead space, pump, and hose loss</span>
+                <span class="form-hint">Wort trapped below the kettle drain port</span>
+            </div>
+
+            <!-- Kettle Transfer Loss -->
+            <div class="form-group">
+                <label class="form-label">
+                    <span>Kettle Transfer Loss</span>
+                    <button type="button" @click="$store.units.toggle('step1_kettle_transfer_loss_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_kettle_transfer_loss_l') }" x-text="$store.units.getLabel('step1_kettle_transfer_loss_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.kettle_transfer_loss_l, 'step1_kettle_transfer_loss_l')" @input="setVolDisplay(manifest.equipment, 'kettle_transfer_loss_l', $event.target.value, 'step1_kettle_transfer_loss_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Wort retained in kettle hose and pump</span>
             </div>
 
             <!-- Trub Loss -->
