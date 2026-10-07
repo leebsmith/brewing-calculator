@@ -846,6 +846,13 @@ pre {
   max-width: var(--container-modal-workspace, 72rem);
 }
 
+@container modal-bounds (max-width: 800px) {
+  .modal-dialog-workspace {
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+  }
+}
+
 .modal-workspace-header {
   padding: var(--space-4) var(--space-6);
   border-bottom: 1px solid var(--sys-border-subtle);
@@ -1941,13 +1948,6 @@ pre {
 @container (min-width: 600px) {
   .step-grid-2col {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@container modal-bounds (max-width: 800px) {
-  .modal-dialog-workspace {
-    border-radius: var(--radius-sm);
-    padding: var(--space-2);
   }
 }
 
