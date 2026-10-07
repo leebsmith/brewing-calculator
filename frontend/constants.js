@@ -118,19 +118,3 @@ export const BREW_CONSTANTS = {
   MSG_SOLVER_SAME_VARIABLE: 'Cannot select the same variable twice.',
   MSG_SOLVER_UNKNOWN_VARIABLE: 'Unknown variable identifier.',
 };
-
-    if (!VALID_VARIABLES.has(var1) || !VALID_VARIABLES.has(var2)) {
-      return { valid: false, reason: 'Unknown variable identifier.' };
-    }
-    if (var1 === var2) {
-      return { valid: false, reason: 'Cannot select the same variable twice.' };
-    }
-    const key = [var1, var2].sort().join(':');
-    if (INVALID_PAIRS.has(key)) {
-      return {
-        valid: false,
-        reason: 'Invalid system: results in a singular matrix (underdetermined or degenerate).'
-      };
-    }
-    return { valid: true, reason: 'Valid independent output pair.' };
-  }
