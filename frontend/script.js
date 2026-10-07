@@ -1673,10 +1673,25 @@ Alpine.data('wizard', () => {
     get targetKettleExtract() {
       // S_kettle = V2 * G2 (post-boil kettle extract), per the solver spec.
       // This is the value that feeds Step 3's grist mass calculation.
+      // Stored/returned in the base metric unit (L·°).
       return ThermodynamicSolver.calculateKettleExtract(
         this.manifest.postboil_volume_l,
         this.manifest.postboil_gravity
       );
+    },
+
+    get targetKettleExtractDisplay() {
+      // Convert the base L·° value into the active extract-potential display
+      // unit (L·°/kg in metric, gal·°/lb in imperial) so the summary card
+      // tracks the global unit mode.
+      const baseVal = parseFloat(this.targetKettleExtract) || 0;
+      const unitsStore = Alpine.store('units');
+      return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : baseVal;
+    },
+
+    get targetKettleExtractUnit() {
+      const unitsStore = Alpine.store('units');
+      return unitsStore ? unitsStore.getFieldUnit('extract_potential') : 'L·°/kg';
     },
 
     // Step Validation Override for Wizard Workflow
