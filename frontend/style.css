@@ -846,6 +846,7 @@ pre {
   max-width: var(--container-modal-workspace, 72rem);
 }
 
+/* stylelint-disable-next-line at-rule-no-unknown -- @container with named container is valid CSS */
 @container modal-bounds (max-width: 800px) {
   .modal-dialog-workspace {
     border-radius: var(--radius-sm);
