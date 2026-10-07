@@ -79,9 +79,8 @@ export function PPGFromLDK(ldk) {
  * @returns {boolean} True if the percentage is below the trace threshold.
  */
 export function isTracePercentage(pct) {
-  const value = Number(pct);
-  if (isNaN(value)) return false;
-  return value < 2.0;
+  if (typeof pct !== 'number' || isNaN(pct)) return false;
+  return pct < 2.0;
 }
 
 /**
