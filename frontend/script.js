@@ -6,6 +6,10 @@
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 import { BREW_CONSTANTS } from './constants.js';
+import {
+  grainYieldToImperialGallonPointsPerPound,
+  calculateMetricLiterDegreesPerKg,
+} from './src/utils/pureFunctions.js';
 
 // Setup Alpine Native Plugins
 window.Alpine = Alpine;
@@ -1038,15 +1042,13 @@ Alpine.store('maltGrid', {
     if (totalPct <= 0) return 0.0;
 
     const weightedFrac = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.potential_fraction) || 0.75)), 0) / totalPct;
-    
+
     const unitsStore = Alpine.store('units');
     const isImperial = unitsStore ? (unitsStore.globalMode === BREW_CONSTANTS.UNIT_MODES.IMPERIAL) : false;
 
-    const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
-    const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
-    const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
-
-    const baseVal = isImperial ? (weightedFrac * sucrosePpg) : (weightedFrac * metricScaling);
+    const baseVal = isImperial
+      ? grainYieldToImperialGallonPointsPerPound(weightedFrac)
+      : calculateMetricLiterDegreesPerKg(weightedFrac);
     return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : Number(baseVal.toFixed(1));
   },
 
@@ -1067,11 +1069,10 @@ Alpine.store('maltGrid', {
     const frac = parseFloat(row.potential_fraction) || 0.75;
     const unitsStore = Alpine.store('units');
     const isImperial = unitsStore ? (unitsStore.globalMode === BREW_CONSTANTS.UNIT_MODES.IMPERIAL) : false;
-    const constants = typeof BREW_CONSTANTS !== 'undefined' ? BREW_CONSTANTS : (typeof window !== 'undefined' ? window.BREW_CONSTANTS : {});
-    const sucrosePpg = constants.SUCROSE_POTENTIAL_PPG || 46.21;
-    const metricScaling = constants.METRIC_POTENTIAL_SCALING_FACTOR || 386.4;
 
-    const baseVal = isImperial ? (frac * sucrosePpg) : (frac * metricScaling);
+    const baseVal = isImperial
+      ? grainYieldToImperialGallonPointsPerPound(frac)
+      : calculateMetricLiterDegreesPerKg(frac);
     return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : Number(baseVal.toFixed(1));
   },
 
