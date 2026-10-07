@@ -24,6 +24,13 @@ const BREW_CONSTANTS = {
 // Spy on console.error so invalid-input tests can assert on the message.
 let consoleErrorSpy;
 
+function expectClose(actual, expected, tolerance = 1e-9) {
+  assert.ok(
+    Math.abs(actual - expected) <= tolerance,
+    `Expected ${actual} to be within ${tolerance} of ${expected}`
+  );
+}
+
 describe('Pure Functions Tests', () => {
 
   beforeEach(() => {
@@ -33,110 +40,120 @@ describe('Pure Functions Tests', () => {
   // Tests for grainYieldToImperialGallonPointsPerPound
   describe('grainYieldToImperialGallonPointsPerPound', () => {
     test('should convert 0 extract potential to 0 imperial yield', () => {
-      expect(grainYieldToImperialGallonPointsPerPound(0)).toBe(0);
+      assert.strictEqual(grainYieldToImperialGallonPointsPerPound(0), 0);
     });
 
     test('should convert 1.0 extract potential to max imperial yield', () => {
-      expect(grainYieldToImperialGallonPointsPerPound(1.0)).toBe(BREW_CONSTANTS.IMPERIAL_POTENTIAL_SCALING_FACTOR);
+      assert.strictEqual(grainYieldToImperialGallonPointsPerPound(1.0), BREW_CONSTANTS.IMPERIAL_POTENTIAL_SCALING_FACTOR);
     });
 
     test('should correctly convert 0.5 extract potential to imperial yield', () => {
-      expect(grainYieldToImperialGallonPointsPerPound(0.5)).toBeCloseTo(BREW_CONSTANTS.IMPERIAL_POTENTIAL_SCALING_FACTOR / 2);
+      expectClose(grainYieldToImperialGallonPointsPerPound(0.5), BREW_CONSTANTS.IMPERIAL_POTENTIAL_SCALING_FACTOR / 2);
     });
 
     test('should return NaN for negative extract potential', () => {
-      expect(grainYieldToImperialGallonPointsPerPound(-0.1)).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
+      assert.ok(Number.isNaN(grainYieldToImperialGallonPointsPerPound(-0.1)));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
     });
 
     test('should return NaN for extract potential greater than 1', () => {
-      expect(grainYieldToImperialGallonPointsPerPound(1.1)).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
+      assert.ok(Number.isNaN(grainYieldToImperialGallonPointsPerPound(1.1)));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
     });
 
     test('should return NaN for non-numeric input', () => {
-      expect(grainYieldToImperialGallonPointsPerPound('abc')).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
+      assert.ok(Number.isNaN(grainYieldToImperialGallonPointsPerPound('abc')));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
     });
   });
 
   // Tests for calculateMetricLiterDegreesPerKg
   describe('calculateMetricLiterDegreesPerKg', () => {
     test('should convert 0 extract potential to 0 metric yield', () => {
-      expect(calculateMetricLiterDegreesPerKg(0)).toBe(0);
+      assert.strictEqual(calculateMetricLiterDegreesPerKg(0), 0);
     });
 
     test('should convert 1.0 extract potential to max metric yield', () => {
-      expect(calculateMetricLiterDegreesPerKg(1.0)).toBe(BREW_CONSTANTS.METRIC_POTENTIAL_SCALING_FACTOR);
+      assert.strictEqual(calculateMetricLiterDegreesPerKg(1.0), BREW_CONSTANTS.METRIC_POTENTIAL_SCALING_FACTOR);
     });
 
     test('should correctly convert 0.5 extract potential to metric yield', () => {
-      expect(calculateMetricLiterDegreesPerKg(0.5)).toBeCloseTo(BREW_CONSTANTS.METRIC_POTENTIAL_SCALING_FACTOR / 2);
+      expectClose(calculateMetricLiterDegreesPerKg(0.5), BREW_CONSTANTS.METRIC_POTENTIAL_SCALING_FACTOR / 2);
     });
 
     test('should return NaN for negative extract potential', () => {
-      expect(calculateMetricLiterDegreesPerKg(-0.1)).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
+      assert.ok(Number.isNaN(calculateMetricLiterDegreesPerKg(-0.1)));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
     });
 
     test('should return NaN for extract potential greater than 1', () => {
-      expect(calculateMetricLiterDegreesPerKg(1.1)).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
+      assert.ok(Number.isNaN(calculateMetricLiterDegreesPerKg(1.1)));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
     });
 
     test('should return NaN for non-numeric input', () => {
-      expect(calculateMetricLiterDegreesPerKg('abc')).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
+      assert.ok(Number.isNaN(calculateMetricLiterDegreesPerKg('abc')));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'extractPotentialFraction' must be a number between 0 and 1.");
     });
   });
 
   // Tests for LDKFromPPG
   describe('LDKFromPPG', () => {
     test('should correctly convert PPG to LDK', () => {
-      expect(LDKFromPPG(10)).toBeCloseTo(10 * BREW_CONSTANTS.LDK_PPG_CONVERSION_FACTOR); // 10 * 8.345 = 83.45
+      expectClose(LDKFromPPG(10), 10 * BREW_CONSTANTS.LDK_PPG_CONVERSION_FACTOR); // 10 * 8.345 = 83.45
     });
 
     test('should convert 0 PPG to 0 LDK', () => {
-      expect(LDKFromPPG(0)).toBe(0);
+      assert.strictEqual(LDKFromPPG(0), 0);
     });
 
     test('should convert 1 PPG to the conversion factor in LDK', () => {
-      expect(LDKFromPPG(1)).toBe(BREW_CONSTANTS.LDK_PPG_CONVERSION_FACTOR);
+      assert.strictEqual(LDKFromPPG(1), BREW_CONSTANTS.LDK_PPG_CONVERSION_FACTOR);
     });
 
     test('should return NaN for negative PPG input', () => {
-      expect(LDKFromPPG(-5)).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'ppg' must be a number.");
+      assert.ok(Number.isNaN(LDKFromPPG(-5)));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'ppg' must be a number.");
     });
 
     test('should return NaN for non-numeric PPG input', () => {
-      expect(LDKFromPPG('abc')).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'ppg' must be a number.");
+      assert.ok(Number.isNaN(LDKFromPPG('abc')));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'ppg' must be a number.");
     });
   });
 
   // Tests for PPGFromLDK
   describe('PPGFromLDK', () => {
     test('should correctly convert LDK to PPG', () => {
-      expect(PPGFromLDK(83.45)).toBeCloseTo(10); // 83.45 / 8.345 = 10
+      expectClose(PPGFromLDK(83.45), 10); // 83.45 / 8.345 = 10
     });
 
     test('should convert 0 LDK to 0 PPG', () => {
-      expect(PPGFromLDK(0)).toBe(0);
+      assert.strictEqual(PPGFromLDK(0), 0);
     });
 
     test('should convert the conversion factor in LDK to 1 PPG', () => {
-      expect(PPGFromLDK(BREW_CONSTANTS.LDK_PPG_CONVERSION_FACTOR)).toBe(1);
+      assert.strictEqual(PPGFromLDK(BREW_CONSTANTS.LDK_PPG_CONVERSION_FACTOR), 1);
     });
 
     test('should return NaN for negative LDK input', () => {
-      expect(PPGFromLDK(-10)).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'ldk' must be a number.");
+      assert.ok(Number.isNaN(PPGFromLDK(-10)));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'ldk' must be a number.");
     });
 
     test('should return NaN for non-numeric LDK input', () => {
-      expect(PPGFromLDK('abc')).toBeNaN();
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Invalid input: 'ldk' must be a number.");
+      assert.ok(Number.isNaN(PPGFromLDK('abc')));
+      assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'ldk' must be a number.");
     });
   });
 });
