@@ -102,7 +102,26 @@ const UNIT_REGISTRY = {
     base_unit: 'SG',
     units: {
       SG:    { label: 'SG',    to_base: (v) => v, from_base: (v) => v, precision: 3 },
-      Plato: { label: '°P',    to_base: (p) => 1 + (p / (258.6 - (p/258.2) * 227.1)), from_base: (sg) => (-1 * 616.868) + (1111.14 * sg) - (630.272 * Math.pow(sg, 2)) + (135.997 * Math.pow(sg, 3)), precision: 1 }
+      Plato: {
+        label: '°P',
+        // Exact numerical inverse of the ASBC cubic below, via Newton-Raphson.
+        // Guarantees SG -> Plato -> SG round-trips are lossless.
+        to_base: (p) => {
+          const sgFromPlato = (plato) =>
+            (-1 * 616.868) + (1111.14 * plato) - (630.272 * Math.pow(plato, 2)) + (135.997 * Math.pow(plato, 3));
+          // Solve sgFromPlato(sg) = p for sg using Newton-Raphson.
+          let sg = 1.0 + (p / 258.6); // initial guess (linearized)
+          for (let i = 0; i < 8; i++) {
+            const f = sgFromPlato(sg) - p;
+            const df = 1111.14 - (2 * 630.272 * sg) + (3 * 135.997 * Math.pow(sg, 2));
+            if (Math.abs(df) < 1e-12) break;
+            sg -= f / df;
+          }
+          return sg;
+        },
+        from_base: (sg) => (-1 * 616.868) + (1111.14 * sg) - (630.272 * Math.pow(sg, 2)) + (135.997 * Math.pow(sg, 3)),
+        precision: 1
+      }
     }
   },
   percentage: {
@@ -1611,19 +1630,17 @@ Alpine.data('wizard', () => {
 
       // The solver core operates exclusively on base storage units:
       //   volume -> L, gravity -> SG, time -> hours.
-      // The manifest stores gravity in SG, but the UI may display it in Plato,
-      // so we must normalize any display-unit inputs to SG before solving.
-      const units = Alpine.store('units');
-      const toSg = (val, fieldKey) => {
-        if (val == null || isNaN(val)) return 1.0;
-        return units ? units.toBase('gravity', parseFloat(val), fieldKey) : parseFloat(val);
-      };
-
-      // Snapshot the manifest with gravity normalized to SG for the solver.
+      //
+      // IMPORTANT: manifest.preboil_gravity / postboil_gravity are ALREADY
+      // stored in SG (the base unit). The setGravityDisplay() setter converts
+      // display-unit input (e.g. Plato) to SG before writing to the manifest.
+      // Therefore we must NOT re-convert here -- doing so would treat an SG
+      // value as if it were Plato and corrupt it. The solver consumes the
+      // manifest values directly.
       const solverManifest = {
         ...this.manifest,
-        preboil_gravity: toSg(this.manifest.preboil_gravity, 'step2_preboil_gravity'),
-        postboil_gravity: toSg(this.manifest.postboil_gravity, 'step2_postboil_gravity'),
+        preboil_gravity: parseFloat(this.manifest.preboil_gravity) || 1.0,
+        postboil_gravity: parseFloat(this.manifest.postboil_gravity) || 1.0,
       };
 
       const [a, b] = this.solverOutputs;
