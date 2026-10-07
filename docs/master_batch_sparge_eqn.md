@@ -2,7 +2,7 @@
 
 $$S_{kettle} = (P \times M \times C_{e}) \times \left[ 1 - \left( \frac{Loss_{equip} + (M \times A_{f})}{V_{strike} + \frac{M \times \text{moisture}\%}{\rho_{water}}} \right) \times \left( \frac{Loss_{equip} + (M \times A_{f})}{Loss_{equip} + (M \times A_{f}) + V_{run2}} \right) \right]$$
 
-This equation models $S_{kettle}$ - the total amount of fermentable sugar (extract) collected in the boil kettle **at the end of the lauter, before the boil begins** (i.e., pre-boil extract) during a two-stage batch sparge brewing process.
+This equation models $S_{kettle}$ - the total amount of fermentable sugar (extract) collected in the boil kettle **at the end of the lauter, before the boil begins** (i.e., pre-boil extract), **prior to the addition of any fermentable sugars in the boil kettle**, during a two-stage batch sparge brewing process.
 
 It factors into two multiplicative terms: the total sugar created during the mash, and the fraction of that sugar you successfully rinse into the kettle (lauter efficiency).
 
