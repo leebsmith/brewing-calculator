@@ -1263,6 +1263,13 @@ Alpine.store('maltGrid', {
   },
 
   get totalWeightedContributionDisplay() {
+    // Relies on the Hamilton largest-remainder invariant: normalizeDraft()
+    // guarantees Σ pct === 100.0 for any non-empty bill, and majorMalts is
+    // only ever written from an already-normalized draft (saveModal). So the
+    // pct/100 share below sums to exactly 1.0, making this total equal to the
+    // percentage-weighted average potential shown in the adjacent column.
+    // If a future code path can persist a non-normalized bill, divide by
+    // Σ pct instead of assuming 100.0.
     const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
     const unitsStore = Alpine.store('units');
     const isImperial = unitsStore ? (unitsStore.globalMode === BREW_CONSTANTS.UNIT_MODES.IMPERIAL) : false;
