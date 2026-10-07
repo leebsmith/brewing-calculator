@@ -1286,6 +1286,14 @@ Alpine.data('wizard', () => {
     ...nav,
     ...eqMgr,
 
+    // Generalized 2-DOF solver: which two variables are solved outputs.
+    // Default (V2, G2) preserves legacy Option B behavior.
+    solverOutputs: [...BREW_CONSTANTS.SOLVER_DEFAULT_OUTPUTS],
+    solverError: null,
+
+    // Metadata for the 6 solver pills (labels + unit domains), sourced from constants.
+    solverVariables: BREW_CONSTANTS.SOLVER_VARIABLES,
+
     // Working Recipe Manifest
     manifest: {
       name: BREW_CONSTANTS.DEFAULT_BATCH_NAME,
