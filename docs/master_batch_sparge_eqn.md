@@ -11,23 +11,53 @@ It factors into two multiplicative terms: the total sugar created during the mas
 >
 > **Scope note:** $S_{late}$ covers *fermentable* late additions only. Late hops (aroma, flavor, whirlpool) contribute no fermentable extract and are modeled separately in the hop schedule; they do not appear in this equation.
 
-### Post-Boil Gravity Does NOT Include Late Additions
+### The Pair-of-Pairs Model
 
-The boil solver's post-boil gravity $G2$ is the gravity of the **mash-derived wort only**, measured at flameout, *before* any fermentable late additions are stirred in. This is a deliberate modeling choice with three consequences:
+The calculator is built on **two independent 2-DOF solvers**, each operating on its own pair of pairs:
 
-1. **The boil solver's conservation equation stays clean.** $V1 \cdot G1 = V2 \cdot G2$ holds exactly, because $S_{late}$ is not injected between $V1$ and $V2$. If $G2$ included late additions, the conservation equation would become $V1 \cdot G1 + S_{late} = V2 \cdot G2$, and every case of the 2-DOF boil solver would need to be rewritten.
+| Solver | Variables | Pick | Solve | Physical domain |
+| :--- | :--- | :--- | :--- | :--- |
+| **Boil** | $V1, G1, V2, G2, R_{boil}, t$ | 2 | 4 | Kettle geometry & evaporation |
+| **Fermentation** | $OG, FG, ABV, AA$ | 2 | 2 | Yeast behavior |
 
-2. **The fermenter OG is a separate, downstream quantity.** The gravity the brewer measures in the fermenter *does* include late additions:
-   $$OG_{fermenter} = 1 + \frac{S_{kettle} + S_{late}}{V_{packaged}}$$
+The two solvers are **fully independent** — neither consumes the other's variables. They are coupled only through the **extract budget**, and the coupling term is $S_{late}$.
 
-3. **The bridge between them is the late-addition ΔOG.** The Late Additions step surfaces this explicitly:
-   $$\Delta OG_{late} = \frac{S_{late}}{V_{packaged}}$$
-   so the user can see exactly how much the late additions shift the gravity, and why $OG_{fermenter} \neq G2$.
+### $S_{late}$ as a Residual
 
-> **UI labeling requirement:** Because $G2$ and $OG_{fermenter}$ are different quantities, they must be labeled unambiguously wherever they appear:
-> * Step 2's $G2$ field → **"Post-Boil Gravity (kettle, pre-late)"**
+The boil solver produces the **mash extract**:
+
+$$S_{kettle}^{mash} = V2 \cdot (G2 - 1) \cdot 1000$$
+
+The fermentation solver produces the **required fermenter extract**:
+
+$$S_{fermenter} = (OG - 1) \cdot V_{packaged}$$
+
+The difference between them is the **late-addition residual**:
+
+$$S_{late} = S_{fermenter} - S_{kettle}^{mash}$$
+
+This residual is the **bridge** between the two solvers, and it is *computed*, not declared. Its sign tells the user what to do:
+
+| $S_{late}$ | Meaning | User action |
+| :--- | :--- | :--- |
+| $= 0$ | The mash provides exactly the extract the fermentation target requires | No late additions needed |
+| $> 0$ | The fermentation target requires **more** extract than the mash provides | **Add fermentable late additions** |
+| $< 0$ | The mash provides **more** extract than the fermentation target needs | Reduce grain bill or increase volume |
+
+> **This is the "surface the need" behavior.** The wizard computes $S_{late}$ as a residual and tells the user: *"You need X kg of fermentable late additions to hit your ABV target."* The user is not required to know this in advance — the wizard derives it.
+
+### Why the Boil Solver Is Unchanged
+
+Because $S_{late}$ is a *residual* rather than a *term in the boil solver's conservation equation*, the boil solver's extract-conservation equation stays clean:
+
+$$V1 \cdot G1 = V2 \cdot G2$$
+
+$G2$ remains the gravity of the **mash-derived wort only** (kettle, pre-late). No case of the 2-DOF boil solver needs to be rewritten. The late-addition contribution is accounted for entirely in the residual $S_{late}$, which is computed *after* both solvers have run.
+
+> **UI labeling requirement:** Because $G2$ and $OG$ are different quantities, they must be labeled unambiguously wherever they appear:
+> * Boil solver's $G2$ → **"Post-Boil Gravity (kettle, mash wort)"**
 > * Fermentation solver's $OG$ → **"Original Gravity (fermenter)"**
-> * Late Additions step → **"ΔOG from late additions"** (the bridge value above)
+> * Late Additions step → **"Required late additions"** (derived from the residual $S_{late}$)
 
 ## The Two Factors of the Equation
 
@@ -205,27 +235,30 @@ This is the **diagnostic pathway**: the brewer has a wort of known gravity and a
 
 ### Coupling to the Lauter Solver
 
-The fermentation solver's output feeds the Lauter solver via the extract budget:
+The Lauter solver's target is the **mash extract** $S_{kettle}^{mash}$ produced by the boil solver:
 
-$$S_{fermenter,target} = (OG_{target} - 1) \times V_{packaged}$$
-$$S_{kettle,target} = S_{fermenter,target} - S_{late}$$
+$$S_{kettle}^{mash} = V2 \cdot (G2 - 1) \cdot 1000$$
 
-where $V_{packaged}$ comes from the boil solver's downstream bridge, and $S_{late}$ comes from the Late Additions step. $S_{kettle,target}$ is then the RHS of the master sparge equation, which the Lauter solver inverts to find $M$.
+This is the RHS of the master sparge equation, which the Lauter solver inverts to find $M$:
 
-> **Note:** $S_{late}$ *reduces* the grain bill. Adding fermentable late additions means less base malt is needed to hit the same OG — a physically correct and useful property.
+$$S_{kettle}^{mash} = (P \times M \times C_{e}) \times \left[ 1 - \left( \frac{Loss_{equip} + (M \times A_{f})}{V_{strike} + \frac{M \times \text{moisture}\%}{\rho_{water}}} \right) \times \left( \frac{Loss_{equip} + (M \times A_{f})}{Loss_{equip} + (M \times A_{f}) + V_{run2}} \right) \right]$$
 
-### The Late-Addition Bridge (Displayed to the User)
+Note that $S_{late}$ does **not** appear here. The Lauter solver sizes the grain bill to produce exactly the mash extract the boil solver requires. Late additions are accounted for separately, in the residual $S_{late}$.
 
-The Late Additions step surfaces the bridge between the boil solver's $G2$ and the fermentation solver's $OG_{fermenter}$:
+> **Note:** Because $S_{late}$ is a residual, adding fermentable late additions does *not* directly reduce the grain bill in this model. Instead, it changes the *fermentation target* ($OG$), which in turn changes $S_{fermenter}$, which changes the residual. The user reconciles by adjusting either the boil parameters or the fermentation target until $S_{late}$ matches their intended late-addition amount.
 
-$$\Delta OG_{late} = \frac{S_{late}}{V_{packaged}}$$
+### The Late-Addition Residual (Displayed to the User)
+
+The Late Additions step surfaces the residual between the two solvers:
+
+$$S_{late} = S_{fermenter} - S_{kettle}^{mash} = (OG - 1) \cdot V_{packaged} - V2 \cdot (G2 - 1) \cdot 1000$$
 
 This value is **displayed** in the Late Additions step so the user can see:
-* The kettle gravity $G2$ (mash wort only, pre-late).
-* The ΔOG contributed by their late additions.
-* The resulting fermenter OG: $OG_{fermenter} = G2_{adjusted} + \Delta OG_{late}$, where $G2_{adjusted}$ accounts for the volume change from boil to packaging.
+* The mash extract $S_{kettle}^{mash}$ (from the boil solver).
+* The required fermenter extract $S_{fermenter}$ (from the fermentation solver).
+* The residual $S_{late}$, expressed both as extract and as a suggested late-addition mass.
 
-> **Why display it:** Without this bridge, a brewer who adds 1 kg of candi syrup at flameout would measure a higher kettle gravity than the boil solver predicts, and would have no way to reconcile the two numbers. The bridge makes the model transparent and self-documenting.
+> **Why display it:** Without this residual, the user would have to manually reconcile the boil solver's output with the fermentation solver's target. The residual makes the model transparent and self-documenting, and it *surfaces the need* for late additions rather than requiring the user to know it in advance.
 
 ## Variable Glossary
 
@@ -244,10 +277,11 @@ This value is **displayed** in the Late Additions step so the user can see:
 | $V_{run2}$ | Second runnings volume — sparge water added to the grain bed *after* the first drain, which becomes the second runnings | Varies |
 | $V_{wort}$ | Target pre-boil wort volume — the sum of both runnings collected in the kettle ($V_{run1} + V_{run2}$) | Target varies by recipe |
 | $E_{kettle}$ | Efficiency into the kettle | $< C_{e}$ |
-| $S_{late}$ | Extract contributed by **fermentable** late additions (sugars, DME, LME); zero if none. Late hops contribute no extract and are out of scope for this term. | $0$ or recipe-dependent |
+| $S_{kettle}^{mash}$ | Mash extract produced by the boil solver: $V2 \cdot (G2 - 1) \cdot 1000$ | Target varies by recipe |
+| $S_{fermenter}$ | Required fermenter extract from the fermentation solver: $(OG - 1) \cdot V_{packaged}$ | Target varies by recipe |
+| $S_{late}$ | **Residual** between the two solvers: $S_{fermenter} - S_{kettle}^{mash}$. Positive means late additions are needed; zero means none; negative means excess mash extract. | $0$ or recipe-dependent |
 | $G2$ | Post-boil gravity of the **mash-derived wort only** (kettle, pre-late additions) | Target varies by recipe |
-| $OG_{fermenter}$ | Original gravity in the fermenter, **including** $S_{late}$ | Target varies by recipe |
-| $\Delta OG_{late}$ | Gravity shift contributed by late additions: $S_{late} / V_{packaged}$ | $0$ or recipe-dependent |
+| $OG$ | Original gravity in the fermenter, **including** $S_{late}$ | Target varies by recipe |
 
 ## Worked Example
 
@@ -298,16 +332,11 @@ Note that $E_{kettle,theoretical} < C_{e}$ ($86.5\% < 95\%$), as expected — th
 
 ### Late Addition Advisory (Advisory Only)
 
-The workflow does **not** surface the *need* for fermentable late additions. OG flows correctly whether or not late additions are used:
+The pair-of-pairs model **already surfaces the need** for fermentable late additions via the residual $S_{late}$ (see "The Late-Addition Residual" above). When $S_{late} > 0$, the wizard tells the user how much late addition is required to hit their ABV target.
 
-* **No late additions** ($S_{late} = 0$): the Lauter solver sizes the grain bill to carry the full extract burden.
-* **With late additions** ($S_{late} > 0$): the Lauter solver sizes a *smaller* grain bill, and the late additions make up the difference.
+This is **advisory only** — the wizard does not enforce late additions. A brewer may legitimately want an all-malt recipe, and the wizard should not second-guess that intent. If the user declines the suggested late additions, they must instead adjust the boil parameters or the fermentation target until $S_{late} = 0$.
 
-Both paths hit the target OG exactly. The difference is that skipping late additions produces a larger grain bill — which may be stylistically wrong (e.g., a Belgian Dubbel should derive gravity from candi syrup, not base malt) or may exceed `max_mash_tun_volume_l`.
-
-**Proposed enhancement:** when the Lauter solver produces a grain bill that exceeds a threshold (e.g., $> 8\ \text{kg}$, or $> 80\%$ of mash tun capacity), surface a **non-blocking advisory**: *"Grain bill is large. Consider fermentable late additions to reduce mash volume."*
-
-This is **advisory only** — the wizard does not enforce late additions. A brewer may legitimately want an all-malt recipe, and the wizard should not second-guess that intent.
+**Additional enhancement (future):** when the Lauter solver produces a grain bill that exceeds a threshold (e.g., $> 8\ \text{kg}$, or $> 80\%$ of mash tun capacity), surface a **non-blocking advisory**: *"Grain bill is large. Consider fermentable late additions to reduce mash volume."* This is a *capacity* advisory, distinct from the *extract* residual above.
 
 ### LLM Recipe Analyst (Future)
 
