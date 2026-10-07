@@ -39,6 +39,15 @@ global.Alpine = {
 
 global.collapse = {};
 
+// Load pureFunctions.js into the global scope. script.js imports these
+// helpers, but the harness strips import statements before eval, so we must
+// define them globally first (mirroring how the browser resolves the module).
+const pureFunctionsPath = resolve(__dirname, '../src/utils/pureFunctions.js');
+let pureFunctionsCode = readFileSync(pureFunctionsPath, 'utf8');
+pureFunctionsCode = pureFunctionsCode.replace(/^import\s+[\s\S]*?;\s*$/gm, '');
+pureFunctionsCode = pureFunctionsCode.replace(/^export\s+/gm, '');
+eval(pureFunctionsCode);
+
 // Evaluate script.js to register the Alpine stores
 const scriptPath = resolve(__dirname, '../script.js');
 let scriptCode = readFileSync(scriptPath, 'utf8');
