@@ -849,6 +849,10 @@ pre {
   }
 }
 
+.modal-dialog-workspace {
+  max-width: var(--container-modal-workspace, 72rem);
+}
+
 .modal-workspace-header {
   padding: var(--space-4) var(--space-6);
   border-bottom: 1px solid var(--sys-border-subtle);
@@ -1028,6 +1032,10 @@ pre {
 .data-table td {
   padding: var(--space-3);
   vertical-align: middle;
+}
+
+.data-table thead th {
+  text-align: center;
 }
 
 .data-table tbody tr {
