@@ -235,6 +235,165 @@ export class ThermodynamicSolver {
   }
 
   /**
+   * Validates a requested 2-DOF output pair against the singular/degenerate blacklist.
+   * Returns { valid: boolean, reason: string }.
+   */
+  static validateOutputPair(var1, var2) {
+    const VALID_VARIABLES = new Set(BREW_CONSTANTS.SOLVER_VALID_VARIABLES);
+    const INVALID_PAIRS = new Set(BREW_CONSTANTS.SOLVER_INVALID_PAIRS);
+
+    if (!VALID_VARIABLES.has(var1) || !VALID_VARIABLES.has(var2)) {
+      return { valid: false, reason: BREW_CONSTANTS.MSG_SOLVER_UNKNOWN_VARIABLE };
+    }
+    if (var1 === var2) {
+      return { valid: false, reason: BREW_CONSTANTS.MSG_SOLVER_SAME_VARIABLE };
+    }
+    const key = [var1, var2].sort().join(':');
+    if (INVALID_PAIRS.has(key)) {
+      return { valid: false, reason: BREW_CONSTANTS.MSG_SOLVER_SINGULAR_PAIR };
+    }
+    return { valid: true, reason: 'Valid independent output pair.' };
+  }
+
+  /**
+   * Generalized 2-DOF kettle solver.
+   * Given a manifest and two output variable identifiers, solves for those two
+   * while treating the remaining four as fixed inputs. Returns a result object
+   * with the solved values and any validation error.
+   */
+  static solve2DOF(manifest, var1, var2) {
+    const check = this.validateOutputPair(var1, var2);
+    if (!check.valid) {
+      return { ok: false, error: check.reason, solved: {} };
+    }
+
+    const m = manifest;
+    const eq = m.equipment || {};
+    const t = (parseFloat(m.boil_time_min) || 60) / 60.0;
+    const V1 = parseFloat(m.preboil_volume_l) || 0;
+    const G1 = parseFloat(m.preboil_gravity) || 1.0;
+    const V2 = parseFloat(m.postboil_volume_l) || 0;
+    const G2 = parseFloat(m.postboil_gravity) || 1.0;
+    const R = parseFloat(eq.boil_off_rate_l_per_hr) || 0;
+
+    const pair = [var1, var2].sort().join(':');
+    const solved = {};
+
+    const fail = (msg) => ({ ok: false, error: msg, solved: {} });
+
+    switch (pair) {
+      // 1. (V2, G2) — Default / Option B
+      case 'G2:V2': {
+        if (R * t >= V1) return fail('Post-boil volume would be <= 0 (boil-off exceeds pre-boil volume).');
+        solved.V2 = V1 - (R * t);
+        solved.G2 = (V1 * G1) / solved.V2;
+        break;
+      }
+      // 2. (R_boil, G2) — Option A
+      case 'G2:R_boil': {
+        if (t <= 0) return fail('Boil duration must be > 0.');
+        if (V2 <= 0 || V1 <= V2) return fail('Pre-boil volume must exceed post-boil volume.');
+        solved.R_boil = (V1 - V2) / t;
+        solved.G2 = (V1 * G1) / V2;
+        break;
+      }
+      // 3. (t, G2)
+      case 'G2:t': {
+        if (R <= 0) return fail('Boil-off rate must be > 0.');
+        if (V2 <= 0 || V1 <= V2) return fail('Pre-boil volume must exceed post-boil volume.');
+        solved.t = (V1 - V2) / R;
+        solved.G2 = (V1 * G1) / V2;
+        break;
+      }
+      // 4. (V1, G1) — Reverse Runoff Solver
+      case 'G1:V1': {
+        solved.V1 = V2 + (R * t);
+        if (solved.V1 <= 0) return fail('Solved pre-boil volume must be > 0.');
+        solved.G1 = (V2 * G2) / solved.V1;
+        break;
+      }
+      // 5. (R_boil, G1)
+      case 'G1:R_boil': {
+        if (t <= 0) return fail('Boil duration must be > 0.');
+        if (V1 <= 0 || V1 <= V2) return fail('Pre-boil volume must exceed post-boil volume.');
+        solved.R_boil = (V1 - V2) / t;
+        solved.G1 = (V2 * G2) / V1;
+        break;
+      }
+      // 6. (t, G1)
+      case 'G1:t': {
+        if (R <= 0) return fail('Boil-off rate must be > 0.');
+        if (V1 <= 0 || V1 <= V2) return fail('Pre-boil volume must exceed post-boil volume.');
+        solved.t = (V1 - V2) / R;
+        solved.G1 = (V2 * G2) / V1;
+        break;
+      }
+      // 7. (V1, V2) — Dilution & Concentration
+      case 'V1:V2': {
+        if (G2 <= G1) return fail('Post-boil gravity must exceed pre-boil gravity (no boil concentration).');
+        solved.V1 = (G2 * R * t) / (G2 - G1);
+        solved.V2 = (G1 * R * t) / (G2 - G1);
+        break;
+      }
+      // 8. (V1, R_boil)
+      case 'R_boil:V1': {
+        if (G1 <= 0) return fail('Pre-boil gravity must be > 0.');
+        if (t <= 0) return fail('Boil duration must be > 0.');
+        if (G1 >= G2) return fail('Post-boil gravity must exceed pre-boil gravity.');
+        solved.V1 = (V2 * G2) / G1;
+        solved.R_boil = (solved.V1 - V2) / t;
+        break;
+      }
+      // 9. (V1, t)
+      case 'V1:t': {
+        if (G1 <= 0) return fail('Pre-boil gravity must be > 0.');
+        if (R <= 0) return fail('Boil-off rate must be > 0.');
+        if (G1 >= G2) return fail('Post-boil gravity must exceed pre-boil gravity.');
+        solved.V1 = (V2 * G2) / G1;
+        solved.t = (solved.V1 - V2) / R;
+        break;
+      }
+      // 10. (V2, R_boil)
+      case 'R_boil:V2': {
+        if (G2 <= 0) return fail('Post-boil gravity must be > 0.');
+        if (t <= 0) return fail('Boil duration must be > 0.');
+        if (G1 >= G2) return fail('Post-boil gravity must exceed pre-boil gravity.');
+        solved.V2 = (V1 * G1) / G2;
+        solved.R_boil = (V1 - solved.V2) / t;
+        break;
+      }
+      // 11. (V2, t)
+      case 'V2:t': {
+        if (G2 <= 0) return fail('Post-boil gravity must be > 0.');
+        if (R <= 0) return fail('Boil-off rate must be > 0.');
+        if (G1 >= G2) return fail('Post-boil gravity must exceed pre-boil gravity.');
+        solved.V2 = (V1 * G1) / G2;
+        solved.t = (V1 - solved.V2) / R;
+        break;
+      }
+      // 12. (V1, G2)
+      case 'G2:V1': {
+        if (V2 <= 0) return fail('Post-boil volume must be > 0.');
+        solved.V1 = V2 + (R * t);
+        solved.G2 = (solved.V1 * G1) / V2;
+        break;
+      }
+      // 13. (V2, G1)
+      case 'G1:V2': {
+        if (V1 <= 0) return fail('Pre-boil volume must be > 0.');
+        if (V1 <= R * t) return fail('Boil-off exceeds pre-boil volume.');
+        solved.V2 = V1 - (R * t);
+        solved.G1 = (solved.V2 * G2) / V1;
+        break;
+      }
+      default:
+        return fail('Unsupported output pair.');
+    }
+
+    return { ok: true, error: null, solved };
+  }
+
+  /**
    * Executes complete boil thermodynamics solver across Option A or Option B.
    */
   static solveBoil(manifest) {
@@ -1350,8 +1509,43 @@ Alpine.data('wizard', () => {
       this.runBoilSolver();
     },
 
+    // --- Generalized 2-DOF Solver Actions ---
+
+    isSolverOutput(varKey) {
+      return this.solverOutputs.includes(varKey);
+    },
+
+    // Proactive gating: a pill is disabled if selecting it would form a singular pair.
+    isSolverPillDisabled(varKey) {
+      if (this.solverOutputs.includes(varKey)) return false;
+      if (this.solverOutputs.length < 1) return false;
+      const candidate = this.solverOutputs[0];
+      return !ThermodynamicSolver.validateOutputPair(candidate, varKey).valid;
+    },
+
+    solverPillDisabledReason(varKey) {
+      if (this.solverOutputs.length < 1) return '';
+      const candidate = this.solverOutputs[0];
+      const res = ThermodynamicSolver.validateOutputPair(candidate, varKey);
+      return res.valid ? '' : res.reason;
+    },
+
+    toggleSolverPill(varKey) {
+      const idx = this.solverOutputs.indexOf(varKey);
+      if (idx >= 0) {
+        // Deselect (n -> n-1)
+        this.solverOutputs.splice(idx, 1);
+      } else {
+        if (this.solverOutputs.length >= 2) return; // frozen at 2
+        if (this.isSolverPillDisabled(varKey)) return;
+        this.solverOutputs.push(varKey);
+      }
+      this.runBoilSolver();
+    },
+
     setBoilSolverMode(mode) {
-      this.manifest.boil_solver_mode = mode;
+      // Legacy compatibility shim: map old Option A/B to the new pill pairs.
+      this.solverOutputs = mode === 'option_a' ? ['R_boil', 'G2'] : ['V2', 'G2'];
       this.runBoilSolver();
     },
 
@@ -1408,7 +1602,41 @@ Alpine.data('wizard', () => {
     },
 
     runBoilSolver() {
-      ThermodynamicSolver.solveBoil(this.manifest);
+      if (this.solverOutputs.length !== 2) {
+        // Not enough outputs selected yet; fall back to legacy default solve.
+        ThermodynamicSolver.solveBoil(this.manifest);
+        this.solverError = null;
+        return;
+      }
+
+      const [a, b] = this.solverOutputs;
+      const result = ThermodynamicSolver.solve2DOF(this.manifest, a, b);
+      this.solverError = result.ok ? null : result.error;
+
+      if (result.ok) {
+        const s = result.solved;
+        if (s.V1 !== undefined) this.manifest.preboil_volume_l = Number(s.V1.toFixed(2));
+        if (s.G1 !== undefined) this.manifest.preboil_gravity = Number(s.G1.toFixed(4));
+        if (s.V2 !== undefined) this.manifest.postboil_volume_l = Number(s.V2.toFixed(2));
+        if (s.G2 !== undefined) this.manifest.postboil_gravity = Number(s.G2.toFixed(4));
+        if (s.R_boil !== undefined) this.manifest.equipment.boil_off_rate_l_per_hr = Number(s.R_boil.toFixed(2));
+        if (s.t !== undefined) this.manifest.boil_time_min = Number((s.t * 60).toFixed(1));
+      }
+
+      // Downstream chilling bridge (packaged volume + target OG).
+      const eq = this.manifest.equipment || {};
+      const trubLoss = parseFloat(eq.trub_loss_l) || 0;
+      const kettleLoss = parseFloat(eq.kettle_dead_space_l) || 0;
+      const shrinkage = parseFloat(eq.shrinkage_pct) || 0.04;
+      const vPost = parseFloat(this.manifest.postboil_volume_l) || 0;
+      const vTarget = ThermodynamicSolver.calculatePackagedVolume(vPost, trubLoss + kettleLoss, shrinkage);
+      this.manifest.target_volume_l = vTarget;
+
+      const extractPointsTotal = (parseFloat(this.manifest.preboil_volume_l) || 0) *
+        ((parseFloat(this.manifest.preboil_gravity) || 1.0) - 1.0);
+      this.manifest.target_og = ThermodynamicSolver.calculateTargetOg(
+        extractPointsTotal, vTarget, parseFloat(this.manifest.postboil_gravity) || 1.050
+      );
     },
 
     // Step 2 Synthesized Outputs (delegated to ThermodynamicSolver)

@@ -1228,6 +1228,82 @@ pre {
   font-family: var(--font-mono);
 }
 
+/* --- Generalized 2-DOF Solver Pill Toolbar --- */
+
+.solver-pill-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.solver-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-0-5);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--sys-border-subtle);
+  background-color: var(--sys-surface-default);
+  color: var(--sys-text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.solver-pill:hover:not(:disabled) {
+  background-color: var(--sys-surface-hover);
+  border-color: var(--sys-border-default);
+  color: var(--sys-text-primary);
+}
+
+.solver-pill:focus-visible {
+  outline: 2px solid var(--sys-border-focus);
+  outline-offset: 2px;
+}
+
+.solver-pill.is-selected {
+  background-color: var(--sys-color-action-subtle);
+  border-color: var(--sys-color-action-primary);
+  color: var(--sys-color-action-subtle-text);
+  box-shadow: var(--sys-shadow-sm);
+}
+
+.solver-pill.is-disabled,
+.solver-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.solver-pill-key {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.03em;
+}
+
+.solver-pill-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+/* --- Solved (read-only) Form Input Affordance --- */
+
+.form-input-solved {
+  background-color: var(--sys-surface-canvas);
+  color: var(--sys-text-primary);
+  font-variant-numeric: tabular-nums;
+  border-color: var(--sys-color-action-primary);
+  cursor: default;
+}
+
+.form-input-solved:read-only {
+  opacity: 1;
+}
+
 .table-header-toolbar {
   display: flex;
   align-items: center;

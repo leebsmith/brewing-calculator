@@ -40,30 +40,39 @@
                 <span class="form-hint">Unique identifier for this brewing recipe</span>
             </div>
 
-            <!-- Solver Mode Toggle -->
+            <!-- Generalized 2-DOF Solver: 6-Pill Output Selector -->
             <div class="form-group">
                 <div class="solver-mode-header">
-                    <label class="form-label">Boil Solver Mode</label>
-                    <span class="solver-mode-hint" x-text="manifest.boil_solver_mode === 'option_b' ? 'Fixing Rate → Solving Post-Vol' : 'Fixing Post-Vol → Solving Rate'"></span>
+                    <label class="form-label">Boil Solver Outputs</label>
+                    <span
+                        class="solver-mode-hint"
+                        x-text="solverOutputs.length === 2
+                            ? 'Solving: ' + solverOutputs.join(' + ')
+                            : 'Select 2 variables to solve for'"
+                    ></span>
                 </div>
-                <div class="segmented-control">
-                    <button
+                <div class="solver-pill-toolbar">
+                    <template x-for="v in solverVariables" :key="v.key">
+                        <button
                             type="button"
-                            @click="setBoilSolverMode('option_b')"
-                            class="segmented-control-item"
-                            :class="{ 'is-active': manifest.boil_solver_mode === 'option_b' }"
-                    >
-                        Hardware-Driven (Option B)
-                    </button>
-                    <button
-                            type="button"
-                            @click="setBoilSolverMode('option_a')"
-                            class="segmented-control-item"
-                            :class="{ 'is-active': manifest.boil_solver_mode === 'option_a' }"
-                    >
-                        Target-Driven (Option A)
-                    </button>
+                            class="solver-pill"
+                            :class="{
+                                'is-selected': isSolverOutput(v.key),
+                                'is-disabled': isSolverPillDisabled(v.key)
+                            }"
+                            :disabled="isSolverPillDisabled(v.key)"
+                            :title="solverPillDisabledReason(v.key)"
+                            :aria-pressed="isSolverOutput(v.key).toString()"
+                            @click="toggleSolverPill(v.key)"
+                        >
+                            <span class="solver-pill-key" x-text="v.key"></span>
+                            <span class="solver-pill-label" x-text="v.label"></span>
+                        </button>
+                    </template>
                 </div>
+                <template x-if="solverError">
+                    <span class="form-hint text-danger" x-text="solverError"></span>
+                </template>
             </div>
 
             <div class="step-grid-2col">
@@ -73,8 +82,18 @@
                         <span>Pre-Boil Volume</span>
                         <button type="button" @click="$store.units.toggle('step2_preboil_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step2_preboil_volume_l') }" x-text="$store.units.getLabel('step2_preboil_volume_l')" title="Click to toggle unit"></button>
                     </label>
-                    <input type="number" step="0.5" min="1" :value="volDisplay(manifest.preboil_volume_l, 'step2_preboil_volume_l')" @input="setVolDisplay(manifest, 'preboil_volume_l', $event.target.value, 'step2_preboil_volume_l')" class="form-input tabular-nums" required />
-                    <span class="form-hint">Total wort collected in kettle prior to boil</span>
+                    <input
+                        type="number"
+                        step="0.5"
+                        min="1"
+                        :value="volDisplay(manifest.preboil_volume_l, 'step2_preboil_volume_l')"
+                        @input="setVolDisplay(manifest, 'preboil_volume_l', $event.target.value, 'step2_preboil_volume_l')"
+                        class="form-input tabular-nums"
+                        :class="{ 'form-input-solved': isSolverOutput('V1') }"
+                        :readonly="isSolverOutput('V1')"
+                        required
+                    />
+                    <span class="form-hint" x-text="isSolverOutput('V1') ? '⚙️ Solved' : 'Total wort collected in kettle prior to boil'"></span>
                 </div>
 
                 <!-- Pre-Boil Gravity -->
@@ -83,15 +102,37 @@
                         <span>Pre-Boil Gravity</span>
                         <button type="button" @click="$store.units.toggle('step2_preboil_gravity')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step2_preboil_gravity') }" x-text="$store.units.getLabel('step2_preboil_gravity')" title="Click to toggle gravity unit"></button>
                     </label>
-                    <input type="number" step="0.001" min="1.000" max="1.200" :value="gravityDisplay(manifest.preboil_gravity, 'step2_preboil_gravity')" @input="setGravityDisplay(manifest, 'preboil_gravity', $event.target.value, 'step2_preboil_gravity')" class="form-input tabular-nums" required />
-                    <span class="form-hint">Specific gravity or Plato measured before boil</span>
+                    <input
+                        type="number"
+                        step="0.001"
+                        min="1.000"
+                        max="1.200"
+                        :value="gravityDisplay(manifest.preboil_gravity, 'step2_preboil_gravity')"
+                        @input="setGravityDisplay(manifest, 'preboil_gravity', $event.target.value, 'step2_preboil_gravity')"
+                        class="form-input tabular-nums"
+                        :class="{ 'form-input-solved': isSolverOutput('G1') }"
+                        :readonly="isSolverOutput('G1')"
+                        required
+                    />
+                    <span class="form-hint" x-text="isSolverOutput('G1') ? '⚙️ Solved' : 'Specific gravity or Plato measured before boil'"></span>
                 </div>
 
                 <!-- Boil Time -->
                 <div class="form-group">
                     <label class="form-label">Boil Time (min)</label>
-                    <input type="number" step="5" min="0" max="180" x-model.number="manifest.boil_time_min" @input="onBatchMetaChange" class="form-input tabular-nums" required />
-                    <span class="form-hint">Duration of wort boil</span>
+                    <input
+                        type="number"
+                        step="5"
+                        min="0"
+                        max="180"
+                        x-model.number="manifest.boil_time_min"
+                        @input="onBatchMetaChange"
+                        class="form-input tabular-nums"
+                        :class="{ 'form-input-solved': isSolverOutput('t') }"
+                        :readonly="isSolverOutput('t')"
+                        required
+                    />
+                    <span class="form-hint" x-text="isSolverOutput('t') ? '⚙️ Solved' : 'Duration of wort boil'"></span>
                 </div>
 
                 <!-- Boil-Off Rate -->
@@ -100,8 +141,19 @@
                         <span>Boil-Off Rate</span>
                         <button type="button" @click="$store.units.toggle('step1_boil_off_rate_l_per_hr')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_boil_off_rate_l_per_hr') }" x-text="$store.units.getLabel('step1_boil_off_rate_l_per_hr') + '/hr'" title="Click to toggle unit"></button>
                     </label>
-                    <input type="number" step="0.1" min="0.1" max="15" :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'step1_boil_off_rate_l_per_hr')" @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value, 'step1_boil_off_rate_l_per_hr')" :disabled="manifest.boil_solver_mode === 'option_a'" class="form-input tabular-nums" required />
-                    <span class="form-hint" x-text="manifest.boil_solver_mode === 'option_a' ? 'Solved automatically from pre/post volumes' : 'Evaporation rate per hour (PID duty cycle)'"></span>
+                    <input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        max="15"
+                        :value="volDisplay(manifest.equipment.boil_off_rate_l_per_hr, 'step1_boil_off_rate_l_per_hr')"
+                        @input="setVolDisplay(manifest.equipment, 'boil_off_rate_l_per_hr', $event.target.value, 'step1_boil_off_rate_l_per_hr')"
+                        class="form-input tabular-nums"
+                        :class="{ 'form-input-solved': isSolverOutput('R_boil') }"
+                        :readonly="isSolverOutput('R_boil')"
+                        required
+                    />
+                    <span class="form-hint" x-text="isSolverOutput('R_boil') ? '⚙️ Solved' : 'Evaporation rate per hour (PID duty cycle)'"></span>
                 </div>
 
                 <!-- Post-Boil Volume -->
@@ -110,8 +162,18 @@
                         <span>Post-Boil Volume</span>
                         <button type="button" @click="$store.units.toggle('step2_postboil_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step2_postboil_volume_l') }" x-text="$store.units.getLabel('step2_postboil_volume_l')" title="Click to toggle unit"></button>
                     </label>
-                    <input type="number" step="0.5" min="1" :value="volDisplay(manifest.postboil_volume_l, 'step2_postboil_volume_l')" @input="setVolDisplay(manifest, 'postboil_volume_l', $event.target.value, 'step2_postboil_volume_l')" :disabled="manifest.boil_solver_mode === 'option_b'" class="form-input tabular-nums" required />
-                    <span class="form-hint" x-text="manifest.boil_solver_mode === 'option_b' ? 'Derived from pre-boil volume minus boil-off' : 'Hot wort volume at flameout'"></span>
+                    <input
+                        type="number"
+                        step="0.5"
+                        min="1"
+                        :value="volDisplay(manifest.postboil_volume_l, 'step2_postboil_volume_l')"
+                        @input="setVolDisplay(manifest, 'postboil_volume_l', $event.target.value, 'step2_postboil_volume_l')"
+                        class="form-input tabular-nums"
+                        :class="{ 'form-input-solved': isSolverOutput('V2') }"
+                        :readonly="isSolverOutput('V2')"
+                        required
+                    />
+                    <span class="form-hint" x-text="isSolverOutput('V2') ? '⚙️ Solved' : 'Hot wort volume at flameout'"></span>
                 </div>
 
                 <!-- Target Packaged Volume (Result) -->
