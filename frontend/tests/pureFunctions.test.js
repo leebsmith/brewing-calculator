@@ -11,7 +11,9 @@ import {
   grainYieldToImperialGallonPointsPerPound,
   calculateMetricLiterDegreesPerKg,
   LDKFromPPG,
-  PPGFromLDK
+  PPGFromLDK,
+  isTracePercentage,
+  allocateProportionalPercentages
 } from '../src/utils/pureFunctions.js';
 
 // Mirror of the constants used by the module under test.
@@ -127,6 +129,75 @@ describe('Pure Functions Tests', () => {
       assert.ok(Number.isNaN(LDKFromPPG('abc')));
       assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
       assert.strictEqual(consoleErrorSpy.mock.calls[0].arguments[0], "Invalid input: 'ppg' must be a number.");
+    });
+  });
+
+  // Tests for isTracePercentage
+  describe('isTracePercentage', () => {
+    test('should return true for percentages below 2%', () => {
+      assert.strictEqual(isTracePercentage(0), true);
+      assert.strictEqual(isTracePercentage(1.9), true);
+    });
+
+    test('should return false for percentages at or above 2%', () => {
+      assert.strictEqual(isTracePercentage(2.0), false);
+      assert.strictEqual(isTracePercentage(50.0), false);
+    });
+
+    test('should return false for non-numeric input', () => {
+      assert.strictEqual(isTracePercentage('abc'), false);
+      assert.strictEqual(isTracePercentage(null), false);
+    });
+  });
+
+  // Tests for allocateProportionalPercentages
+  describe('allocateProportionalPercentages', () => {
+    test('should return an empty array for empty input', () => {
+      assert.deepStrictEqual(allocateProportionalPercentages([]), []);
+      assert.deepStrictEqual(allocateProportionalPercentages(null), []);
+    });
+
+    test('should return all zeros when total parts is zero', () => {
+      const result = allocateProportionalPercentages([{ parts: 0 }, { parts: 0 }]);
+      assert.deepStrictEqual(result, [0.0, 0.0]);
+    });
+
+    test('should allocate a single row to exactly 100%', () => {
+      const result = allocateProportionalPercentages([{ parts: 10 }]);
+      assert.deepStrictEqual(result, [100.0]);
+    });
+
+    test('should allocate equal parts evenly', () => {
+      const result = allocateProportionalPercentages([{ parts: 1 }, { parts: 1 }]);
+      assert.deepStrictEqual(result, [50.0, 50.0]);
+    });
+
+    test('should always sum to exactly 100.0%', () => {
+      const rows = [{ parts: 1 }, { parts: 1 }, { parts: 1 }];
+      const result = allocateProportionalPercentages(rows);
+      const sum = result.reduce((a, b) => a + b, 0);
+      expectClose(sum, 100.0, 1e-9);
+    });
+
+    test('should break remainder ties by larger parts, then index', () => {
+      // 1/3 each -> 33.3, 33.3, 33.3 with one +0.1 remainder to distribute.
+      const result = allocateProportionalPercentages([{ parts: 1 }, { parts: 1 }, { parts: 1 }]);
+      const sum = result.reduce((a, b) => a + b, 0);
+      expectClose(sum, 100.0, 1e-9);
+      // Deterministic: first index wins the tie.
+      assert.deepStrictEqual(result, [33.4, 33.3, 33.3]);
+    });
+
+    test('should not mutate the input rows', () => {
+      const rows = [{ parts: 3 }, { parts: 7 }];
+      const snapshot = JSON.parse(JSON.stringify(rows));
+      allocateProportionalPercentages(rows);
+      assert.deepStrictEqual(rows, snapshot);
+    });
+
+    test('should treat negative parts as zero', () => {
+      const result = allocateProportionalPercentages([{ parts: -5 }, { parts: 10 }]);
+      assert.deepStrictEqual(result, [0.0, 100.0]);
     });
   });
 

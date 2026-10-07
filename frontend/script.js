@@ -9,6 +9,8 @@ import { BREW_CONSTANTS } from './constants.js';
 import {
   grainYieldToImperialGallonPointsPerPound,
   calculateMetricLiterDegreesPerKg,
+  isTracePercentage,
+  allocateProportionalPercentages,
 } from './src/utils/pureFunctions.js';
 
 // Setup Alpine Native Plugins
@@ -1115,44 +1117,10 @@ Alpine.store('maltGrid', {
     const rows = this.draftMajorMalts;
     if (!rows || rows.length === 0) return;
 
-    const totalParts = rows.reduce((sum, r) => sum + Math.max(0, parseFloat(r.parts) || 0), 0);
-    if (totalParts === 0) {
-      rows.forEach(r => { r.pct = 0.0; });
-      return;
-    }
-
-    const scaled = rows.map((r, idx) => {
-      const parts = Math.max(0, parseFloat(r.parts) || 0);
-      const rawScaled = (parts / totalParts) * 1000;
-      const floored = Math.floor(rawScaled);
-      const remainder = rawScaled - floored;
-      return { index: idx, parts, floored, remainder };
-    });
-
-    const currentSum = scaled.reduce((sum, item) => sum + item.floored, 0);
-    const deficit = 1000 - currentSum;
-
-    scaled.sort((a, b) => {
-      if (Math.abs(b.remainder - a.remainder) > 1e-9) {
-        return b.remainder - a.remainder;
-      }
-      if (b.parts !== a.parts) {
-        return b.parts - a.parts;
-      }
-      return a.index - b.index;
-    });
-
-    const finalScaled = new Array(rows.length);
-    scaled.forEach((item, rank) => {
-      let val = item.floored;
-      if (rank < deficit) {
-        val += 1;
-      }
-      finalScaled[item.index] = val;
-    });
-
+    // Delegate the Hamilton largest-remainder allocation to a pure helper.
+    const percentages = allocateProportionalPercentages(rows);
     rows.forEach((r, idx) => {
-      r.pct = finalScaled[idx] / 10.0;
+      r.pct = percentages[idx];
     });
   },
 
@@ -1166,7 +1134,7 @@ Alpine.store('maltGrid', {
   },
 
   isTrace(pct) {
-    return pct < 2.0;
+    return isTracePercentage(pct);
   },
 
   addMajorMalt(catalogItem) {
