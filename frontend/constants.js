@@ -100,4 +100,47 @@ export const BREW_CONSTANTS = {
   // New constants for Anomaly 7
   MSG_UNIT_PREFERENCES_LOAD_FAILED: 'Failed to load unit preferences',
   MSG_PING_PROCESSED_SUCCESSFULLY: 'Ping processed successfully!',
+
+  // Generalized 2-DOF Boil Solver
+  SOLVER_VARIABLES: [
+    { key: 'V1',     label: 'Pre-Boil Vol',   domain: 'volume',  fieldKey: 'step2_preboil_volume_l' },
+    { key: 'G1',     label: 'Pre-Boil Grav',  domain: 'gravity', fieldKey: 'step2_preboil_gravity' },
+    { key: 'V2',     label: 'Post-Boil Vol',  domain: 'volume',  fieldKey: 'step2_postboil_volume_l' },
+    { key: 'G2',     label: 'Post-Boil Grav', domain: 'gravity', fieldKey: 'step2_postboil_gravity' },
+    { key: 'R_boil', label: 'Boil-Off Rate',  domain: 'volume',  fieldKey: 'step1_boil_off_rate_l_per_hr' },
+    { key: 't',      label: 'Duration',       domain: 'time',    fieldKey: 'step2_boil_time_min' }
+  ],
+  SOLVER_VALID_VARIABLES: ['V1', 'G1', 'V2', 'G2', 'R_boil', 't'],
+  // Pairs that produce a structurally singular (underdetermined/degenerate) system.
+  SOLVER_INVALID_PAIRS: ['R_boil:t', 'G1:G2'],
+  SOLVER_DEFAULT_OUTPUTS: ['V2', 'G2'],
+  MSG_SOLVER_SINGULAR_PAIR: 'Invalid system: results in a singular matrix (underdetermined or degenerate).',
+  MSG_SOLVER_SAME_VARIABLE: 'Cannot select the same variable twice.',
+  MSG_SOLVER_UNKNOWN_VARIABLE: 'Unknown variable identifier.',
 };
+````
+
+Now update `script.js` to consume those constants instead of the inline array, and to use the shared blacklist in `validateOutputPair`.
+
+frontend/script.js
+````javascript
+<<<<<<< SEARCH
+  static validateOutputPair(var1, var2) {
+    const VALID_VARIABLES = new Set(['V1', 'G1', 'V2', 'G2', 'R_boil', 't']);
+    const INVALID_PAIRS = new Set(['R_boil:t', 'G1:G2']);
+
+    if (!VALID_VARIABLES.has(var1) || !VALID_VARIABLES.has(var2)) {
+      return { valid: false, reason: 'Unknown variable identifier.' };
+    }
+    if (var1 === var2) {
+      return { valid: false, reason: 'Cannot select the same variable twice.' };
+    }
+    const key = [var1, var2].sort().join(':');
+    if (INVALID_PAIRS.has(key)) {
+      return {
+        valid: false,
+        reason: 'Invalid system: results in a singular matrix (underdetermined or degenerate).'
+      };
+    }
+    return { valid: true, reason: 'Valid independent output pair.' };
+  }
