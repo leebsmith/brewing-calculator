@@ -259,3 +259,24 @@ Note that $E_{kettle,theoretical} < C_{e}$ ($86.5\% < 95\%$), as expected — th
 
 1. The units of $S_{kettle}$ depend on the units of $P$. If the units of $P$ are points/pound/gallon (PPG), then the units of $S_{kettle}$ are total sugar points. If the units of $P$ are dimensionless, then the units of $S_{kettle}$ are the same as $M$.
 2. The British units $L^{\circ}/kg$ or $LDK$ can be used for $P$ if metric units, throughout, are desired.
+
+## Future Enhancements
+
+### Late Addition Advisory (Advisory Only)
+
+The workflow does **not** surface the *need* for fermentable late additions. OG flows correctly whether or not late additions are used:
+
+* **No late additions** ($S_{late} = 0$): the Lauter solver sizes the grain bill to carry the full extract burden.
+* **With late additions** ($S_{late} > 0$): the Lauter solver sizes a *smaller* grain bill, and the late additions make up the difference.
+
+Both paths hit the target OG exactly. The difference is that skipping late additions produces a larger grain bill — which may be stylistically wrong (e.g., a Belgian Dubbel should derive gravity from candi syrup, not base malt) or may exceed `max_mash_tun_volume_l`.
+
+**Proposed enhancement:** when the Lauter solver produces a grain bill that exceeds a threshold (e.g., $> 8\ \text{kg}$, or $> 80\%$ of mash tun capacity), surface a **non-blocking advisory**: *"Grain bill is large. Consider fermentable late additions to reduce mash volume."*
+
+This is **advisory only** — the wizard does not enforce late additions. A brewer may legitimately want an all-malt recipe, and the wizard should not second-guess that intent.
+
+### LLM Recipe Analyst (Future)
+
+A separate, downstream analysis layer that reviews the completed recipe for **style consistency** and other qualitative concerns (e.g., "this Dubbel has no candi syrup," "this IPA's bitterness ratio is out of style," "this stout's roasted malt percentage is unusually low"). This is orthogonal to the deterministic solvers described in this document and would consume their outputs as inputs.
+
+> **Design note:** The deterministic solvers (boil, fermentation, lauter) remain the source of truth for all numeric quantities. The LLM analyst is a *commentary* layer, never a *calculation* layer.
