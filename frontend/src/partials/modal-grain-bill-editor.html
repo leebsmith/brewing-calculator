@@ -57,12 +57,13 @@
         <div class="data-table-container">
           <table class="data-table is-fixed">
             <colgroup>
-              <col style="width: 28%;" />
-              <col style="width: 14%;" />
+              <col style="width: 24%;" />
               <col style="width: 12%;" />
+              <col style="width: 11%;" />
+              <col style="width: 11%;" />
               <col style="width: 12%;" />
-              <col style="width: 12%;" />
-              <col style="width: 12%;" />
+              <col style="width: 10%;" />
+              <col style="width: 10%;" />
               <col style="width: 10%;" />
             </colgroup>
             <thead>
@@ -71,6 +72,10 @@
                 <th>Category</th>
                 <th class="text-right" x-text="$store.maltGrid.weightedColorUnit"></th>
                 <th class="text-right" x-text="$store.maltGrid.weightedPotentialUnit"></th>
+                <th class="text-right">
+                  <span>Weighted</span><br />
+                  <span x-text="$store.maltGrid.weightedContributionUnit"></span>
+                </th>
                 <th class="text-right">Parts</th>
                 <th class="text-right">Malt %</th>
                 <th class="text-right">Actions</th>
@@ -88,6 +93,7 @@
                   <td class="font-sans text-secondary text-micro truncate" x-text="row.category"></td>
                   <td class="text-right tabular-nums text-secondary" x-text="$store.maltGrid.maltColorDisplay(row)"></td>
                   <td class="text-right tabular-nums text-secondary" x-text="$store.maltGrid.maltPotentialDisplay(row)"></td>
+                  <td class="text-right tabular-nums text-secondary" x-text="$store.maltGrid.maltWeightedContributionDisplay(row)"></td>
                   <td class="text-right">
                     <input
                       type="number"
@@ -142,7 +148,7 @@
               </template>
               <template x-if="$store.maltGrid.draftMajorMalts.length === 0">
                 <tr>
-                  <td colspan="7" class="table-empty-cell">
+                  <td colspan="8" class="table-empty-cell">
                     No malts in grain bill draft. Click '+ Add Malt from Catalog' to begin.
                   </td>
                 </tr>

@@ -1234,6 +1234,29 @@ Alpine.store('maltGrid', {
     return unitsStore ? unitsStore.toDisplay('extract_potential', baseVal) : Number(baseVal.toFixed(1));
   },
 
+  get weightedContributionUnit() {
+    const unitsStore = Alpine.store('units');
+    const isImperial = unitsStore ? (unitsStore.globalMode === BREW_CONSTANTS.UNIT_MODES.IMPERIAL) : false;
+    if (isImperial) return 'gal·°/lb';
+    return unitsStore ? unitsStore.getFieldUnit('extract_potential') : 'L·°/kg';
+  },
+
+  maltWeightedContributionDisplay(row) {
+    // Weighted contribution = potential (in the active extract-potential unit)
+    // scaled by the malt's share of the grist (pct / 100). This is the
+    // per-row contribution to the grist's weighted extract potential.
+    const frac = parseFloat(row.potential_fraction) || 0.75;
+    const share = (parseFloat(row.pct) || 0) / 100.0;
+    const unitsStore = Alpine.store('units');
+    const isImperial = unitsStore ? (unitsStore.globalMode === BREW_CONSTANTS.UNIT_MODES.IMPERIAL) : false;
+
+    const baseVal = isImperial
+      ? grainYieldToImperialGallonPointsPerPound(frac)
+      : calculateMetricLiterDegreesPerKg(frac);
+    const weightedBase = baseVal * share;
+    return unitsStore ? unitsStore.toDisplay('extract_potential', weightedBase) : Number(weightedBase.toFixed(1));
+  },
+
   get validationStatus() {
     const total = Number(this.totalPct.toFixed(1));
     if (total === 100.0) return { type: 'balanced', label: '100.0% Balanced', class: 'badge-success' };
