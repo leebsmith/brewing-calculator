@@ -4,7 +4,7 @@
         <button
                 type="button"
                 class="accordion-trigger"
-                :aria-expanded="activeStep === 3"
+                :aria-expanded="(activeStep === 3).toString()"
                 aria-controls="step-panel-3"
                 id="step-trigger-3"
                 @click="setActiveStep(3)"
@@ -18,7 +18,7 @@
             </div>
             <div class="accordion-controls">
                 <span class="status-badge text-xs" :class="$store.maltGrid.validationStatus.class" x-text="$store.maltGrid.validationStatus.label"></span>
-                <span class="accordion-status-pill" :class="getStepStatusClass(1)" x-text="getStepStatusLabel(1)"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(3)" x-text="getStepStatusLabel(3)"></span>
                 <span class="accordion-chevron" x-text="activeStep === 3 ? '▲' : '▼'"></span>
             </div>
         </button>
@@ -28,6 +28,7 @@
             id="step-panel-3"
             role="region"
             aria-labelledby="step-trigger-3"
+            x-cloak
             x-show="activeStep === 3"
             x-collapse
             class="step-card-body"
@@ -55,8 +56,8 @@
                     <tr>
                         <th>Malt Name</th>
                         <th>Category</th>
-                        <th class="align-right">Parts</th>
-                        <th class="align-right">Malt %</th>
+                        <th class="text-right">Parts</th>
+                        <th class="text-right">Malt %</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -69,8 +70,8 @@
                                 </template>
                             </td>
                             <td x-text="row.category"></td>
-                            <td class="align-right tabular-nums" x-text="row.parts"></td>
-                            <td class="align-right tabular-nums font-bold" :class="$store.maltGrid.isTrace(row.pct) ? 'table-pct-value is-trace' : 'table-pct-value'" x-text="row.pct.toFixed(1) + '%'"></td>
+                            <td class="text-right tabular-nums" x-text="row.parts"></td>
+                            <td class="text-right tabular-nums font-bold table-pct-value" :class="{ 'is-trace': $store.maltGrid.isTrace(row.pct) }" x-text="row.pct.toFixed(1) + '%'"></td>
                         </tr>
                     </template>
                     <template x-if="$store.maltGrid.majorMalts.length === 0">
