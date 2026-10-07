@@ -8,8 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "node --test frontend/tests/",
-    "test:watch": "node --test --watch frontend/tests/"
+    "test": "node --test \"frontend/tests/**/*.test.js\"",
+    "test:watch": "node --test --watch \"frontend/tests/**/*.test.js\""
   },
   "dependencies": {
     "@alpinejs/collapse": "^3.17.4",
