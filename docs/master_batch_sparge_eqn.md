@@ -6,8 +6,10 @@ This equation models $S_{kettle}$ - the total amount of fermentable sugar (extra
 
 It factors into two multiplicative terms: the total sugar created during the mash, and the fraction of that sugar you successfully rinse into the kettle (lauter efficiency).
 
-> **Pre-boil vs. post-boil:** $S_{kettle}$ is defined here as *pre-boil* extract. By conservation of extract, the total extract is unchanged by boiling (only the volume changes, concentrating the wort). Therefore $S_{kettle}^{preboil} = S_{kettle}^{postboil}$ **provided no late additions are made**. If fermentable late additions (sugars, DME, LME) are added during or after the boil, the post-boil extract exceeds the pre-boil extract by the late-addition contribution $S_{late}$:
+> **Pre-boil vs. post-boil:** $S_{kettle}$ is defined here as *pre-boil* extract. By conservation of extract, the total extract is unchanged by boiling (only the volume changes, concentrating the wort). Therefore $S_{kettle}^{preboil} = S_{kettle}^{postboil}$ **provided no late additions are made**. If **fermentable** late additions (sugars, DME, LME) are added during or after the boil, the post-boil extract exceeds the pre-boil extract by the late-addition contribution $S_{late}$:
 > $$S_{kettle}^{postboil} = S_{kettle}^{preboil} + S_{late}$$
+>
+> **Scope note:** $S_{late}$ covers *fermentable* late additions only. Late hops (aroma, flavor, whirlpool) contribute no fermentable extract and are modeled separately in the hop schedule; they do not appear in this equation.
 
 ## The Two Factors of the Equation
 
@@ -130,7 +132,7 @@ This cascade determines the required strike volume and LGR when you start with a
 | $V_{run2}$ | Second runnings volume — sparge water added to the grain bed *after* the first drain, which becomes the second runnings | Varies |
 | $V_{wort}$ | Target pre-boil wort volume — the sum of both runnings collected in the kettle ($V_{run1} + V_{run2}$) | Target varies by recipe |
 | $E_{kettle}$ | Efficiency into the kettle | $< C_{e}$ |
-| $S_{late}$ | Extract contributed by fermentable late additions (sugars, DME, LME); zero if none | $0$ or recipe-dependent |
+| $S_{late}$ | Extract contributed by **fermentable** late additions (sugars, DME, LME); zero if none. Late hops contribute no extract and are out of scope for this term. | $0$ or recipe-dependent |
 
 ## Worked Example
 
