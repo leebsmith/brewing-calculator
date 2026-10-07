@@ -204,7 +204,7 @@
                         <button type="button" @click="$store.units.toggle('step2_target_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step2_target_volume_l') }" x-text="$store.units.getLabel('step2_target_volume_l')" title="Click to toggle unit"></button>
                     </label>
                     <input type="number" step="0.5" min="1" :value="volDisplay(manifest.target_volume_l, 'step2_target_volume_l')" readonly disabled class="form-input tabular-nums" />
-                    <span class="form-hint">Derived: Post-boil minus trub loss &amp; cooling shrinkage</span>
+                    <span class="form-hint">Derived: Post-boil × (1 − shrinkage) − trub loss − kettle dead space</span>
                 </div>
             </div>
         </div>

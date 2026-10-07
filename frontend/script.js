@@ -221,14 +221,23 @@ export class ThermodynamicSolver {
   }
 
   /**
-   * Calculates packaged batch volume after trub loss and thermal contraction.
-   * V_target = max(0, (V_post - Loss_trub) * (1.0 - shrinkage))
+   * Calculates packaged batch volume after thermal contraction and kettle loss.
+   *
+   * Physical ordering: the hot wort contracts first (hot -> cold), THEN the
+   * unrecoverable kettle losses (trub + dead space) are racked off. Applying
+   * shrinkage to the net volume would incorrectly shrink the losses too.
+   *
+   *   V_target = max(0, V_post * (1 - shrinkage) - Loss_kettle)
+   *
+   * @param {number} postVolume   - Hot post-boil volume (L).
+   * @param {number} kettleLoss   - Total unrecoverable kettle loss (L).
+   * @param {number} shrinkagePct - Thermal contraction fraction (e.g. 0.04).
    */
-  static calculatePackagedVolume(postVolume, trubLoss, shrinkagePct) {
+  static calculatePackagedVolume(postVolume, kettleLoss, shrinkagePct) {
     const vPost = parseFloat(postVolume) || 0;
-    const trub = parseFloat(trubLoss) || 0;
+    const loss = parseFloat(kettleLoss) || 0;
     const shrinkage = parseFloat(shrinkagePct) || 0.04;
-    return Number(Math.max(0, (vPost - trub) * (1.0 - shrinkage)).toFixed(1));
+    return Number(Math.max(0, (vPost * (1.0 - shrinkage)) - loss).toFixed(1));
   }
 
   /**
