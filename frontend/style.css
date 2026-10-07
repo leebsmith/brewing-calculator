@@ -842,15 +842,15 @@ pre {
   justify-content: flex-end;
 }
 
+.modal-dialog-workspace {
+  max-width: var(--container-modal-workspace, 72rem);
+}
+
 @container modal-bounds (max-width: 800px) {
   .modal-dialog-workspace {
     border-radius: var(--radius-sm);
     padding: var(--space-2);
   }
-}
-
-.modal-dialog-workspace {
-  max-width: var(--container-modal-workspace, 72rem);
 }
 
 .modal-workspace-header {
