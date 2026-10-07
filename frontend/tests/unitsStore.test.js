@@ -45,8 +45,10 @@ global.collapse = {};
 // Evaluate script.js to register the Alpine store
 const scriptPath = resolve(__dirname, '../script.js');
 let scriptCode = readFileSync(scriptPath, 'utf8');
-// Strip out ESM imports and exports so we can safely eval the file
-scriptCode = scriptCode.replace(/^import\s+.*?;\s*$/gm, '');
+// Strip out ESM imports and exports so we can safely eval the file.
+// The `s` (dotAll) flag is required so multi-line import statements
+// (e.g. `import {\n  a,\n  b,\n} from '...';`) are matched and removed.
+scriptCode = scriptCode.replace(/^import\s+[\s\S]*?;\s*$/gm, '');
 scriptCode = scriptCode.replace(/^export\s+/gm, '');
 
 // Execute script in global context to register Alpine.store('units', ...)
