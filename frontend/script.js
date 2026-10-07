@@ -290,10 +290,19 @@ export class ThermodynamicSolver {
     const eq = m.equipment || {};
     const t = (parseFloat(m.boil_time_min) || 60) / 60.0;
     const V1 = parseFloat(m.preboil_volume_l) || 0;
-    const G1 = parseFloat(m.preboil_gravity) || 1.0;
     const V2 = parseFloat(m.postboil_volume_l) || 0;
-    const G2 = parseFloat(m.postboil_gravity) || 1.0;
     const R = parseFloat(eq.boil_off_rate_l_per_hr) || 0;
+
+    // The solute-conservation equation V1 * C1 = V2 * C2 is only linear when
+    // C is a LINEAR concentration -- i.e. gravity points (SG - 1) * 1000 --
+    // NOT specific gravity itself (which carries a +1.0 offset). We therefore
+    // convert SG -> gravity points on entry, solve in points, and convert
+    // points -> SG on exit. The manifest continues to store SG (base unit).
+    const sgToPoints = (sg) => (parseFloat(sg) || 1.0) - 1.0;
+    const pointsToSg = (pts) => 1.0 + (parseFloat(pts) || 0);
+
+    const G1 = sgToPoints(m.preboil_gravity);
+    const G2 = sgToPoints(m.postboil_gravity);
 
     const pair = [var1, var2].sort().join(':');
     const solved = {};
@@ -1628,31 +1637,23 @@ Alpine.data('wizard', () => {
         return;
       }
 
-      // The solver core operates exclusively on base storage units:
-      //   volume -> L, gravity -> SG, time -> hours.
-      //
-      // IMPORTANT: manifest.preboil_gravity / postboil_gravity are ALREADY
-      // stored in SG (the base unit). The setGravityDisplay() setter converts
-      // display-unit input (e.g. Plato) to SG before writing to the manifest.
-      // Therefore we must NOT re-convert here -- doing so would treat an SG
-      // value as if it were Plato and corrupt it. The solver consumes the
-      // manifest values directly.
-      const solverManifest = {
-        ...this.manifest,
-        preboil_gravity: parseFloat(this.manifest.preboil_gravity) || 1.0,
-        postboil_gravity: parseFloat(this.manifest.postboil_gravity) || 1.0,
-      };
-
+      // The solver core operates on base storage units (volume -> L,
+      // gravity -> SG, time -> hours) and internally converts SG to gravity
+      // points for the linear solute-conservation equation. The manifest
+      // already stores gravity in SG, so we pass it through unchanged.
       const [a, b] = this.solverOutputs;
-      const result = ThermodynamicSolver.solve2DOF(solverManifest, a, b);
+      const result = ThermodynamicSolver.solve2DOF(this.manifest, a, b);
       this.solverError = result.ok ? null : result.error;
 
       if (result.ok) {
         const s = result.solved;
+        // Solved gravity values are in gravity points; convert back to SG
+        // (the manifest's base storage unit) before writing.
+        const pointsToSg = (pts) => 1.0 + (parseFloat(pts) || 0);
         if (s.V1 !== undefined) this.manifest.preboil_volume_l = Number(s.V1.toFixed(2));
-        if (s.G1 !== undefined) this.manifest.preboil_gravity = Number(s.G1.toFixed(4));
+        if (s.G1 !== undefined) this.manifest.preboil_gravity = Number(pointsToSg(s.G1).toFixed(4));
         if (s.V2 !== undefined) this.manifest.postboil_volume_l = Number(s.V2.toFixed(2));
-        if (s.G2 !== undefined) this.manifest.postboil_gravity = Number(s.G2.toFixed(4));
+        if (s.G2 !== undefined) this.manifest.postboil_gravity = Number(pointsToSg(s.G2).toFixed(4));
         if (s.R_boil !== undefined) this.manifest.equipment.boil_off_rate_l_per_hr = Number(s.R_boil.toFixed(2));
         if (s.t !== undefined) this.manifest.boil_time_min = Number((s.t * 60).toFixed(1));
       }
@@ -1666,9 +1667,10 @@ Alpine.data('wizard', () => {
       const vTarget = ThermodynamicSolver.calculatePackagedVolume(vPost, trubLoss + kettleLoss, shrinkage);
       this.manifest.target_volume_l = vTarget;
 
-      // manifest.preboil_gravity is stored in SG (base unit), so this is safe.
+      // Total extract in gravity-point-liters: V1 * (SG1 - 1.0) * 1000.
+      // (calculateTargetOg expects points and divides by volume * 1000.)
       const extractPointsTotal = (parseFloat(this.manifest.preboil_volume_l) || 0) *
-        ((parseFloat(this.manifest.preboil_gravity) || 1.0) - 1.0);
+        ((parseFloat(this.manifest.preboil_gravity) || 1.0) - 1.0) * 1000;
       this.manifest.target_og = ThermodynamicSolver.calculateTargetOg(
         extractPointsTotal, vTarget, parseFloat(this.manifest.postboil_gravity) || 1.050
       );
