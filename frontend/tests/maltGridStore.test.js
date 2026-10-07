@@ -46,7 +46,10 @@ const pureFunctionsPath = resolve(__dirname, '../src/utils/pureFunctions.js');
 let pureFunctionsCode = readFileSync(pureFunctionsPath, 'utf8');
 pureFunctionsCode = pureFunctionsCode.replace(/^import\s+[\s\S]*?;\s*$/gm, '');
 pureFunctionsCode = pureFunctionsCode.replace(/^export\s+/gm, '');
-eval(pureFunctionsCode);
+// Indirect eval runs in the global scope, so the function declarations
+// (allocateProportionalPercentages, etc.) become global and are visible to
+// the separately-eval'd script.js below.
+(0, eval)(pureFunctionsCode);
 
 // Evaluate script.js to register the Alpine stores
 const scriptPath = resolve(__dirname, '../script.js');
