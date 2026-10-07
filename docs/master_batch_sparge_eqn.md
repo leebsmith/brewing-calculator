@@ -11,6 +11,24 @@ It factors into two multiplicative terms: the total sugar created during the mas
 >
 > **Scope note:** $S_{late}$ covers *fermentable* late additions only. Late hops (aroma, flavor, whirlpool) contribute no fermentable extract and are modeled separately in the hop schedule; they do not appear in this equation.
 
+### Post-Boil Gravity Does NOT Include Late Additions
+
+The boil solver's post-boil gravity $G2$ is the gravity of the **mash-derived wort only**, measured at flameout, *before* any fermentable late additions are stirred in. This is a deliberate modeling choice with three consequences:
+
+1. **The boil solver's conservation equation stays clean.** $V1 \cdot G1 = V2 \cdot G2$ holds exactly, because $S_{late}$ is not injected between $V1$ and $V2$. If $G2$ included late additions, the conservation equation would become $V1 \cdot G1 + S_{late} = V2 \cdot G2$, and every case of the 2-DOF boil solver would need to be rewritten.
+
+2. **The fermenter OG is a separate, downstream quantity.** The gravity the brewer measures in the fermenter *does* include late additions:
+   $$OG_{fermenter} = 1 + \frac{S_{kettle} + S_{late}}{V_{packaged}}$$
+
+3. **The bridge between them is the late-addition ΔOG.** The Late Additions step surfaces this explicitly:
+   $$\Delta OG_{late} = \frac{S_{late}}{V_{packaged}}$$
+   so the user can see exactly how much the late additions shift the gravity, and why $OG_{fermenter} \neq G2$.
+
+> **UI labeling requirement:** Because $G2$ and $OG_{fermenter}$ are different quantities, they must be labeled unambiguously wherever they appear:
+> * Step 2's $G2$ field → **"Post-Boil Gravity (kettle, pre-late)"**
+> * Fermentation solver's $OG$ → **"Original Gravity (fermenter)"**
+> * Late Additions step → **"ΔOG from late additions"** (the bridge value above)
+
 ## The Two Factors of the Equation
 
 1. **Total Converted Sugar:** $(P \times M \times C_{e})$ This first factor represents the absolute maximum amount of sugar available in the mash tun before any draining occurs.
@@ -196,6 +214,19 @@ where $V_{packaged}$ comes from the boil solver's downstream bridge, and $S_{lat
 
 > **Note:** $S_{late}$ *reduces* the grain bill. Adding fermentable late additions means less base malt is needed to hit the same OG — a physically correct and useful property.
 
+### The Late-Addition Bridge (Displayed to the User)
+
+The Late Additions step surfaces the bridge between the boil solver's $G2$ and the fermentation solver's $OG_{fermenter}$:
+
+$$\Delta OG_{late} = \frac{S_{late}}{V_{packaged}}$$
+
+This value is **displayed** in the Late Additions step so the user can see:
+* The kettle gravity $G2$ (mash wort only, pre-late).
+* The ΔOG contributed by their late additions.
+* The resulting fermenter OG: $OG_{fermenter} = G2_{adjusted} + \Delta OG_{late}$, where $G2_{adjusted}$ accounts for the volume change from boil to packaging.
+
+> **Why display it:** Without this bridge, a brewer who adds 1 kg of candi syrup at flameout would measure a higher kettle gravity than the boil solver predicts, and would have no way to reconcile the two numbers. The bridge makes the model transparent and self-documenting.
+
 ## Variable Glossary
 
 | Variable | Definition | Typical Homebrew Value |
@@ -214,6 +245,9 @@ where $V_{packaged}$ comes from the boil solver's downstream bridge, and $S_{lat
 | $V_{wort}$ | Target pre-boil wort volume — the sum of both runnings collected in the kettle ($V_{run1} + V_{run2}$) | Target varies by recipe |
 | $E_{kettle}$ | Efficiency into the kettle | $< C_{e}$ |
 | $S_{late}$ | Extract contributed by **fermentable** late additions (sugars, DME, LME); zero if none. Late hops contribute no extract and are out of scope for this term. | $0$ or recipe-dependent |
+| $G2$ | Post-boil gravity of the **mash-derived wort only** (kettle, pre-late additions) | Target varies by recipe |
+| $OG_{fermenter}$ | Original gravity in the fermenter, **including** $S_{late}$ | Target varies by recipe |
+| $\Delta OG_{late}$ | Gravity shift contributed by late additions: $S_{late} / V_{packaged}$ | $0$ or recipe-dependent |
 
 ## Worked Example
 
