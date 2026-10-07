@@ -2,9 +2,12 @@
 
 $$S_{kettle} = (P \times M \times C_{e}) \times \left[ 1 - \left( \frac{Loss_{equip} + (M \times A_{f})}{V_{strike} + \frac{M \times \text{moisture}\%}{\rho_{water}}} \right) \times \left( \frac{Loss_{equip} + (M \times A_{f})}{Loss_{equip} + (M \times A_{f}) + V_{run2}} \right) \right]$$
 
-This equation models $S_{kettle}$ - the total amount of fermentable sugar (extract) collected in the boil kettle during a two-stage batch sparge brewing process.
+This equation models $S_{kettle}$ - the total amount of fermentable sugar (extract) collected in the boil kettle **at the end of the lauter, before the boil begins** (i.e., pre-boil extract) during a two-stage batch sparge brewing process.
 
 It factors into two multiplicative terms: the total sugar created during the mash, and the fraction of that sugar you successfully rinse into the kettle (lauter efficiency).
+
+> **Pre-boil vs. post-boil:** $S_{kettle}$ is defined here as *pre-boil* extract. By conservation of extract, the total extract is unchanged by boiling (only the volume changes, concentrating the wort). Therefore $S_{kettle}^{preboil} = S_{kettle}^{postboil}$ **provided no late additions are made**. If fermentable late additions (sugars, DME, LME) are added during or after the boil, the post-boil extract exceeds the pre-boil extract by the late-addition contribution $S_{late}$:
+> $$S_{kettle}^{postboil} = S_{kettle}^{preboil} + S_{late}$$
 
 ## The Two Factors of the Equation
 
@@ -114,7 +117,7 @@ This cascade determines the required strike volume and LGR when you start with a
 
 | Variable | Definition | Typical Homebrew Value |
 | :--- | :--- | :--- |
-| $S_{kettle}$ | Total sugar/extract in the kettle | Target varies by recipe |
+| $S_{kettle}$ | Total sugar/extract in the kettle at the end of the lauter (pre-boil) | Target varies by recipe |
 | $P$ | Malt potential (choose one unit system and use it consistently) | $\sim 36-38 \text{ ppg}$ (points/pound/gallon) or decimal potential fraction $(\sim 0.85)^{1}$ or $L^{\circ}/kg$ $(LDK)^{2}$ |
 | $M$ | Mass of the grain bill | Varies |
 | $C_{e}$ | Conversion efficiency | $90\% - 100\%$ |
@@ -127,6 +130,7 @@ This cascade determines the required strike volume and LGR when you start with a
 | $V_{run2}$ | Second runnings volume — sparge water added to the grain bed *after* the first drain, which becomes the second runnings | Varies |
 | $V_{wort}$ | Target pre-boil wort volume — the sum of both runnings collected in the kettle ($V_{run1} + V_{run2}$) | Target varies by recipe |
 | $E_{kettle}$ | Efficiency into the kettle | $< C_{e}$ |
+| $S_{late}$ | Extract contributed by fermentable late additions (sugars, DME, LME); zero if none | $0$ or recipe-dependent |
 
 ## Worked Example
 
