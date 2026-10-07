@@ -48,6 +48,12 @@ Liquid that remains in the vessel after draining, due to its physical geometry.
 - **HLT dead space** — liquid trapped below the HLT drain port. This is
   *water*, not wort, and therefore does not affect extract mass balance.
 
+  > **Terminology note:** the word "loss" is retained here only for naming
+  > consistency with the mash tun and boil kettle. HLT dead space is not a
+  > loss to the batch — it is a loss to the *water budget*, not the *extract
+  > budget*. It is subtracted in §4.4 solely to compute deliverable sparge
+  > volume, and it never enters either scalar in §5.2. See §3.5.
+
 ### 3.2 Transfer Loss (per-vessel, extrinsic)
 
 Liquid retained in hoses, pumps, and fittings during transfer *out of* a
@@ -60,12 +66,39 @@ connected to it.
   during transfer to the fermenter.
 - **HLT transfer loss** — water left in the HLT hose and pump.
 
+  > **Terminology note:** as with HLT dead space above, this is a water-budget
+  > term, not an extract loss. It is subtracted in §4.4 to compute deliverable
+  > sparge volume and never enters the wort mass balance. See §3.5.
+
 ### 3.3 Trub Loss (boil kettle only)
 
 Protein, hop matter, and cold-break material that settles in the kettle after
 the boil and is deliberately left behind. This is *not* a dead-space loss — it
 is a process loss that scales with the recipe (hop load, protein content), not
 with the vessel's geometry.
+
+### 3.5 HLT "Losses" Are Water Accounting, Not Extract Losses
+
+The HLT is the one vessel whose "losses" do not belong in the same conceptual
+category as the mash tun's and boil kettle's. The distinction is worth stating
+explicitly, because the shared `_loss_l` naming suffix obscures it:
+
+| | Mash tun / Boil kettle | HLT |
+|---|---|---|
+| Liquid lost | **Wort** (carries extract) | **Water** (carries no extract) |
+| Affects extract balance? | ✅ Yes | ❌ No |
+| Affects water budget? | ✅ Yes | ✅ Yes |
+| Enters `Loss_preboil` / `Loss_postboil`? | ✅ Yes | ❌ No |
+| Used for | Wort mass balance | Sparge volume & salt dosing (§4.4, §4.5) |
+
+So `hlt_dead_space_l` and `hlt_transfer_loss_l` are **water-accounting terms**,
+not process losses. They sit alongside `hlt_coil_floor_l` and
+`hlt_starting_volume_l` as constraints on how much liquor the HLT can actually
+deliver, rather than alongside `trub_loss_l` as a loss of product.
+
+The names are kept as-is for consistency with the other vessels and because the
+`_loss_l` suffix is a useful shorthand, but the schema groups them with the
+other HLT water-accounting fields to make the distinction visible in code.
 
 ### 3.4 Thermal Shrinkage (boil kettle only)
 
