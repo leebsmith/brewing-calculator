@@ -230,7 +230,11 @@ export class ThermodynamicSolver {
    *   V_target = max(0, V_post * (1 - shrinkage) - Loss_kettle)
    *
    * @param {number} postVolume   - Hot post-boil volume (L).
-   * @param {number} kettleLoss   - Total unrecoverable kettle loss (L).
+   * @param {number} kettleLoss   - Sum of ALL post-boil additive losses (L):
+   *                                trub_loss_l + kettle_dead_space_l +
+   *                                kettle_transfer_loss_l. Compute this with
+   *                                calculatePostBoilLoss(). See
+   *                                plans/vessel-loss-model.md section 4.2.
    * @param {number} shrinkagePct - Thermal contraction fraction (e.g. 0.04).
    */
   static calculatePackagedVolume(postVolume, kettleLoss, shrinkagePct) {
@@ -253,13 +257,112 @@ export class ThermodynamicSolver {
   }
 
   /**
-   * Calculates fixed system liquid loss (mash dead space + kettle dead space + kettle trub loss).
+   * Calculates the pre-boil (mash tun) additive loss scalar.
+   *
+   * Loss_preboil = mash_dead_space_l + mash_transfer_loss_l
+   *
+   * This loss is applied UPSTREAM of the boil solver: it determines what
+   * pre-boil volume (V1) the brewer actually collects in the kettle. The
+   * solver itself does not consume this value -- V1 is already defined as
+   * post-lauter wort in the kettle, so subtracting this loss again would
+   * double-count it. See plans/vessel-loss-model.md sections 4.1 and 5.2.
    */
-  static calculateFixedLoss(mashDeadSpace, trubLoss, kettleDeadSpace = 0) {
+  static calculatePreBoilLoss(mashDeadSpace, mashTransferLoss) {
     const deadSpace = parseFloat(mashDeadSpace) || 0;
+    const transfer = parseFloat(mashTransferLoss) || 0;
+    return Number((deadSpace + transfer).toFixed(2));
+  }
+
+  /**
+   * Calculates the post-boil (boil kettle) additive loss scalar.
+   *
+   * Loss_postboil = trub_loss_l + kettle_dead_space_l + kettle_transfer_loss_l
+   *
+   * This loss is applied DOWNSTREAM of the boil solver, in the chilling
+   * bridge that computes the packaged volume. It is passed as the
+   * `kettleLoss` argument to calculatePackagedVolume(). See
+   * plans/vessel-loss-model.md sections 4.2 and 5.2.
+   */
+  static calculatePostBoilLoss(trubLoss, kettleDeadSpace, kettleTransferLoss) {
     const trub = parseFloat(trubLoss) || 0;
-    const kettle = parseFloat(kettleDeadSpace) || 0;
-    return (deadSpace + trub + kettle).toFixed(2);
+    const deadSpace = parseFloat(kettleDeadSpace) || 0;
+    const transfer = parseFloat(kettleTransferLoss) || 0;
+    return Number((trub + deadSpace + transfer).toFixed(2));
+  }
+
+  /**
+   * Calculates the HLT top-up volume required to keep the HERMS coil submerged
+   * after strike water has been drawn from the HLT.
+   *
+   *   V_hlt_after_strike = hlt_starting_volume_l - strikeDrawn
+   *   V_hlt_top_up       = max(0, hlt_coil_floor_l - V_hlt_after_strike)
+   *
+   * The coil floor is NOT a loss -- it is a minimum operating volume. This is
+   * a derived, read-only value; it does not participate in the 2-DOF boil
+   * solver. See plans/vessel-loss-model.md sections 4.3 and 4.4.
+   *
+   * @param {number} hltStartingVolume - Liquor in the HLT at brew-day start (L).
+   * @param {number} strikeDrawn       - Strike water drawn from the HLT (L).
+   * @param {number} coilFloor         - Minimum volume to submerge the coil (L).
+   */
+  static calculateHltTopUp(hltStartingVolume, strikeDrawn, coilFloor) {
+    const starting = parseFloat(hltStartingVolume) || 0;
+    const drawn = parseFloat(strikeDrawn) || 0;
+    const floor = parseFloat(coilFloor) || 0;
+    const afterStrike = starting - drawn;
+    return Number(Math.max(0, floor - afterStrike).toFixed(2));
+  }
+
+  /**
+   * Calculates the sparge water volume deliverable to the mash tun from the HLT.
+   *
+   *   V_sparge = V_hlt_after_strike
+   *            + V_hlt_top_up
+   *            - hlt_dead_space_l
+   *            - hlt_transfer_loss_l
+   *
+   * The coil floor is NOT subtracted here: the top-up has already ensured the
+   * coil is covered, so the floor volume is usable for sparging. HLT losses
+   * are subtracted because that liquor cannot be delivered to the mash tun.
+   * See plans/vessel-loss-model.md section 4.4.
+   *
+   * @param {number} hltStartingVolume - Liquor in the HLT at brew-day start (L).
+   * @param {number} strikeDrawn       - Strike water drawn from the HLT (L).
+   * @param {number} coilFloor         - Minimum volume to submerge the coil (L).
+   * @param {number} hltDeadSpace      - Liquor trapped below the HLT drain (L).
+   * @param {number} hltTransferLoss   - Liquor retained in HLT hose/pump (L).
+   */
+  static calculateSpargeVolume(hltStartingVolume, strikeDrawn, coilFloor, hltDeadSpace, hltTransferLoss) {
+    const starting = parseFloat(hltStartingVolume) || 0;
+    const drawn = parseFloat(strikeDrawn) || 0;
+    const deadSpace = parseFloat(hltDeadSpace) || 0;
+    const transfer = parseFloat(hltTransferLoss) || 0;
+    const afterStrike = starting - drawn;
+    const topUp = this.calculateHltTopUp(starting, drawn, coilFloor);
+    return Number(Math.max(0, afterStrike + topUp - deadSpace - transfer).toFixed(2));
+  }
+
+  /**
+   * Calculates the volume of HLT liquor that must be salted for the sparge.
+   *
+   *   V_sparge_salted = V_hlt_after_strike + V_hlt_top_up
+   *
+   * Critically, this INCLUDES the top-up. If the top-up is omitted from the
+   * salt calculation, the sparge water's ion concentrations will be diluted
+   * by the top-up factor and the wort will be under-mineralized. This is a
+   * correctness requirement, not a convenience. See
+   * plans/vessel-loss-model.md section 4.5.
+   *
+   * @param {number} hltStartingVolume - Liquor in the HLT at brew-day start (L).
+   * @param {number} strikeDrawn       - Strike water drawn from the HLT (L).
+   * @param {number} coilFloor         - Minimum volume to submerge the coil (L).
+   */
+  static calculateSpargeSaltVolume(hltStartingVolume, strikeDrawn, coilFloor) {
+    const starting = parseFloat(hltStartingVolume) || 0;
+    const drawn = parseFloat(strikeDrawn) || 0;
+    const afterStrike = starting - drawn;
+    const topUp = this.calculateHltTopUp(starting, drawn, coilFloor);
+    return Number((afterStrike + topUp).toFixed(2));
   }
 
   /**
@@ -472,9 +575,11 @@ export class ThermodynamicSolver {
     const m = manifest;
     const eq = m.equipment || {};
     const boilTimeHrs = (parseFloat(m.boil_time_min) || 60) / 60.0;
-    const trubLoss = parseFloat(eq.trub_loss_l) || 0;
-    const kettleLoss = parseFloat(eq.kettle_dead_space_l) || 0;
-    const totalKettleLoss = trubLoss + kettleLoss;
+    const totalKettleLoss = this.calculatePostBoilLoss(
+      eq.trub_loss_l,
+      eq.kettle_dead_space_l,
+      eq.kettle_transfer_loss_l
+    );
     const shrinkage = parseFloat(eq.shrinkage_pct) || 0.04;
     const vPre = parseFloat(m.preboil_volume_l) || 26.0;
     const sgPre = parseFloat(m.preboil_gravity) || 1.045;
@@ -1700,12 +1805,17 @@ Alpine.data('wizard', () => {
       }
 
       // Downstream chilling bridge (packaged volume + target OG).
+      // Loss_postboil collapses trub + kettle dead space + kettle transfer
+      // loss into a single additive scalar (see vessel-loss-model.md 5.2).
       const eq = this.manifest.equipment || {};
-      const trubLoss = parseFloat(eq.trub_loss_l) || 0;
-      const kettleLoss = parseFloat(eq.kettle_dead_space_l) || 0;
+      const postBoilLoss = ThermodynamicSolver.calculatePostBoilLoss(
+        eq.trub_loss_l,
+        eq.kettle_dead_space_l,
+        eq.kettle_transfer_loss_l
+      );
       const shrinkage = parseFloat(eq.shrinkage_pct) || 0.04;
       const vPost = parseFloat(this.manifest.postboil_volume_l) || 0;
-      const vTarget = ThermodynamicSolver.calculatePackagedVolume(vPost, trubLoss + kettleLoss, shrinkage);
+      const vTarget = ThermodynamicSolver.calculatePackagedVolume(vPost, postBoilLoss, shrinkage);
       this.manifest.target_volume_l = vTarget;
 
       // Total extract in gravity-point-liters: V1 * sgToPoints(SG1).
