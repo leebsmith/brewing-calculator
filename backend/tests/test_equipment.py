@@ -25,8 +25,14 @@ def test_seed_equipment_profiles_valid():
         assert profile.max_hlt_volume_l >= 0
         assert profile.boil_off_rate_l_per_hr > 0
         assert profile.mash_dead_space_l >= 0
+        assert profile.mash_transfer_loss_l >= 0
         assert profile.kettle_dead_space_l >= 0
+        assert profile.kettle_transfer_loss_l >= 0
+        assert profile.hlt_dead_space_l >= 0
+        assert profile.hlt_transfer_loss_l >= 0
         assert profile.trub_loss_l >= 0
+        assert profile.hlt_coil_floor_l >= 0
+        assert profile.hlt_starting_volume_l >= 0
         assert 0.80 <= profile.conversion_efficiency <= 1.0
         assert profile.is_custom is False
 
@@ -99,13 +105,18 @@ def test_custom_profile_crud_lifecycle(client, monkeypatch):
             "max_mash_tun_volume_l": 80.0,
             "max_hlt_volume_l": 80.0,
             "mash_dead_space_l": 2.5,
+            "mash_transfer_loss_l": 0.946,
             "kettle_dead_space_l": 2.5,
+            "kettle_transfer_loss_l": 0.946,
+            "hlt_dead_space_l": 0.946,
+            "hlt_transfer_loss_l": 0.946,
             "trub_loss_l": 3.5,
             "boil_off_rate_l_per_hr": 5.0,
             "grain_absorption_factor_l_per_kg": 0.96,
             "conversion_efficiency": 0.94,
             "shrinkage_pct": 0.04,
-            "hlt_min_volume_l": 20.0,
+            "hlt_coil_floor_l": 20.0,
+            "hlt_starting_volume_l": 80.0,
             "is_custom": False  # Should be forced to True by backend
         }
         res_post = client.post("/api/equipment-profiles", json=custom_payload)
@@ -114,6 +125,10 @@ def test_custom_profile_crud_lifecycle(client, monkeypatch):
         assert created["id"] == "my-custom-nano-70l"
         assert created["is_custom"] is True
         assert created["max_kettle_volume_l"] == 80.0
+        assert created["hlt_coil_floor_l"] == 20.0
+        assert created["hlt_starting_volume_l"] == 80.0
+        assert created["mash_transfer_loss_l"] == 0.946
+        assert created["kettle_transfer_loss_l"] == 0.946
 
         # 2. Get all profiles, verifying the custom profile is included
         res_get = client.get("/api/equipment-profiles")
