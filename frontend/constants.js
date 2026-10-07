@@ -26,6 +26,7 @@ export const BREW_CONSTANTS = {
 
   // Extract Potential Reference Constants (Pure Sucrose / Grist Scaling)
   SUCROSE_POTENTIAL_PPG: 46.21,
+  IMPERIAL_POTENTIAL_SCALING_FACTOR: 46.21,
   METRIC_POTENTIAL_SCALING_FACTOR: 386.4,
   LDK_PPG_CONVERSION_FACTOR: 8.345,
 
