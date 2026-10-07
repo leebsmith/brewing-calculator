@@ -119,15 +119,6 @@ export const BREW_CONSTANTS = {
   MSG_SOLVER_UNKNOWN_VARIABLE: 'Unknown variable identifier.',
 };
 
-Now update `script.js` to consume those constants instead of the inline array, and to use the shared blacklist in `validateOutputPair`.
-
-frontend/script.js
-````javascript
-<<<<<<< SEARCH
-  static validateOutputPair(var1, var2) {
-    const VALID_VARIABLES = new Set(['V1', 'G1', 'V2', 'G2', 'R_boil', 't']);
-    const INVALID_PAIRS = new Set(['R_boil:t', 'G1:G2']);
-
     if (!VALID_VARIABLES.has(var1) || !VALID_VARIABLES.has(var2)) {
       return { valid: false, reason: 'Unknown variable identifier.' };
     }
