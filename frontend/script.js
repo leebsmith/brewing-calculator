@@ -228,7 +228,9 @@ export class ThermodynamicSolver {
   static calculateTargetOg(extractPointsTotal, targetVolume, fallbackOg = 1.050) {
     const points = parseFloat(extractPointsTotal) || 0;
     const vTarget = parseFloat(targetVolume) || 0;
-    return vTarget > 0 ? Number((1.0 + (points / vTarget)).toFixed(3)) : fallbackOg;
+    // extractPointsTotal is in gravity-point-liters (V * (SG - 1) * 1000),
+    // so divide by (volume * 1000) to recover the SG offset.
+    return vTarget > 0 ? Number((1.0 + (points / (vTarget * 1000))).toFixed(3)) : fallbackOg;
   }
 
   /**
@@ -1653,11 +1655,13 @@ Alpine.data('wizard', () => {
       this.manifest.target_volume_l = vTarget;
 
       // Total extract in gravity-point-liters: V1 * sgToPoints(SG1).
-      // (calculateTargetOg expects points and divides by volume * 1000.)
+      // calculateTargetOg expects gravity POINTS (not point-liters), so we
+      // divide the total extract by the target volume first.
       const extractPointsTotal = (parseFloat(this.manifest.preboil_volume_l) || 0) *
         ThermodynamicSolver.sgToPoints(this.manifest.preboil_gravity);
+      const targetOgPoints = vTarget > 0 ? (extractPointsTotal / vTarget) : 0;
       this.manifest.target_og = ThermodynamicSolver.calculateTargetOg(
-        extractPointsTotal, vTarget, parseFloat(this.manifest.postboil_gravity) || 1.050
+        targetOgPoints, 1.0, parseFloat(this.manifest.postboil_gravity) || 1.050
       );
     },
 
@@ -1667,7 +1671,12 @@ Alpine.data('wizard', () => {
     },
 
     get targetKettleExtract() {
-      return ThermodynamicSolver.calculateKettleExtract(this.manifest.target_volume_l, this.manifest.target_og);
+      // S_kettle = V2 * G2 (post-boil kettle extract), per the solver spec.
+      // This is the value that feeds Step 3's grist mass calculation.
+      return ThermodynamicSolver.calculateKettleExtract(
+        this.manifest.postboil_volume_l,
+        this.manifest.postboil_gravity
+      );
     },
 
     // Step Validation Override for Wizard Workflow
