@@ -141,7 +141,7 @@ const UNIT_REGISTRY = {
     base_unit: 'L/kg',
     units: {
       'L/kg':   { label: 'L/kg',   to_base: (v) => v, from_base: (v) => v, precision: 2 },
-      'gal/lb': { label: 'gal/lb', to_base: (v) => v * 0.5217, from_base: (v) => v / 0.5217, precision: 3 }
+      'gal/lb': { label: 'gal/lb', to_base: (v) => v * 8.3454, from_base: (v) => v / 8.3454, precision: 3 }
     }
   },
   extract_potential: {
