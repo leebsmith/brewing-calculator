@@ -106,9 +106,9 @@
                         x-text="row.pct.toFixed(1) + '%'"
                       ></span>
                       <template x-if="$store.maltGrid.isTrace(row.pct)">
-                        <span class="table-pct-badge is-trace">
+                        <span class="table-pct-badge is-trace" title="Trace addition (&lt;2%)">
                           <span>✗</span>
-                          <span>Trace (&lt;2%)</span>
+                          <span>Trace</span>
                         </span>
                       </template>
                       <template x-if="!$store.maltGrid.isTrace(row.pct)">
