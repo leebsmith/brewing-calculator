@@ -40,7 +40,10 @@ class HopPrimitive(BaseModel):
 class YeastPrimitive(BaseModel):
     id: str
     name: str
+    manufacturer: str
     attenuation_pct: float
+    low_attenuation: float
+    high_attenuation: float
     flocculation: str
     alcohol_tolerance_abv: float
     notes: str | None = None

@@ -982,7 +982,11 @@ def determine_yeast_parameters(name: str, manufacturer: str) -> dict:
     else:
         alcohol_tolerance_abv = 10.0
 
-    # 4. Sensory / Strain Notes
+    # 4. Attenuation bounds (+/- 7% deviation from stated attenuation)
+    low_attenuation = round(attenuation_pct * 0.93, 1)
+    high_attenuation = round(attenuation_pct * 1.07, 1)
+
+    # 5. Sensory / Strain Notes
     if "notes" in spec:
         notes = spec["notes"]
     else:
@@ -991,7 +995,10 @@ def determine_yeast_parameters(name: str, manufacturer: str) -> dict:
     return {
         "id": slug,
         "name": name,
+        "manufacturer": manufacturer,
         "attenuation_pct": attenuation_pct,
+        "low_attenuation": low_attenuation,
+        "high_attenuation": high_attenuation,
         "flocculation": flocculation,
         "alcohol_tolerance_abv": alcohol_tolerance_abv,
         "notes": notes,
