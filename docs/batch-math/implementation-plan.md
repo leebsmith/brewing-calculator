@@ -79,7 +79,7 @@ Validation codes: `UNKNOWN_TOPOLOGY`, `INVALID_EXTRACT_POTENTIAL`,
 
 Tests: `backend/tests/test_batch_solver_phase3.py`.
 
-### Stage 1.4 — Phase 4: Stage Volume & Gravity Cascade (IN PROGRESS)
+### Stage 1.4 — Phase 4: Stage Volume & Gravity Cascade (DONE)
 
 Post-convergence volume cascade for both constraint topologies, plus
 `calculate_sg_pre_boil` (pre-boil gravity assembly). Functions:
@@ -97,7 +97,7 @@ Validation codes: `UNKNOWN_TOPOLOGY`, `INVALID_INTENSIVE_VALUE`.
 
 Tests: `backend/tests/test_batch_solver_phase4.py`.
 
-### Stage 1.5 — Orchestration & API Wiring (IN PROGRESS)
+### Stage 1.5 — Orchestration & API Wiring (DONE)
 
 Top-level `solve_batch(...)` entry point composing Phases 1-4, plus the API
 schema and route. Functions:
@@ -118,5 +118,5 @@ Tests: `backend/tests/test_batch_solver_orchestration.py`.
 | 1.1 | Phase 1: cold-side inverse | DONE |
 | 1.2 | Phase 2: volumetric reversal | DONE |
 | 1.3 | Phase 3: grist mass root-finding | DONE |
-| 1.4 | Phase 4: stage volume & gravity cascade | IN PROGRESS |
-| 1.5 | Orchestration & API wiring | IN PROGRESS |
+| 1.4 | Phase 4: stage volume & gravity cascade | DONE |
+| 1.5 | Orchestration & API wiring | DONE |
