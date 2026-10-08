@@ -1,34 +1,34 @@
-<!-- Step 3: Yeast Selection Accordion Card (in partials) -->
-<div class="step-card" :class="{ 'is-active': activeStep === 3, 'is-completed': completedSteps.includes(3) }">
+<!-- Step 2: Yeast Selection Accordion Card (in partials) -->
+<div class="step-card" :class="{ 'is-active': activeStep === 2, 'is-completed': completedSteps.includes(2) }">
     <div class="accordion-header">
         <button
                 type="button"
                 class="accordion-trigger"
-                :aria-expanded="(activeStep === 3).toString()"
-                aria-controls="step-panel-3"
-                id="step-trigger-3"
-                @click="setActiveStep(3)"
+                :aria-expanded="(activeStep === 2).toString()"
+                aria-controls="step-panel-2"
+                id="step-trigger-2"
+                @click="setActiveStep(2)"
         >
             <div class="accordion-title-wrap">
-                <span class="accordion-step-num">3</span>
+                <span class="accordion-step-num">2</span>
                 <div>
                     <span class="accordion-title">Yeast Selection</span>
                     <span class="accordion-subtitle">Choose a strain and set the expected apparent attenuation</span>
                 </div>
             </div>
             <div class="accordion-controls">
-                <span class="accordion-status-pill" :class="getStepStatusClass(3)" x-text="getStepStatusLabel(3)"></span>
-                <span class="accordion-chevron" x-text="activeStep === 3 ? '▲' : '▼'"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(2)" x-text="getStepStatusLabel(2)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 2 ? '▲' : '▼'"></span>
             </div>
         </button>
     </div>
 
     <div
-            id="step-panel-3"
+            id="step-panel-2"
             role="region"
-            aria-labelledby="step-trigger-3"
+            aria-labelledby="step-trigger-2"
             x-cloak
-            x-show="activeStep === 3"
+            x-show="activeStep === 2"
             x-collapse
             class="step-card-body"
     >
@@ -94,7 +94,7 @@
                                 <span class="font-medium" x-text="y.name"></span>
                             </td>
                             <td x-text="y.manufacturer"></td>
-                            <td class="text-right tabular-nums" x-text="$store.units.toDisplay('percentage', y.low_attenuation, 'step3_yeast_attenuation_pct') + '–' + $store.units.toDisplay('percentage', y.high_attenuation, 'step3_yeast_attenuation_pct') + $store.units.getLabel('step3_yeast_attenuation_pct')"></td>
+                            <td class="text-right tabular-nums" x-text="$store.units.toDisplay('percentage', y.low_attenuation, 'step2_yeast_attenuation_pct') + '–' + $store.units.toDisplay('percentage', y.high_attenuation, 'step2_yeast_attenuation_pct') + $store.units.getLabel('step2_yeast_attenuation_pct')"></td>
                             <td x-text="y.flocculation"></td>
                             <td class="text-right tabular-nums" x-text="y.alcohol_tolerance_abv + '%'"></td>
                             <td class="text-right">
@@ -138,23 +138,23 @@
                                 <span>Expected Apparent Attenuation</span>
                                 <button
                                     type="button"
-                                    @click="$store.units.toggle('step3_yeast_attenuation_pct')"
+                                    @click="$store.units.toggle('step2_yeast_attenuation_pct')"
                                     class="unit-badge"
-                                    :class="{ 'unit-badge-customized': $store.units.isCustomized('step3_yeast_attenuation_pct') }"
-                                    x-text="$store.units.getLabel('step3_yeast_attenuation_pct')"
+                                    :class="{ 'unit-badge-customized': $store.units.isCustomized('step2_yeast_attenuation_pct') }"
+                                    x-text="$store.units.getLabel('step2_yeast_attenuation_pct')"
                                     title="Click to toggle unit"
                                 ></button>
                             </label>
                             <input
                                 type="number"
                                 step="0.1"
-                                :min="$store.units.toDisplay('percentage', selectedYeast.low_attenuation, 'step3_yeast_attenuation_pct')"
-                                :max="$store.units.toDisplay('percentage', selectedYeast.high_attenuation, 'step3_yeast_attenuation_pct')"
+                                :min="$store.units.toDisplay('percentage', selectedYeast.low_attenuation, 'step2_yeast_attenuation_pct')"
+                                :max="$store.units.toDisplay('percentage', selectedYeast.high_attenuation, 'step2_yeast_attenuation_pct')"
                                 :value="yeastAttenuationDisplay()"
                                 @change="onYeastAttenuationChange($event.target.value)"
                                 class="form-input tabular-nums"
                             />
-                            <span class="form-hint" x-text="'Valid range: ' + $store.units.toDisplay('percentage', selectedYeast.low_attenuation, 'step3_yeast_attenuation_pct') + $store.units.getLabel('step3_yeast_attenuation_pct') + ' – ' + $store.units.toDisplay('percentage', selectedYeast.high_attenuation, 'step3_yeast_attenuation_pct') + $store.units.getLabel('step3_yeast_attenuation_pct')"></span>
+                            <span class="form-hint" x-text="'Valid range: ' + $store.units.toDisplay('percentage', selectedYeast.low_attenuation, 'step2_yeast_attenuation_pct') + $store.units.getLabel('step2_yeast_attenuation_pct') + ' – ' + $store.units.toDisplay('percentage', selectedYeast.high_attenuation, 'step2_yeast_attenuation_pct') + $store.units.getLabel('step2_yeast_attenuation_pct')"></span>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Strain Details</label>
@@ -174,7 +174,7 @@
         <div class="step-actions">
             <button
                     type="button"
-                    @click="markStepComplete(3)"
+                    @click="markStepComplete(2)"
                     class="btn btn-primary"
             >
                 Next: Grain Bill →

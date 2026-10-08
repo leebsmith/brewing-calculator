@@ -25,11 +25,10 @@ export const BREW_CONSTANTS = {
   // Wizard Step Roster
   // Single source of truth for which steps are implemented. Update this list
   // when adding a new step partial, and update invalidateDownstream's
-  // downstream set accordingly. Steps are 1-indexed.
-  // NOTE: Step 2 (Batch Metadata) was retired; the roster intentionally skips
-  // it. The wizard.init() guardrail only warns about declared steps that lack
-  // a matching #step-panel-N, so omitting 2 here silences the false positive.
-  WIZARD_STEPS: [1, 3, 4, 5, 6],
+  // downstream set accordingly. Steps are 1-indexed and MUST be contiguous:
+  // markStepComplete(N) advances to N+1, so a gap would strand the wizard on
+  // a step with no matching #step-panel-N.
+  WIZARD_STEPS: [1, 2, 3, 4, 5],
 
   // Steps that become dirty when an upstream step changes. These are the
   // solved/derived steps (Master Solver, Water Chemistry, Hops, Fermentation,
@@ -108,10 +107,10 @@ export const BREW_CONSTANTS = {
     'step2_target_volume_l': 'volume',
     'step2_preboil_gravity': 'gravity',
     'step2_postboil_gravity': 'gravity',
-    // Step 3: Yeast Selection
-    'step3_yeast_attenuation_pct': 'percentage',
-    // Step 6: Batch Sparge Solver
-    'step6_intensive_value': 'compound'
+    // Step 2: Yeast Selection
+    'step2_yeast_attenuation_pct': 'percentage',
+    // Step 5: Batch Sparge Solver
+    'step5_intensive_value': 'compound'
   },
 
   UNIT_DOMAIN_MASS: 'mass',

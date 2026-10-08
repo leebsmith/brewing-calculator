@@ -1993,8 +1993,8 @@ Alpine.data('wizard', () => {
         }
       }
 
-      // Validate Step 3 (Yeast Selection)
-      if (stepNumber === 3) {
+      // Validate Step 2 (Yeast Selection)
+      if (stepNumber === 2) {
         if (!this.manifest.yeast_id) {
           Alpine.store('ui').add(BREW_CONSTANTS.MSG_YEAST_REQUIRED, 'error');
           return;
@@ -2016,7 +2016,7 @@ Alpine.data('wizard', () => {
       nav.markStepComplete.call(this, stepNumber);
     },
 
-    // --- Step 6: Batch Sparge Solver ---
+    // --- Step 5: Batch Sparge Solver ---
     // Constraint topology for the new POST /api/solve-batch endpoint.
     // 'r_l_to_g'      -> {V_pre_boil, R_L:G}  (intensive_value is L/kg)
     // 'runoff_ratio'  -> {V_pre_boil, r}      (intensive_value is dimensionless)
@@ -2098,7 +2098,7 @@ Alpine.data('wizard', () => {
       }
     },
 
-    // --- Step 3: Yeast Selection ---
+    // --- Step 2: Yeast Selection ---
     yeastSearchQuery: '',
     yeastManufacturerFilter: '',
 
@@ -2162,7 +2162,7 @@ Alpine.data('wizard', () => {
       // (0..1), which is the percentage domain's base unit. toBase() converts
       // the display value (e.g. "78" in % mode) straight to a fraction.
       const fraction = Alpine.store('units')
-        ? Alpine.store('units').toBase('percentage', parseFloat(displayVal), 'step3_yeast_attenuation_pct')
+        ? Alpine.store('units').toBase('percentage', parseFloat(displayVal), 'step2_yeast_attenuation_pct')
         : parseFloat(displayVal) / 100;
       if (isNaN(fraction)) return;
       if (fraction < yeast.low_attenuation || fraction > yeast.high_attenuation) {
@@ -2180,7 +2180,7 @@ Alpine.data('wizard', () => {
       // The manifest already stores a fraction, which is the percentage
       // domain's base unit, so it can be passed to toDisplay() directly.
       return Alpine.store('units')
-        ? Alpine.store('units').toDisplay('percentage', this.manifest.yeast_attenuation_pct, 'step3_yeast_attenuation_pct')
+        ? Alpine.store('units').toDisplay('percentage', this.manifest.yeast_attenuation_pct, 'step2_yeast_attenuation_pct')
         : this.manifest.yeast_attenuation_pct;
     }
   };

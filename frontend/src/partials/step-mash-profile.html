@@ -1,34 +1,34 @@
-<!-- Step 5: Mash Profile (in partials) -->
-<div class="step-card" :class="{ 'is-active': activeStep === 5, 'is-completed': completedSteps.includes(5) }">
+<!-- Step 4: Mash Profile (in partials) -->
+<div class="step-card" :class="{ 'is-active': activeStep === 4, 'is-completed': completedSteps.includes(4) }">
     <div class="accordion-header">
         <button
                 type="button"
                 class="accordion-trigger"
-                :aria-expanded="(activeStep === 5).toString()"
-                aria-controls="step-panel-5"
-                id="step-trigger-5"
-                @click="setActiveStep(5)"
+                :aria-expanded="(activeStep === 4).toString()"
+                aria-controls="step-panel-4"
+                id="step-trigger-4"
+                @click="setActiveStep(4)"
         >
             <div class="accordion-title-wrap">
-                <span class="accordion-step-num">5</span>
+                <span class="accordion-step-num">4</span>
                 <div>
                     <span class="accordion-title">Mash Profile</span>
                     <span class="accordion-subtitle">Define mash steps, temperatures, and rests</span>
                 </div>
             </div>
             <div class="accordion-controls">
-                <span class="accordion-status-pill" :class="getStepStatusClass(5)" x-text="getStepStatusLabel(5)"></span>
-                <span class="accordion-chevron" x-text="activeStep === 5 ? '▲' : '▼'"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(4)" x-text="getStepStatusLabel(4)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 4 ? '▲' : '▼'"></span>
             </div>
         </button>
     </div>
 
     <div
-            id="step-panel-5"
+            id="step-panel-4"
             role="region"
-            aria-labelledby="step-trigger-5"
+            aria-labelledby="step-trigger-4"
             x-cloak
-            x-show="activeStep === 5"
+            x-show="activeStep === 4"
             x-collapse
             class="step-card-body"
     >
@@ -40,7 +40,7 @@
         <div class="step-actions">
             <button
                     type="button"
-                    @click="markStepComplete(5)"
+                    @click="markStepComplete(4)"
                     class="btn btn-primary"
             >
                 Save &amp; Continue
