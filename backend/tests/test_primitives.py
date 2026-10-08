@@ -77,13 +77,19 @@ def test_yeast_primitive_notes():
     yeast = YeastPrimitive(
         id="wlp001",
         name="California Ale Yeast",
+        manufacturer="White Labs",
         attenuation_pct=0.76,
+        low_attenuation=0.73,
+        high_attenuation=0.80,
         flocculation="Medium",
         alcohol_tolerance_abv=15.0,
         notes="Neutral profile, highlights malt and hops.",
     )
     assert yeast.notes == "Neutral profile, highlights malt and hops."
     assert yeast.attenuation_pct == 0.76
+    assert yeast.manufacturer == "White Labs"
+    assert yeast.low_attenuation == 0.73
+    assert yeast.high_attenuation == 0.80
 
 
 def test_sugar_primitive_notes():
