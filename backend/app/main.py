@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import get_db, init_firebase
 from app.service import logic
 from app.auth import get_current_user
-from app.schemas.models import PingResponse, AuthenticatedUser, FermentablesCatalogResponse
+from app.schemas.models import PingResponse, AuthenticatedUser, FermentablesCatalogResponse, YeastCatalogResponse
 from app.schemas.templates import EquipmentProfile, EquipmentProfilesResponse
 
 ERR_CANNOT_DELETE_PRESET = "Cannot delete built-in canonical equipment preset."
@@ -78,6 +78,18 @@ def get_fermentables_endpoint(
     Requires valid Firebase ID token authentication.
     """
     return logic.get_fermentables_catalog(db)
+
+
+@app.get("/api/yeasts", response_model=YeastCatalogResponse)
+def get_yeasts_endpoint(
+    db: Any = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Protected entry route for the yeast catalog.
+    Requires valid Firebase ID token authentication.
+    """
+    return logic.get_yeast_catalog(db)
 
 
 @app.get("/api/equipment-profiles", response_model=EquipmentProfilesResponse)

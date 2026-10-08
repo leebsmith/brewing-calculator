@@ -1,7 +1,7 @@
 import json
 from functools import lru_cache
 from pathlib import Path
-from app.schemas.primitives import MaltPrimitive, SugarPrimitive
+from app.schemas.primitives import MaltPrimitive, SugarPrimitive, YeastPrimitive
 from app.schemas.templates import EquipmentProfile
 
 SEEDS_DIR = Path(__file__).resolve().parent
@@ -23,6 +23,15 @@ def load_seed_sugars() -> list[SugarPrimitive]:
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return [SugarPrimitive(**item) for item in data]
+
+
+@lru_cache(maxsize=1)
+def load_seed_yeasts() -> list[YeastPrimitive]:
+    """Loads and caches the canonical list of YeastPrimitive seed records."""
+    file_path = SEEDS_DIR / "yeasts.json"
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return [YeastPrimitive(**item) for item in data]
 
 
 @lru_cache(maxsize=1)
@@ -50,6 +59,14 @@ def get_seed_sugar_by_id(sugar_id: str) -> SugarPrimitive | None:
     return None
 
 
+def get_seed_yeast_by_id(yeast_id: str) -> YeastPrimitive | None:
+    """Finds a seed yeast by its unique slug ID."""
+    for yeast in load_seed_yeasts():
+        if yeast.id == yeast_id:
+            return yeast
+    return None
+
+
 def get_seed_equipment_profile_by_id(profile_id: str) -> EquipmentProfile | None:
     """Finds a seed equipment profile by its unique slug ID."""
     for profile in load_seed_equipment_profiles():
@@ -61,9 +78,11 @@ def get_seed_equipment_profile_by_id(profile_id: str) -> EquipmentProfile | None
 __all__ = [
     "load_seed_malts",
     "load_seed_sugars",
+    "load_seed_yeasts",
     "load_seed_equipment_profiles",
     "get_seed_malt_by_id",
     "get_seed_sugar_by_id",
+    "get_seed_yeast_by_id",
     "get_seed_equipment_profile_by_id",
 ]
 

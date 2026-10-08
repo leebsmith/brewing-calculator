@@ -1,9 +1,10 @@
 from typing import Any
-from app.schemas.models import FermentablesCatalogResponse, PingResponse
+from app.schemas.models import FermentablesCatalogResponse, PingResponse, YeastCatalogResponse
 from app.schemas.templates import EquipmentProfile, EquipmentProfilesResponse
 from app.repositories import (
     firestore,
     get_fermentables_catalog as fetch_fermentables_catalog,
+    get_yeasts_catalog as fetch_yeasts_catalog,
     list_equipment_profiles as fetch_equipment_profiles,
     get_equipment_profile as fetch_equipment_profile,
     save_equipment_profile as persist_equipment_profile,
@@ -28,6 +29,14 @@ def get_fermentables_catalog(db: Any = None) -> FermentablesCatalogResponse:
     Coordinates validation and repository access.
     """
     return fetch_fermentables_catalog(db=db)
+
+
+def get_yeast_catalog(db: Any = None) -> YeastCatalogResponse:
+    """
+    Business logic layer for yeast catalog retrieval.
+    Coordinates validation and repository access.
+    """
+    return fetch_yeasts_catalog(db=db)
 
 
 def get_equipment_profiles() -> EquipmentProfilesResponse:

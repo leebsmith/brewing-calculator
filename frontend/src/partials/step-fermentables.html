@@ -1,16 +1,16 @@
-<!-- Step 3: Fermentables (Grain Bill & Hamilton Proportional Allocator) (in partials) -->
-<div class="step-card" :class="{ 'is-active': activeStep === 3, 'is-completed': completedSteps.includes(3) }">
+<!-- Step 4: Fermentables (Grain Bill & Hamilton Proportional Allocator) (in partials) -->
+<div class="step-card" :class="{ 'is-active': activeStep === 4, 'is-completed': completedSteps.includes(4) }">
     <div class="accordion-header">
         <button
                 type="button"
                 class="accordion-trigger"
-                :aria-expanded="(activeStep === 3).toString()"
-                aria-controls="step-panel-3"
-                id="step-trigger-3"
-                @click="setActiveStep(3)"
+                :aria-expanded="(activeStep === 4).toString()"
+                aria-controls="step-panel-4"
+                id="step-trigger-4"
+                @click="setActiveStep(4)"
         >
             <div class="accordion-title-wrap">
-                <span class="accordion-step-num">3</span>
+                <span class="accordion-step-num">4</span>
                 <div>
                     <span class="accordion-title">Fermentables &amp; Grist Bill</span>
                     <span class="accordion-subtitle">Major structural malts (proportional parts) &amp; trace additions</span>
@@ -18,18 +18,18 @@
             </div>
             <div class="accordion-controls">
                 <span class="status-badge text-xs" :class="$store.maltGrid.validationStatus.class" x-text="$store.maltGrid.validationStatus.label"></span>
-                <span class="accordion-status-pill" :class="getStepStatusClass(3)" x-text="getStepStatusLabel(3)"></span>
-                <span class="accordion-chevron" x-text="activeStep === 3 ? '▲' : '▼'"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(4)" x-text="getStepStatusLabel(4)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 4 ? '▲' : '▼'"></span>
             </div>
         </button>
     </div>
 
     <div
-            id="step-panel-3"
+            id="step-panel-4"
             role="region"
-            aria-labelledby="step-trigger-3"
+            aria-labelledby="step-trigger-4"
             x-cloak
-            x-show="activeStep === 3"
+            x-show="activeStep === 4"
             x-collapse
             class="step-card-body"
     >
@@ -117,7 +117,7 @@
         <div class="step-actions">
             <button
                     type="button"
-                    @click="markStepComplete(3)"
+                    @click="markStepComplete(4)"
                     class="btn btn-primary"
                     :disabled="$store.maltGrid.validationStatus.type !== 'balanced'"
             >

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from app.schemas.primitives import MaltPrimitive, SugarPrimitive
+from app.schemas.primitives import MaltPrimitive, SugarPrimitive, YeastPrimitive
 
 class AuthenticatedUser(BaseModel):
     uid: str
@@ -16,3 +16,6 @@ class PingResponse(BaseModel):
 class FermentablesCatalogResponse(BaseModel):
     malts: list[MaltPrimitive]
     sugars: list[SugarPrimitive]
+
+class YeastCatalogResponse(BaseModel):
+    yeasts: list[YeastPrimitive]

@@ -645,7 +645,7 @@ export function createWizardNavigation() {
     },
 
     invalidateDownstream(fromStepNumber) {
-      this.dirtySteps = [6, 7, 8, 9, 11, 12].filter(step => step > fromStepNumber);
+      this.dirtySteps = [7, 8, 9, 10, 12, 13].filter(step => step > fromStepNumber);
     },
 
     toggleExpansionMode() {
@@ -1546,10 +1546,11 @@ Alpine.store('ui', {
   }
 });
 
-// Global Catalog Store for Fermentables (Malts & Sugars)
+// Global Catalog Store for Fermentables (Malts & Sugars) and Yeasts
 Alpine.store('catalog', {
   malts: [],
   sugars: [],
+  yeasts: [],
   loading: false,
   error: null,
   loaded: false,
@@ -1559,17 +1560,25 @@ Alpine.store('catalog', {
     this.loading = true;
     this.error = null;
     try {
-      const response = await apiFetch('/api/fermentables');
-      if (!response.ok) {
-        throw new Error(`Failed to load fermentables catalog: ${response.status}`);
+      const [fermentablesRes, yeastsRes] = await Promise.all([
+        apiFetch('/api/fermentables'),
+        apiFetch('/api/yeasts'),
+      ]);
+      if (!fermentablesRes.ok) {
+        throw new Error(`Failed to load fermentables catalog: ${fermentablesRes.status}`);
       }
-      const data = await response.json();
-      this.malts = data.malts || [];
-      this.sugars = data.sugars || [];
+      if (!yeastsRes.ok) {
+        throw new Error(`Failed to load yeast catalog: ${yeastsRes.status}`);
+      }
+      const fermentablesData = await fermentablesRes.json();
+      const yeastsData = await yeastsRes.json();
+      this.malts = fermentablesData.malts || [];
+      this.sugars = fermentablesData.sugars || [];
+      this.yeasts = yeastsData.yeasts || [];
       this.loaded = true;
     } catch (err) {
       this.error = err.message;
-      console.error('Error fetching fermentables catalog:', err);
+      console.error('Error fetching catalog:', err);
     } finally {
       this.loading = false;
     }
@@ -1585,6 +1594,14 @@ Alpine.store('catalog', {
 
   getMaltsByCategory(category) {
     return this.malts.filter(m => m.category === category);
+  },
+
+  getYeastById(id) {
+    return this.yeasts.find(y => y.id === id) || null;
+  },
+
+  get yeastManufacturers() {
+    return [...new Set(this.yeasts.map(y => y.manufacturer))].sort();
   }
 });
 
@@ -1733,6 +1750,7 @@ Alpine.data('wizard', () => {
       water_profile_id: null,
       hop_schedule: [],
       yeast_id: null,
+      yeast_attenuation_pct: null,
       fermentation_schedule: [],
       dry_hops: []
     },
@@ -1967,7 +1985,91 @@ Alpine.data('wizard', () => {
         }
       }
 
+      // Validate Step 3 (Yeast Selection)
+      if (stepNumber === 3) {
+        if (!this.manifest.yeast_id) {
+          Alpine.store('ui').add(BREW_CONSTANTS.MSG_YEAST_REQUIRED, 'error');
+          return;
+        }
+        const yeast = Alpine.store('catalog').getYeastById(this.manifest.yeast_id);
+        if (yeast) {
+          const att = Number(this.manifest.yeast_attenuation_pct);
+          if (isNaN(att) || att < yeast.low_attenuation || att > yeast.high_attenuation) {
+            Alpine.store('ui').add(
+              BREW_CONSTANTS.MSG_YEAST_ATTENUATION_RANGE(yeast.low_attenuation, yeast.high_attenuation),
+              'error'
+            );
+            return;
+          }
+        }
+      }
+
       nav.markStepComplete.call(this, stepNumber);
+    },
+
+    // --- Step 3: Yeast Selection ---
+    yeastSearchQuery: '',
+    yeastManufacturerFilter: '',
+
+    get filteredYeasts() {
+      const all = Alpine.store('catalog') ? Alpine.store('catalog').yeasts : [];
+      const q = (this.yeastSearchQuery || '').trim().toLowerCase();
+      const mfr = this.yeastManufacturerFilter;
+      return all.filter(y => {
+        if (mfr && y.manufacturer !== mfr) return false;
+        if (q) {
+          const matchName = y.name && y.name.toLowerCase().includes(q);
+          const matchMfr = y.manufacturer && y.manufacturer.toLowerCase().includes(q);
+          if (!matchName && !matchMfr) return false;
+        }
+        return true;
+      });
+    },
+
+    get yeastManufacturers() {
+      return Alpine.store('catalog') ? Alpine.store('catalog').yeastManufacturers : [];
+    },
+
+    get selectedYeast() {
+      if (!this.manifest.yeast_id) return null;
+      return Alpine.store('catalog').getYeastById(this.manifest.yeast_id);
+    },
+
+    selectYeast(yeastId) {
+      this.manifest.yeast_id = yeastId;
+      const yeast = Alpine.store('catalog').getYeastById(yeastId);
+      if (yeast) {
+        this.manifest.yeast_attenuation_pct = yeast.attenuation_pct;
+      }
+    },
+
+    clearYeastSelection() {
+      this.manifest.yeast_id = null;
+      this.manifest.yeast_attenuation_pct = null;
+    },
+
+    onYeastAttenuationChange(displayVal) {
+      const yeast = this.selectedYeast;
+      if (!yeast) return;
+      const baseVal = Alpine.store('units')
+        ? Alpine.store('units').toBase('percentage', parseFloat(displayVal), 'step3_yeast_attenuation_pct')
+        : parseFloat(displayVal);
+      if (isNaN(baseVal)) return;
+      if (baseVal < yeast.low_attenuation || baseVal > yeast.high_attenuation) {
+        Alpine.store('ui').add(
+          BREW_CONSTANTS.MSG_YEAST_ATTENUATION_RANGE(yeast.low_attenuation, yeast.high_attenuation),
+          'error'
+        );
+        return;
+      }
+      this.manifest.yeast_attenuation_pct = baseVal;
+    },
+
+    yeastAttenuationDisplay() {
+      if (this.manifest.yeast_attenuation_pct == null) return '';
+      return Alpine.store('units')
+        ? Alpine.store('units').toDisplay('percentage', this.manifest.yeast_attenuation_pct, 'step3_yeast_attenuation_pct')
+        : this.manifest.yeast_attenuation_pct;
     }
   };
 });

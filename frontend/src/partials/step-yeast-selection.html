@@ -1,0 +1,167 @@
+<!-- Step 3: Yeast Selection Accordion Card (in partials) -->
+<div class="step-card" :class="{ 'is-active': activeStep === 3, 'is-completed': completedSteps.includes(3) }">
+    <div class="accordion-header">
+        <button
+                type="button"
+                class="accordion-trigger"
+                :aria-expanded="(activeStep === 3).toString()"
+                aria-controls="step-panel-3"
+                id="step-trigger-3"
+                @click="setActiveStep(3)"
+        >
+            <div class="accordion-title-wrap">
+                <span class="accordion-step-num">3</span>
+                <div>
+                    <span class="accordion-title">Yeast Selection</span>
+                    <span class="accordion-subtitle">Choose a strain and set the expected apparent attenuation</span>
+                </div>
+            </div>
+            <div class="accordion-controls">
+                <span class="accordion-status-pill" :class="getStepStatusClass(3)" x-text="getStepStatusLabel(3)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 3 ? '▲' : '▼'"></span>
+            </div>
+        </button>
+    </div>
+
+    <div
+            id="step-panel-3"
+            role="region"
+            aria-labelledby="step-trigger-3"
+            x-cloak
+            x-show="activeStep === 3"
+            x-collapse
+            class="step-card-body"
+    >
+        <div class="step-card-content">
+            <!-- Filter Toolbar: separate search + manufacturer controls -->
+            <div class="step-grid-2col">
+                <div class="form-group">
+                    <label class="form-label">Search by Name</label>
+                    <input
+                        type="text"
+                        class="form-input"
+                        placeholder="e.g. American Ale"
+                        x-model="yeastSearchQuery"
+                    />
+                    <span class="form-hint">Case-insensitive substring match on strain name</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Manufacturer</label>
+                    <select class="form-select" x-model="yeastManufacturerFilter">
+                        <option value="">All Manufacturers</option>
+                        <template x-for="mfr in yeastManufacturers" :key="mfr">
+                            <option :value="mfr" x-text="mfr"></option>
+                        </template>
+                    </select>
+                    <span class="form-hint">Filter by yeast lab</span>
+                </div>
+            </div>
+
+            <!-- Results Table -->
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>Strain</th>
+                        <th>Manufacturer</th>
+                        <th class="text-right">Attenuation</th>
+                        <th>Flocculation</th>
+                        <th class="text-right">ABV Tol.</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <template x-for="y in filteredYeasts" :key="y.id">
+                        <tr :class="{ 'is-selected': manifest.yeast_id === y.id }">
+                            <td>
+                                <span class="font-medium" x-text="y.name"></span>
+                            </td>
+                            <td x-text="y.manufacturer"></td>
+                            <td class="text-right tabular-nums" x-text="y.low_attenuation + '–' + y.high_attenuation + '%'"></td>
+                            <td x-text="y.flocculation"></td>
+                            <td class="text-right tabular-nums" x-text="y.alcohol_tolerance_abv + '%'"></td>
+                            <td class="text-right">
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary text-xs"
+                                    @click="selectYeast(y.id)"
+                                >
+                                    Use
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                    <template x-if="filteredYeasts.length === 0">
+                        <tr>
+                            <td colspan="6" class="table-empty-cell">
+                                No yeast strains match the current filters.
+                            </td>
+                        </tr>
+                    </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Selected Yeast Summary Card -->
+            <template x-if="selectedYeast">
+                <div class="card" style="margin-top: var(--space-4); padding: var(--space-4); background-color: var(--sys-surface-subtle);">
+                    <div class="synthesized-header">
+                        <span class="synthesized-title" x-text="selectedYeast.name"></span>
+                        <button
+                            type="button"
+                            class="btn btn-secondary text-xs"
+                            @click="clearYeastSelection()"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                    <div class="step-grid-2col" style="margin-top: var(--space-3);">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span>Expected Apparent Attenuation</span>
+                                <button
+                                    type="button"
+                                    @click="$store.units.toggle('step3_yeast_attenuation_pct')"
+                                    class="unit-badge"
+                                    :class="{ 'unit-badge-customized': $store.units.isCustomized('step3_yeast_attenuation_pct') }"
+                                    x-text="$store.units.getLabel('step3_yeast_attenuation_pct')"
+                                    title="Click to toggle unit"
+                                ></button>
+                            </label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                :min="selectedYeast.low_attenuation"
+                                :max="selectedYeast.high_attenuation"
+                                :value="yeastAttenuationDisplay()"
+                                @change="onYeastAttenuationChange($event.target.value)"
+                                class="form-input tabular-nums"
+                            />
+                            <span class="form-hint" x-text="'Valid range: ' + selectedYeast.low_attenuation + '% – ' + selectedYeast.high_attenuation + '%'"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Strain Details</label>
+                            <div class="text-xs text-muted" style="line-height: var(--line-height-snug);">
+                                <div><strong>Manufacturer:</strong> <span x-text="selectedYeast.manufacturer"></span></div>
+                                <div><strong>Flocculation:</strong> <span x-text="selectedYeast.flocculation"></span></div>
+                                <div><strong>ABV Tolerance:</strong> <span x-text="selectedYeast.alcohol_tolerance_abv + '%'"></span></div>
+                                <div style="margin-top: var(--space-2);" x-text="selectedYeast.notes"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Step Action Button -->
+        <div class="step-actions">
+            <button
+                    type="button"
+                    @click="markStepComplete(3)"
+                    class="btn btn-primary"
+            >
+                Next: Grain Bill →
+            </button>
+        </div>
+    </div>
+</div>
