@@ -22,6 +22,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 
+from scipy.optimize import brentq
+
 
 # ---------------------------------------------------------------------------
 # Physical constants (metric standards; see inputs-and-outputs.md)
@@ -168,3 +170,107 @@ def converted_extract(
     See ``unified-treatment.md`` §2 (Mash Solute Generation).
     """
     return eta_conv * extract_potential * m_grist
+
+
+# ---------------------------------------------------------------------------
+# Phase 1: Cold-Side Inverse Resolution
+# ---------------------------------------------------------------------------
+#
+# The ASBC conversion polynomials below are implemented locally rather than
+# imported from ``app.core.utils`` because ``unified-treatment.md`` §6 is the
+# authoritative spec for the new solver, and its coefficients differ slightly
+# from the legacy ``utils.py`` versions. Stage 5 reconciles the two.
+
+
+def asbc_plato_to_sg(plato: float) -> float:
+    """Convert degrees Plato to specific gravity (ASBC cubic polynomial).
+
+    See ``unified-treatment.md`` §6.
+    """
+    return (
+        1.0
+        + (0.0038661 * plato)
+        + (1.34e-5 * (plato**2))
+        + (4.3e-8 * (plato**3))
+    )
+
+
+def asbc_sg_to_plato(sg: float) -> float:
+    """Convert specific gravity to degrees Plato (ASBC quadratic polynomial).
+
+    See ``unified-treatment.md`` §6.
+    """
+    return -463.37 + (668.72 * sg) - (205.35 * (sg**2))
+
+
+def cutaia_abv(oe_plato: float, apparent_attenuation: float) -> float:
+    """Compute ABV via the Cutaia et al. (2009) empirical model.
+
+    ``ae_plato = oe_plato * (1 - AA)``
+    ``re_plato = 0.1808 * oe_plato + 0.8192 * ae_plato``
+    ``abw = 0.38726 * (oe - re) + 0.00307 * (oe - re)^2``
+    ``abv = abw * (fg_sg / 0.791)``
+
+    See ``unified-treatment.md`` §6.
+    """
+    ae_plato = oe_plato * (1.0 - apparent_attenuation)
+    re_plato = (0.1808 * oe_plato) + (0.8192 * ae_plato)
+
+    delta = oe_plato - re_plato
+    abw = (0.38726 * delta) + (0.00307 * (delta**2))
+    fg_sg = asbc_plato_to_sg(ae_plato)
+
+    return abw * (fg_sg / 0.791)
+
+
+def solve_sg_post_boil_from_abv(
+    target_abv: float, apparent_attenuation: float
+) -> float:
+    """Phase 1: isolate the post-boil SG required to hit a target ABV.
+
+    Wraps the Cutaia model in a scalar residual and solves it with Brent's
+    method over a 0-40 °P bracket.
+
+    Args:
+        target_abv: Desired alcohol by volume, as a percentage (e.g. 5.5).
+        apparent_attenuation: Expected apparent attenuation as a fraction
+            in (0, 1] (e.g. 0.75 for 75% AA).
+
+    Returns:
+        The post-boil specific gravity (20 °C reference) required to hit
+        ``target_abv`` at the given attenuation.
+
+    Raises:
+        SolverValidationError: If the inputs are outside the physical domain
+            or the target ABV is unreachable within the 0-40 °P bracket.
+
+    See ``unified-treatment.md`` §5 Phase 1 and §6.
+    """
+    if target_abv <= 0:
+        raise SolverValidationError(
+            "INVALID_TARGET_ABV",
+            f"Target ABV must be positive; got {target_abv}.",
+        )
+    if not (0.0 < apparent_attenuation <= 1.0):
+        raise SolverValidationError(
+            "INVALID_ATTENUATION",
+            f"Apparent attenuation must be in (0, 1]; got {apparent_attenuation}.",
+        )
+
+    def residual(oe_plato: float) -> float:
+        return cutaia_abv(oe_plato, apparent_attenuation) - target_abv
+
+    # Bracket: pure water (0 °P) to extreme high gravity (40 °P).
+    f_low = residual(0.0)
+    f_high = residual(40.0)
+    if f_low * f_high > 0.0:
+        raise SolverValidationError(
+            "ABV_UNREACHABLE",
+            (
+                f"Target ABV of {target_abv}% is not reachable within the "
+                f"0-40 °P bracket at {apparent_attenuation:.4f} attenuation."
+            ),
+        )
+
+    target_oe_plato = brentq(residual, 0.0, 40.0)
+    return asbc_plato_to_sg(target_oe_plato)
