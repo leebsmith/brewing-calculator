@@ -274,3 +274,141 @@ def solve_sg_post_boil_from_abv(
 
     target_oe_plato = brentq(residual, 0.0, 40.0)
     return asbc_plato_to_sg(target_oe_plato)
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: Volumetric Reversal & Extract Targeting
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class VolumetricReversal:
+    """Result of Phase 2: the derived solver-side anchors.
+
+    Attributes:
+        v_kettle_cold: Cold kettle volume at 20 °C, in liters.
+        s_post_boil_target: Required post-boil extract mass, in kg.
+        v_pre_boil: Derived pre-boil kettle volume, in liters.
+    """
+
+    v_kettle_cold: float
+    s_post_boil_target: float
+    v_pre_boil: float
+
+
+def kettle_cold_volume(
+    v_ferm: float, v_kettle_dead: float, f_shrink: float
+) -> float:
+    """Compute the cold kettle volume ``V_kettle_cold``.
+
+    ``V_kettle_cold = V_ferm + V_kettle_dead * (1 - f_shrink)``
+
+    See ``unified-treatment.md`` §5 Phase 2.
+    """
+    return v_ferm + (v_kettle_dead * (1.0 - f_shrink))
+
+
+def post_boil_extract_target(
+    sg_post_boil: float, v_kettle_cold: float, gamma: float
+) -> float:
+    """Compute the required post-boil extract mass ``S_post_boil_target``.
+
+    ``S_post_boil_target = 1000 * (SG_post_boil - 1) * V_kettle_cold / gamma``
+
+    See ``unified-treatment.md`` §5 Phase 2.
+    """
+    return (1000.0 * (sg_post_boil - 1.0) * v_kettle_cold) / gamma
+
+
+def pre_boil_volume(
+    v_ferm: float,
+    v_kettle_dead: float,
+    delta_v_evap: float,
+    s_late_add: float,
+    v_bar: float,
+    f_shrink: float,
+) -> float:
+    """Compute the derived pre-boil kettle volume ``V_pre_boil``.
+
+    ``V_pre_boil = V_ferm / (1 - f_shrink) + V_kettle_dead + delta_v_evap
+                   - v_bar * S_late_add``
+
+    See ``unified-treatment.md`` §5 Phase 2.
+    """
+    return (
+        (v_ferm / (1.0 - f_shrink))
+        + v_kettle_dead
+        + delta_v_evap
+        - (v_bar * s_late_add)
+    )
+
+
+def resolve_volumetric_reversal(
+    v_ferm: float,
+    sg_post_boil: float,
+    v_kettle_dead: float,
+    delta_v_evap: float,
+    s_late_add: float,
+    f_shrink: float = F_SHRINK_DEFAULT,
+    v_bar: float = V_BAR_METRIC,
+    gamma: float = GAMMA_METRIC,
+) -> VolumetricReversal:
+    """Phase 2: reverse kettle mechanics to derive the solver-side anchors.
+
+    Bridges the application input state (``V_ferm``) to the solver constraint
+    topology (``V_pre_boil``), and computes the post-boil extract target.
+
+    Args:
+        v_ferm: Target cold fermenter volume, in liters.
+        sg_post_boil: Post-boil specific gravity (20 °C reference) from Phase 1.
+        v_kettle_dead: Unrecoverable kettle/chiller dead space, in liters.
+        delta_v_evap: Calibrated kettle boil-off volume, in liters.
+        s_late_add: Late-addition extract mass, in kg.
+        f_shrink: Thermal contraction coefficient (default 4%).
+        v_bar: Apparent specific volume of dissolved extract, in L/kg.
+        gamma: Gravity-points conversion constant, in GU·L/kg.
+
+    Returns:
+        A frozen ``VolumetricReversal`` with the derived anchors.
+
+    Raises:
+        SolverValidationError: If ``v_ferm`` is non-positive, ``f_shrink`` is
+            outside ``[0, 1)``, or the extract target is not strictly greater
+            than the late-addition extract mass.
+
+    See ``unified-treatment.md`` §5 Phase 2.
+    """
+    if v_ferm <= 0:
+        raise SolverValidationError(
+            "INVALID_FERM_VOLUME",
+            f"Fermenter volume must be positive; got {v_ferm}.",
+        )
+    if not (0.0 <= f_shrink < 1.0):
+        raise SolverValidationError(
+            "INVALID_SHRINKAGE",
+            f"Shrinkage coefficient must be in [0, 1); got {f_shrink}.",
+        )
+
+    v_kettle_cold = kettle_cold_volume(v_ferm, v_kettle_dead, f_shrink)
+    s_post_boil_target = post_boil_extract_target(
+        sg_post_boil, v_kettle_cold, gamma
+    )
+
+    if (s_post_boil_target - s_late_add) <= 0.0:
+        raise SolverValidationError(
+            "EXTRACT_TARGET_NON_POSITIVE",
+            (
+                f"Post-boil extract target ({s_post_boil_target:.4f} kg) must "
+                f"exceed late-addition extract ({s_late_add:.4f} kg)."
+            ),
+        )
+
+    v_pre_boil = pre_boil_volume(
+        v_ferm, v_kettle_dead, delta_v_evap, s_late_add, v_bar, f_shrink
+    )
+
+    return VolumetricReversal(
+        v_kettle_cold=v_kettle_cold,
+        s_post_boil_target=s_post_boil_target,
+        v_pre_boil=v_pre_boil,
+    )
