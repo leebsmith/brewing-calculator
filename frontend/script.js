@@ -179,445 +179,6 @@ const UNIT_REGISTRY = {
 };
 
 /**
- * Isolated Thermodynamic Domain Logic
- * Pure physical and mathematical calculations for boil dynamics,
- * evaporation, extract conservation, and packaging volumes.
- */
-export class ThermodynamicSolver {
-  /**
-   * Calculates post-boil hot volume after evaporation.
-   * V_post = max(0, V_pre - (rate * time))
-   */
-  static calculatePostBoil(preVolume, boilOffRate, timeHours) {
-    const vPre = parseFloat(preVolume) || 0;
-    const rate = parseFloat(boilOffRate) || 0;
-    const hrs = parseFloat(timeHours) || 0;
-    return Math.max(0, vPre - (rate * hrs));
-  }
-
-  /**
-   * Calculates evaporation rate per hour from pre- and post-boil volumes.
-   * Rate = (V_pre - V_post) / time
-   */
-  static calculateBoilOffRate(preVolume, postVolume, timeHours) {
-    const vPre = parseFloat(preVolume) || 0;
-    const vPost = parseFloat(postVolume) || 0;
-    const hrs = parseFloat(timeHours) || 0;
-    if (hrs <= 0 || vPre <= vPost) return 0;
-    return Number(((vPre - vPost) / hrs).toFixed(2));
-  }
-
-  /**
-   * Calculates post-boil specific gravity conserving total extract points.
-   * Extract points = V_pre * (SG_pre - 1.0)
-   * SG_post = 1.0 + (Extract points / V_post)
-   */
-  static calculatePostBoilGravity(preVolume, preGravity, postVolume) {
-    const vPre = parseFloat(preVolume) || 0;
-    const vPost = parseFloat(postVolume) || 0;
-    // Work in gravity points (linear concentration), then convert back to SG.
-    const extractPointsTotal = vPre * this.sgToPoints(preGravity);
-    return vPost > 0 ? Number(this.pointsToSg(extractPointsTotal / vPost).toFixed(3)) : 1.050;
-  }
-
-  /**
-   * Calculates packaged batch volume after thermal contraction and kettle loss.
-   *
-   * Physical ordering: the hot wort contracts first (hot -> cold), THEN the
-   * unrecoverable kettle losses (trub + dead space) are racked off. Applying
-   * shrinkage to the net volume would incorrectly shrink the losses too.
-   *
-   *   V_target = max(0, V_post * (1 - shrinkage) - Loss_kettle)
-   *
-   * @param {number} postVolume   - Hot post-boil volume (L).
-   * @param {number} kettleLoss   - Sum of ALL post-boil additive losses (L):
-   *                                trub_loss_l + kettle_dead_space_l +
-   *                                kettle_transfer_loss_l. Compute this with
-   *                                calculatePostBoilLoss(). See
-   *                                plans/vessel-loss-model.md section 4.2.
-   * @param {number} shrinkagePct - Thermal contraction fraction (e.g. 0.04).
-   */
-  static calculatePackagedVolume(postVolume, kettleLoss, shrinkagePct) {
-    const vPost = parseFloat(postVolume) || 0;
-    const loss = parseFloat(kettleLoss) || 0;
-    const shrinkage = parseFloat(shrinkagePct) || 0.04;
-    return Number(Math.max(0, (vPost * (1.0 - shrinkage)) - loss).toFixed(1));
-  }
-
-  /**
-   * Calculates target original gravity in packaging vessel.
-   * Target OG = 1.0 + (Extract points / V_target)
-   */
-  static calculateTargetOg(extractPointsTotal, targetVolume, fallbackOg = 1.050) {
-    const points = parseFloat(extractPointsTotal) || 0;
-    const vTarget = parseFloat(targetVolume) || 0;
-    // extractPointsTotal is in gravity-point-liters (V * (SG - 1) * 1000),
-    // so divide by (volume * 1000) to recover the SG offset.
-    return vTarget > 0 ? Number((1.0 + (points / (vTarget * 1000))).toFixed(3)) : fallbackOg;
-  }
-
-  /**
-   * Calculates the pre-boil (mash tun) additive loss scalar.
-   *
-   * Loss_preboil = mash_dead_space_l + mash_transfer_loss_l
-   *
-   * This loss is applied UPSTREAM of the boil solver: it determines what
-   * pre-boil volume (V1) the brewer actually collects in the kettle. The
-   * solver itself does not consume this value -- V1 is already defined as
-   * post-lauter wort in the kettle, so subtracting this loss again would
-   * double-count it. See plans/vessel-loss-model.md sections 4.1 and 5.2.
-   */
-  static calculatePreBoilLoss(mashDeadSpace, mashTransferLoss) {
-    const deadSpace = parseFloat(mashDeadSpace) || 0;
-    const transfer = parseFloat(mashTransferLoss) || 0;
-    return Number((deadSpace + transfer).toFixed(2));
-  }
-
-  /**
-   * Calculates the post-boil (boil kettle) additive loss scalar.
-   *
-   * Loss_postboil = trub_loss_l + kettle_dead_space_l + kettle_transfer_loss_l
-   *
-   * This loss is applied DOWNSTREAM of the boil solver, in the chilling
-   * bridge that computes the packaged volume. It is passed as the
-   * `kettleLoss` argument to calculatePackagedVolume(). See
-   * plans/vessel-loss-model.md sections 4.2 and 5.2.
-   */
-  static calculatePostBoilLoss(trubLoss, kettleDeadSpace, kettleTransferLoss) {
-    const trub = parseFloat(trubLoss) || 0;
-    const deadSpace = parseFloat(kettleDeadSpace) || 0;
-    const transfer = parseFloat(kettleTransferLoss) || 0;
-    return Number((trub + deadSpace + transfer).toFixed(2));
-  }
-
-  /**
-   * Calculates the HLT top-up volume required to keep the HERMS coil submerged
-   * after strike water has been drawn from the HLT.
-   *
-   *   V_hlt_after_strike = hlt_starting_volume_l - strikeDrawn
-   *   V_hlt_top_up       = max(0, hlt_coil_floor_l - V_hlt_after_strike)
-   *
-   * The coil floor is NOT a loss -- it is a minimum operating volume. This is
-   * a derived, read-only value; it does not participate in the 2-DOF boil
-   * solver. See plans/vessel-loss-model.md sections 4.3 and 4.4.
-   *
-   * @param {number} hltStartingVolume - Liquor in the HLT at brew-day start (L).
-   * @param {number} strikeDrawn       - Strike water drawn from the HLT (L).
-   * @param {number} coilFloor         - Minimum volume to submerge the coil (L).
-   */
-  static calculateHltTopUp(hltStartingVolume, strikeDrawn, coilFloor) {
-    const starting = parseFloat(hltStartingVolume) || 0;
-    const drawn = parseFloat(strikeDrawn) || 0;
-    const floor = parseFloat(coilFloor) || 0;
-    const afterStrike = starting - drawn;
-    return Number(Math.max(0, floor - afterStrike).toFixed(2));
-  }
-
-  /**
-   * Calculates the sparge water volume deliverable to the mash tun from the HLT.
-   *
-   *   V_sparge = V_hlt_after_strike
-   *            + V_hlt_top_up
-   *            - hlt_dead_space_l
-   *            - hlt_transfer_loss_l
-   *
-   * The coil floor is NOT subtracted here: the top-up has already ensured the
-   * coil is covered, so the floor volume is usable for sparging. HLT losses
-   * are subtracted because that liquor cannot be delivered to the mash tun.
-   * See plans/vessel-loss-model.md section 4.4.
-   *
-   * @param {number} hltStartingVolume - Liquor in the HLT at brew-day start (L).
-   * @param {number} strikeDrawn       - Strike water drawn from the HLT (L).
-   * @param {number} coilFloor         - Minimum volume to submerge the coil (L).
-   * @param {number} hltDeadSpace      - Liquor trapped below the HLT drain (L).
-   * @param {number} hltTransferLoss   - Liquor retained in HLT hose/pump (L).
-   */
-  static calculateSpargeVolume(hltStartingVolume, strikeDrawn, coilFloor, hltDeadSpace, hltTransferLoss) {
-    const starting = parseFloat(hltStartingVolume) || 0;
-    const drawn = parseFloat(strikeDrawn) || 0;
-    const deadSpace = parseFloat(hltDeadSpace) || 0;
-    const transfer = parseFloat(hltTransferLoss) || 0;
-    const afterStrike = starting - drawn;
-    const topUp = this.calculateHltTopUp(starting, drawn, coilFloor);
-    return Number(Math.max(0, afterStrike + topUp - deadSpace - transfer).toFixed(2));
-  }
-
-  /**
-   * Calculates the volume of HLT liquor that must be salted for the sparge.
-   *
-   *   V_sparge_salted = V_hlt_after_strike + V_hlt_top_up
-   *
-   * Critically, this INCLUDES the top-up. If the top-up is omitted from the
-   * salt calculation, the sparge water's ion concentrations will be diluted
-   * by the top-up factor and the wort will be under-mineralized. This is a
-   * correctness requirement, not a convenience. See
-   * plans/vessel-loss-model.md section 4.5.
-   *
-   * @param {number} hltStartingVolume - Liquor in the HLT at brew-day start (L).
-   * @param {number} strikeDrawn       - Strike water drawn from the HLT (L).
-   * @param {number} coilFloor         - Minimum volume to submerge the coil (L).
-   */
-  static calculateSpargeSaltVolume(hltStartingVolume, strikeDrawn, coilFloor) {
-    const starting = parseFloat(hltStartingVolume) || 0;
-    const drawn = parseFloat(strikeDrawn) || 0;
-    const afterStrike = starting - drawn;
-    const topUp = this.calculateHltTopUp(starting, drawn, coilFloor);
-    return Number((afterStrike + topUp).toFixed(2));
-  }
-
-  /**
-   * Converts specific gravity to gravity points (e.g. 1.055 -> 55.0).
-   * Gravity points are the LINEAR concentration unit required by the
-   * solute-conservation equation V1 * C1 = V2 * C2. SG itself is NOT linear
-   * (it carries a +1.0 offset), so all extract math must go through here.
-   */
-  static sgToPoints(sg) {
-    const value = parseFloat(sg);
-    if (isNaN(value)) return 0;
-    return (value - 1.0) * 1000;
-  }
-
-  /**
-   * Converts gravity points back to specific gravity (e.g. 55.0 -> 1.055).
-   * Exact inverse of sgToPoints().
-   */
-  static pointsToSg(points) {
-    const value = parseFloat(points);
-    if (isNaN(value)) return 1.0;
-    return 1.0 + (value / 1000);
-  }
-
-  /**
-   * Extracts gravity points from specific gravity (e.g. 1.055 -> 55.0).
-   */
-  static calculateOgPoints(og) {
-    return Math.max(0, this.sgToPoints(og)).toFixed(1);
-  }
-
-  /**
-   * Calculates total kettle extract points (volume * gravity points).
-   */
-  static calculateKettleExtract(volume, og) {
-    const vol = parseFloat(volume) || 0;
-    const points = Math.max(0, this.sgToPoints(og));
-    return (vol * points).toFixed(1);
-  }
-
-  /**
-   * Validates a requested 2-DOF output pair against the singular/degenerate blacklist.
-   * Returns { valid: boolean, reason: string }.
-   */
-  static validateOutputPair(var1, var2) {
-    const VALID_VARIABLES = new Set(BREW_CONSTANTS.SOLVER_VALID_VARIABLES);
-    const INVALID_PAIRS = new Set(BREW_CONSTANTS.SOLVER_INVALID_PAIRS);
-
-    if (!VALID_VARIABLES.has(var1) || !VALID_VARIABLES.has(var2)) {
-      return { valid: false, reason: BREW_CONSTANTS.MSG_SOLVER_UNKNOWN_VARIABLE };
-    }
-    if (var1 === var2) {
-      return { valid: false, reason: BREW_CONSTANTS.MSG_SOLVER_SAME_VARIABLE };
-    }
-    const key = [var1, var2].sort().join(':');
-    if (INVALID_PAIRS.has(key)) {
-      return { valid: false, reason: BREW_CONSTANTS.MSG_SOLVER_SINGULAR_PAIR };
-    }
-    return { valid: true, reason: 'Valid independent output pair.' };
-  }
-
-  /**
-   * Generalized 2-DOF kettle solver.
-   * Given a manifest and two output variable identifiers, solves for those two
-   * while treating the remaining four as fixed inputs. Returns a result object
-   * with the solved values and any validation error.
-   */
-  static solve2DOF(manifest, var1, var2) {
-    const check = this.validateOutputPair(var1, var2);
-    if (!check.valid) {
-      return { ok: false, error: check.reason, solved: {} };
-    }
-
-    const m = manifest;
-    const eq = m.equipment || {};
-    const t = (parseFloat(m.boil_time_min) || 60) / 60.0;
-    const V1 = parseFloat(m.preboil_volume_l) || 0;
-    const V2 = parseFloat(m.postboil_volume_l) || 0;
-    const R = parseFloat(eq.boil_off_rate_l_per_hr) || 0;
-
-    // The solute-conservation equation V1 * C1 = V2 * C2 is only linear when
-    // C is a LINEAR concentration -- i.e. gravity points (SG - 1) * 1000 --
-    // NOT specific gravity itself (which carries a +1.0 offset). We therefore
-    // convert SG -> gravity points on entry, solve in points, and convert
-    // points -> SG on exit. The manifest continues to store SG (base unit).
-    const G1 = this.sgToPoints(m.preboil_gravity);
-    const G2 = this.sgToPoints(m.postboil_gravity);
-
-    const pair = [var1, var2].sort().join(':');
-    const solved = {};
-
-    const fail = (msg) => ({ ok: false, error: msg, solved: {} });
-
-    switch (pair) {
-      // 1. (V2, G2) — Default / Option B
-      case 'G2:V2': {
-        if (R * t >= V1) return fail('Post-boil volume would be <= 0 (boil-off exceeds pre-boil volume).');
-        solved.V2 = V1 - (R * t);
-        solved.G2 = (V1 * G1) / solved.V2;
-        break;
-      }
-      // 2. (R_boil, G2) — Option A
-      case 'G2:R_boil': {
-        if (t <= 0) return fail('Boil duration must be > 0.');
-        if (V2 <= 0 || V1 <= V2) return fail('Pre-boil volume must exceed post-boil volume.');
-        solved.R_boil = (V1 - V2) / t;
-        solved.G2 = (V1 * G1) / V2;
-        break;
-      }
-      // 3. (t, G2)
-      case 'G2:t': {
-        if (R <= 0) return fail('Boil-off rate must be > 0.');
-        if (V2 <= 0 || V1 <= V2) return fail('Pre-boil volume must exceed post-boil volume.');
-        solved.t = (V1 - V2) / R;
-        solved.G2 = (V1 * G1) / V2;
-        break;
-      }
-      // 4. (V1, G1) — Reverse Runoff Solver
-      case 'G1:V1': {
-        solved.V1 = V2 + (R * t);
-        if (solved.V1 <= 0) return fail('Solved pre-boil volume must be > 0.');
-        solved.G1 = (V2 * G2) / solved.V1;
-        break;
-      }
-      // 5. (R_boil, G1)
-      case 'G1:R_boil': {
-        if (t <= 0) return fail('Boil duration must be > 0.');
-        if (V1 <= 0 || V1 <= V2) return fail('Pre-boil volume must exceed post-boil volume.');
-        solved.R_boil = (V1 - V2) / t;
-        solved.G1 = (V2 * G2) / V1;
-        break;
-      }
-      // 6. (t, G1)
-      case 'G1:t': {
-        if (R <= 0) return fail('Boil-off rate must be > 0.');
-        if (V1 <= 0 || V1 <= V2) return fail('Pre-boil volume must exceed post-boil volume.');
-        solved.t = (V1 - V2) / R;
-        solved.G1 = (V2 * G2) / V1;
-        break;
-      }
-      // 7. (V1, V2) — Dilution & Concentration
-      case 'V1:V2': {
-        if (G2 <= G1) return fail('Post-boil gravity must exceed pre-boil gravity (no boil concentration).');
-        solved.V1 = (G2 * R * t) / (G2 - G1);
-        solved.V2 = (G1 * R * t) / (G2 - G1);
-        break;
-      }
-      // 8. (V1, R_boil)
-      case 'R_boil:V1': {
-        if (G1 <= 0) return fail('Pre-boil gravity must be > 0.');
-        if (t <= 0) return fail('Boil duration must be > 0.');
-        if (G1 >= G2) return fail('Post-boil gravity must exceed pre-boil gravity.');
-        solved.V1 = (V2 * G2) / G1;
-        solved.R_boil = (solved.V1 - V2) / t;
-        break;
-      }
-      // 9. (V1, t)
-      case 'V1:t': {
-        if (G1 <= 0) return fail('Pre-boil gravity must be > 0.');
-        if (R <= 0) return fail('Boil-off rate must be > 0.');
-        if (G1 >= G2) return fail('Post-boil gravity must exceed pre-boil gravity.');
-        solved.V1 = (V2 * G2) / G1;
-        solved.t = (solved.V1 - V2) / R;
-        break;
-      }
-      // 10. (V2, R_boil)
-      case 'R_boil:V2': {
-        if (G2 <= 0) return fail('Post-boil gravity must be > 0.');
-        if (t <= 0) return fail('Boil duration must be > 0.');
-        if (G1 >= G2) return fail('Post-boil gravity must exceed pre-boil gravity.');
-        solved.V2 = (V1 * G1) / G2;
-        solved.R_boil = (V1 - solved.V2) / t;
-        break;
-      }
-      // 11. (V2, t)
-      case 'V2:t': {
-        if (G2 <= 0) return fail('Post-boil gravity must be > 0.');
-        if (R <= 0) return fail('Boil-off rate must be > 0.');
-        if (G1 >= G2) return fail('Post-boil gravity must exceed pre-boil gravity.');
-        solved.V2 = (V1 * G1) / G2;
-        solved.t = (V1 - solved.V2) / R;
-        break;
-      }
-      // 12. (V1, G2)
-      case 'G2:V1': {
-        if (V2 <= 0) return fail('Post-boil volume must be > 0.');
-        solved.V1 = V2 + (R * t);
-        solved.G2 = (solved.V1 * G1) / V2;
-        break;
-      }
-      // 13. (V2, G1)
-      case 'G1:V2': {
-        if (V1 <= 0) return fail('Pre-boil volume must be > 0.');
-        if (V1 <= R * t) return fail('Boil-off exceeds pre-boil volume.');
-        solved.V2 = V1 - (R * t);
-        solved.G1 = (solved.V2 * G2) / V1;
-        break;
-      }
-      default:
-        return fail('Unsupported output pair.');
-    }
-
-    return { ok: true, error: null, solved };
-  }
-
-  /**
-   * Executes complete boil thermodynamics solver across Option A or Option B.
-   */
-  static solveBoil(manifest) {
-    const m = manifest;
-    const eq = m.equipment || {};
-    const boilTimeHrs = (parseFloat(m.boil_time_min) || 60) / 60.0;
-    const totalKettleLoss = this.calculatePostBoilLoss(
-      eq.trub_loss_l,
-      eq.kettle_dead_space_l,
-      eq.kettle_transfer_loss_l
-    );
-    const shrinkage = parseFloat(eq.shrinkage_pct) || 0.04;
-    const vPre = parseFloat(m.preboil_volume_l) || 26.0;
-    const sgPre = parseFloat(m.preboil_gravity) || 1.045;
-
-    if (m.boil_solver_mode === 'option_a') {
-      const vPost = parseFloat(m.postboil_volume_l) || 22.5;
-      const solvedRate = this.calculateBoilOffRate(vPre, vPost, boilTimeHrs);
-      if (solvedRate > 0) {
-        eq.boil_off_rate_l_per_hr = solvedRate;
-      }
-      const sgPost = this.calculatePostBoilGravity(vPre, sgPre, vPost);
-      m.postboil_gravity = sgPost;
-
-      const vTarget = this.calculatePackagedVolume(vPost, totalKettleLoss, shrinkage);
-      m.target_volume_l = vTarget;
-
-      const extractPointsTotal = vPre * (sgPre - 1.0);
-      m.target_og = this.calculateTargetOg(extractPointsTotal, vTarget, sgPost);
-    } else {
-      const rate = parseFloat(eq.boil_off_rate_l_per_hr) || 3.5;
-      const vPost = Number(this.calculatePostBoil(vPre, rate, boilTimeHrs).toFixed(1));
-      m.postboil_volume_l = vPost;
-
-      const sgPost = this.calculatePostBoilGravity(vPre, sgPre, vPost);
-      m.postboil_gravity = sgPost;
-
-      const vTarget = this.calculatePackagedVolume(vPost, totalKettleLoss, shrinkage);
-      m.target_volume_l = vTarget;
-
-      const extractPointsTotal = vPre * (sgPre - 1.0);
-      m.target_og = this.calculateTargetOg(extractPointsTotal, vTarget, sgPost);
-    }
-
-    return m;
-  }
-}
-
-/**
  * Isolated Wizard Navigation FSM
  * Handles 12-step sequential progression, high-water mark gates, and step status evaluation.
  */
@@ -1746,14 +1307,32 @@ Alpine.data('wizard', () => {
         hlt_coil_floor_l: BREW_CONSTANTS.DEFAULT_HLT_COIL_FLOOR_L,
         hlt_starting_volume_l: BREW_CONSTANTS.DEFAULT_HLT_STARTING_VOLUME_L,
       },
-      target_volume_l: BREW_CONSTANTS.DEFAULT_TARGET_VOLUME_L,
-      target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
+      // --- Batch Sparge Solver inputs (Step 5) ---
+      // v_ferm is the extensive "Target Endpoint" (unified-treatment.md §3):
+      // the user's desired cold fermenter volume. The Python solver's Phase 2
+      // reverses kettle losses + boil-off to derive V_pre_boil from it.
+      v_ferm: BREW_CONSTANTS.DEFAULT_V_FERM_L,
+      // target_abv is the cold-side ABV target consumed by Phase 1. Always
+      // expressed as a percentage (no unit toggle).
+      target_abv: BREW_CONSTANTS.DEFAULT_TARGET_ABV,
       boil_time_min: BREW_CONSTANTS.DEFAULT_BOIL_TIME_MIN,
-      boil_solver_mode: 'option_b', // 'option_b' (solve post-boil/OG) or 'option_a' (solve boil-off rate)
-      preboil_volume_l: 26.0,
-      preboil_gravity: 1.045,
-      postboil_volume_l: 22.5,
-      postboil_gravity: 1.052,
+
+      // --- Solver-written derived anchors (denormalized cache) ---
+      // These are OUTPUTS of solveBatch(), not user inputs. They are written
+      // back to the manifest so downstream steps (water chemistry, hops, etc.)
+      // can read them without knowing the solver's response shape. Do NOT
+      // treat them as authoritative inputs; the Python solver owns them.
+      //
+      // NOTE: there is no separate `target_volume_l` field. Per
+      // unified-treatment.md §3, the canonical name for the packaged volume
+      // target is `v_ferm` (above), which is the user input. The solver's
+      // derived packaged volume is `v_ferm` itself (the target is met by
+      // construction), so a second field would be redundant.
+      target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
+      preboil_volume_l: 0.0,
+      preboil_gravity: 1.0,
+      postboil_volume_l: 0.0,
+      postboil_gravity: 1.0,
       grain_bill: [],
       late_additions: [],
       mash_profile: [],
@@ -2049,9 +1628,9 @@ Alpine.data('wizard', () => {
 
       const eq = this.manifest.equipment || {};
       const payload = {
-        target_abv: parseFloat(this.manifest.target_abv) || 5.5,
+        target_abv: parseFloat(this.manifest.target_abv) || BREW_CONSTANTS.DEFAULT_TARGET_ABV,
         apparent_attenuation: parseFloat(this.manifest.yeast_attenuation_pct) || 0.75,
-        v_ferm: parseFloat(this.manifest.target_volume_l) || 20.0,
+        v_ferm: parseFloat(this.manifest.v_ferm) || BREW_CONSTANTS.DEFAULT_V_FERM_L,
         topology: this.batchSolverTopology,
         intensive_value: parseFloat(this.batchSolverIntensiveValue) || 3.0,
         grain_bill,
@@ -2089,7 +1668,18 @@ Alpine.data('wizard', () => {
           return;
         }
 
-        this.batchSolverResult = await res.json();
+        const result = await res.json();
+        this.batchSolverResult = result;
+
+        // Write the derived anchors back to the manifest as a denormalized
+        // cache. These are OUTPUTS, not inputs -- do not read them back into
+        // the solver payload above.
+        this.manifest.preboil_volume_l = result.v_pre_boil;
+        this.manifest.preboil_gravity = result.cascade.sg_pre_boil;
+        this.manifest.postboil_volume_l = result.cascade.v_post_boil;
+        this.manifest.postboil_gravity = result.sg_post_boil;
+        // target_og is the post-boil gravity (the packaged OG at 20 C).
+        this.manifest.target_og = result.sg_post_boil;
       } catch (err) {
         console.error('[batchSolver] request failed:', err);
         this.batchSolverError = BREW_CONSTANTS.MSG_BATCH_SOLVER_FAILED;

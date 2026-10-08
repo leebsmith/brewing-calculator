@@ -101,6 +101,14 @@
                                 <td>Grist Mass</td>
                                 <td class="text-right tabular-nums font-bold" x-text="massDisplay(batchSolverResult.m_grist, 'step5_m_grist') + ' ' + $store.units.getLabel('step5_m_grist')"></td>
                             </tr>
+                            <tr>
+                                <td>Post-Boil Volume</td>
+                                <td class="text-right tabular-nums font-bold" x-text="volDisplay(batchSolverResult.cascade.v_post_boil, 'step5_v_post_boil') + ' ' + $store.units.getLabel('step5_v_post_boil')"></td>
+                            </tr>
+                            <tr>
+                                <td>Target OG</td>
+                                <td class="text-right tabular-nums font-bold" x-text="gravityDisplay(manifest.target_og, 'step5_target_og') + ' ' + $store.units.getLabel('step5_target_og')"></td>
+                            </tr>
                             </tbody>
                         </table>
                     </div>
