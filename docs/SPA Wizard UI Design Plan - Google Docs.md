@@ -1,3 +1,15 @@
+> **⚠️ SUPERSEDED — HISTORICAL REFERENCE ONLY**
+>
+> This document is retained for historical context and technical derivation. It is **not** authoritative for implementation.
+>
+> For all implementation tasks, defer to:
+> * **[Master Frontend UI Requirements](../plans/master-frontend-ui-requirements.md)** — the globally authoritative single source of truth for frontend UI/UX architecture, design tokens, Alpine.js FSM state, and WCAG compliance.
+> * **[The Wizard State Machine Guide](the_wizard_state_machine_guide.md)** — for the concrete `createWizardNavigation` FSM implementation.
+> * **[Color, Typography & State Management](design_requirements/color_typography_state_management.md)** — for the Alpine + Vanilla CSS integration strategy.
+> * **[Style Guidelines](style-guidelines.md)** — for the imperative frontend development charter.
+>
+> Sections of this document that remain uniquely useful (the Compositor tripartite hierarchy derivation, the disclosure-widget-vs-accordion distinction, the `role="grid"` anti-pattern comparison, and the target-size spacing-exception table) have been folded into the Master Requirements. See `docs/README.md` for the full documentation hierarchy.
+
 # **Architectural Specification: The Compositor Wizard Pattern for Single-Page Applications** 
 
 ## **Introduction to the Compositor Paradigm** 

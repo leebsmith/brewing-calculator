@@ -11,7 +11,7 @@ This directory contains technical documentation, system architecture overviews, 
 
 * **Supplemental Historical Documents:** The documents below (and the topical files in `design_requirements/`) are retained for historical context and technical derivation, but are superseded by the Master Requirements for all implementation tasks:
   * `calculator-design-spec.pdf` - Foundational architecture & 12-step sequence.
-  * `SPA Wizard UI Design Plan - Google Docs.md` - Initial Compositor Wizard specification and research notes.
+  * `SPA Wizard UI Design Plan - Google Docs.md` - Initial Compositor Wizard specification and research notes. **Superseded by the Master Frontend UI Requirements**; retained for derivation rationale only.
   * `good-enough-chemistry-calculator-spec.pdf` - Water chemistry equations and pH mitigation models.
   * `master-sugar-equation-for-batch-sparging.pdf` - Mass-balance sugar and runoff derivation.
   * `docs/design_requirements/` - Topical design notes (color, accordion principles, responsive tables).
