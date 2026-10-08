@@ -70,11 +70,12 @@ Brent's method on the cubic residual `P(M_grist)` over the bracketing interval
 * `solve_grist_mass(...)` — orchestrator that builds the bracket, checks the
   sign change, and runs `brentq`.
 
-Scope: `{V_pre_boil, R_L:G}` topology only. The `{V_pre_boil, r}` topology is
-deferred to Stage 1.4.
+Supports both constraint topologies via a `topology` discriminator
+(`"r_l_to_g"` or `"runoff_ratio"`), added in Stage 1.5 to unblock the
+orchestrator's `runoff_ratio` path.
 
-Validation codes: `INVALID_EXTRACT_POTENTIAL`, `EXTRACT_TARGET_NON_POSITIVE`,
-`DEGENERATE_BRACKET`, `BRACKET_NO_SIGN_CHANGE`.
+Validation codes: `UNKNOWN_TOPOLOGY`, `INVALID_EXTRACT_POTENTIAL`,
+`EXTRACT_TARGET_NON_POSITIVE`, `DEGENERATE_BRACKET`, `BRACKET_NO_SIGN_CHANGE`.
 
 Tests: `backend/tests/test_batch_solver_phase3.py`.
 

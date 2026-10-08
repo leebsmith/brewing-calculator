@@ -452,28 +452,33 @@ def grist_mass_residual(
     v_dead: float,
     k_abs_true: float = K_ABS_TRUE_METRIC,
     v_bar: float = V_BAR_METRIC,
+    topology: str = "r_l_to_g",
 ) -> float:
     """Evaluate the cleared-denominator cubic residual ``P(M_grist)``.
 
     ``P(M) = (eta_conv * E * M) * [D1(M) * D2(M) - V_ret(M)^2]
              - (S_target - S_late) * D1(M) * D2(M)``
 
-    where, under the ``{V_pre_boil, R_L:G}`` topology:
+    where:
 
-    * ``V_strike = R_L:G * M``
     * ``c_vol = MC_bar / rho_water + v_bar * eta_conv * E``
     * ``D1(M) = V_strike + c_vol * M``
     * ``D2(M) = V_sparge + V_dead + k_abs_true * M``
-    * ``V_sparge = V_pre_boil - V_run1``, with ``V_run1`` derived from the tun
-      mass balance (see below).
 
-    Because ``V_sparge`` itself depends on ``M`` under this topology, the
-    residual is evaluated by first computing ``V_run1`` from the tun mass
-    balance and then ``V_sparge = V_pre_boil - V_run1``.
+    Under the ``{V_pre_boil, R_L:G}`` topology (``topology="r_l_to_g"``):
+
+    * ``V_strike = R_L:G * M``
+    * ``V_sparge = V_pre_boil - V_run1``, with ``V_run1`` derived from the tun
+      mass balance. Because ``V_sparge`` itself depends on ``M``, the residual
+      is evaluated by first computing ``V_run1`` and then subtracting.
+
+    Under the ``{V_pre_boil, r}`` topology (``topology="runoff_ratio"``):
+
+    * ``V_sparge = V_pre_boil / (r + 1)`` (static, independent of ``M``)
+    * ``V_strike`` is reversed from the tun mass balance to absorb retention.
 
     See ``unified-treatment.md`` §4.
     """
-    v_strike = r_l_to_g * m_grist
     c_vol = (mc_bar / RHO_WATER_METRIC) + (v_bar * eta_conv * extract_potential)
 
     v_mc = moisture_volume(m_grist, mc_bar)
@@ -481,8 +486,15 @@ def grist_mass_residual(
     v_sol = solute_displacement_volume(s_conv, v_bar)
     v_ret = retained_volume(m_grist, k_abs_true, v_dead)
 
-    v_run1 = v_strike + v_mc + v_sol - v_ret
-    v_sparge = v_pre_boil - v_run1
+    if topology == "runoff_ratio":
+        # Static sparge split; reverse the tun mass balance for V_strike.
+        v_sparge = v_pre_boil / (r_l_to_g + 1.0)
+        v_run1 = v_pre_boil - v_sparge
+        v_strike = v_run1 + v_ret - v_mc - v_sol
+    else:
+        v_strike = r_l_to_g * m_grist
+        v_run1 = v_strike + v_mc + v_sol - v_ret
+        v_sparge = v_pre_boil - v_run1
 
     d1 = v_strike + (c_vol * m_grist)
     d2 = v_sparge + v_dead + (k_abs_true * m_grist)
@@ -504,14 +516,20 @@ def solve_grist_mass(
     v_dead: float,
     k_abs_true: float = K_ABS_TRUE_METRIC,
     v_bar: float = V_BAR_METRIC,
+    topology: str = "r_l_to_g",
 ) -> float:
     """Phase 3: resolve the dry grist mass ``M_grist`` via Brent's method.
 
-    Implements the ``{V_pre_boil, R_L:G}`` constraint topology only.
+    Supports both constraint topologies via the ``topology`` discriminator:
+
+    * ``"r_l_to_g"``: ``{V_pre_boil, R_L:G}``; ``r_l_to_g`` is the L:G ratio.
+    * ``"runoff_ratio"``: ``{V_pre_boil, r}``; ``r_l_to_g`` is the runoff
+      ratio ``r`` (dimensionless).
 
     Args:
         v_pre_boil: Derived pre-boil kettle volume, in liters (from Phase 2).
-        r_l_to_g: Liquor-to-grist ratio, in L/kg.
+        r_l_to_g: Liquor-to-grist ratio (L/kg) or runoff ratio (dimensionless),
+            matching ``topology``.
         extract_potential: Composite dry-basis potential factor ``E``.
         mc_bar: Composite moisture fraction ``MC_bar``.
         eta_conv: Mash conversion efficiency as a fraction.
@@ -520,6 +538,7 @@ def solve_grist_mass(
         v_dead: Mash tun dead space, in liters.
         k_abs_true: True husk absorption coefficient, in L/kg.
         v_bar: Apparent specific volume of dissolved extract, in L/kg.
+        topology: Either ``"r_l_to_g"`` or ``"runoff_ratio"``.
 
     Returns:
         The converged dry grist mass ``M_grist``, in kg.
@@ -530,6 +549,11 @@ def solve_grist_mass(
 
     See ``unified-treatment.md`` §4 and §5 Phase 3.
     """
+    if topology not in ("r_l_to_g", "runoff_ratio"):
+        raise SolverValidationError(
+            "UNKNOWN_TOPOLOGY",
+            f"Unknown constraint topology: {topology!r}.",
+        )
     if extract_potential <= 0.0:
         raise SolverValidationError(
             "INVALID_EXTRACT_POTENTIAL",
@@ -564,6 +588,7 @@ def solve_grist_mass(
             v_dead=v_dead,
             k_abs_true=k_abs_true,
             v_bar=v_bar,
+            topology=topology,
         )
 
     f_a = residual(a)
@@ -880,6 +905,7 @@ def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
         s_post_boil_target=reversal.s_post_boil_target,
         s_late_add=inputs.s_late_add,
         v_dead=inputs.v_dead,
+        topology=inputs.topology,
     )
 
     # Phase 4: stage volume & gravity cascade.
