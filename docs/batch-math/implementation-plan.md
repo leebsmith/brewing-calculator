@@ -96,10 +96,18 @@ Validation codes: `UNKNOWN_TOPOLOGY`, `INVALID_INTENSIVE_VALUE`.
 
 Tests: `backend/tests/test_batch_solver_phase4.py`.
 
-### Stage 1.5 — Orchestration & API Wiring
+### Stage 1.5 — Orchestration & API Wiring (IN PROGRESS)
 
 Top-level `solve_batch(...)` entry point composing Phases 1-4, plus the API
-schema and route.
+schema and route. Functions:
+
+* `BatchSolverInput` / `BatchSolverResult` — frozen dataclasses bundling the
+  application-side inputs and the derived anchors.
+* `solve_batch(inputs)` — orchestrator composing Phases 1-4.
+* `POST /api/solve-batch` — protected route mapping `BatchSolverRequest` to
+  `BatchSolverResponse`, translating `SolverValidationError` to HTTP 422.
+
+Tests: `backend/tests/test_batch_solver_orchestration.py`.
 
 ## 2. Stage Status
 
@@ -110,4 +118,4 @@ schema and route.
 | 1.2 | Phase 2: volumetric reversal | DONE |
 | 1.3 | Phase 3: grist mass root-finding | DONE |
 | 1.4 | Phase 4: stage volume & gravity cascade | IN PROGRESS |
-| 1.5 | Orchestration & API wiring | TODO |
+| 1.5 | Orchestration & API wiring | IN PROGRESS |

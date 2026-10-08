@@ -5,8 +5,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import get_db, init_firebase
 from app.service import logic
 from app.auth import get_current_user
-from app.schemas.models import PingResponse, AuthenticatedUser, FermentablesCatalogResponse, YeastCatalogResponse
+from app.schemas.models import (
+    PingResponse,
+    AuthenticatedUser,
+    FermentablesCatalogResponse,
+    YeastCatalogResponse,
+    BatchSolverRequest,
+    BatchSolverResponse,
+    StageCascadeModel,
+)
 from app.schemas.templates import EquipmentProfile, EquipmentProfilesResponse
+from app.core.batch_solver import (
+    BatchSolverInput,
+    GrainBillEntry,
+    SolverValidationError,
+    solve_batch,
+)
 
 ERR_CANNOT_DELETE_PRESET = "Cannot delete built-in canonical equipment preset."
 
@@ -130,5 +144,57 @@ def delete_equipment_profile_endpoint(
             detail=ERR_CANNOT_DELETE_PRESET,
         )
     return {"success": True, "deleted_id": profile_id}
+
+
+@app.post("/api/solve-batch", response_model=BatchSolverResponse)
+def solve_batch_endpoint(
+    request: BatchSolverRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Protected entry route for the batch-sparging solver.
+    Composes Phases 1-4 and returns the derived anchors and stage cascade.
+    """
+    inputs = BatchSolverInput(
+        target_abv=request.target_abv,
+        apparent_attenuation=request.apparent_attenuation,
+        v_ferm=request.v_ferm,
+        topology=request.topology,
+        intensive_value=request.intensive_value,
+        grain_bill=[
+            GrainBillEntry(w_i=e.w_i, dbfg_i=e.dbfg_i, mc_i=e.mc_i)
+            for e in request.grain_bill
+        ],
+        s_late_add=request.s_late_add,
+        v_kettle_dead=request.v_kettle_dead,
+        delta_v_evap=request.delta_v_evap,
+        v_dead=request.v_dead,
+        eta_conv=request.eta_conv,
+        f_shrink=request.f_shrink,
+    )
+
+    try:
+        result = solve_batch(inputs)
+    except SolverValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": exc.code, "message": exc.message},
+        )
+
+    return BatchSolverResponse(
+        sg_post_boil=result.sg_post_boil,
+        v_pre_boil=result.v_pre_boil,
+        s_post_boil_target=result.s_post_boil_target,
+        m_grist=result.m_grist,
+        cascade=StageCascadeModel(
+            v_strike=result.cascade.v_strike,
+            v_run1=result.cascade.v_run1,
+            v_run2=result.cascade.v_run2,
+            v_sparge=result.cascade.v_sparge,
+            s_run1=result.cascade.s_run1,
+            s_run2=result.cascade.s_run2,
+            sg_pre_boil=result.cascade.sg_pre_boil,
+        ),
+    )
 
 

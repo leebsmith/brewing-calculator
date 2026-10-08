@@ -770,3 +770,134 @@ def resolve_stage_cascade(
         s_run2=s_run2,
         sg_pre_boil=sg_pre_boil,
     )
+
+
+# ---------------------------------------------------------------------------
+# Orchestration: top-level solve_batch entry point
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class BatchSolverInput:
+    """Application-side inputs for a single batch-sparge solve.
+
+    Attributes:
+        target_abv: Desired alcohol by volume, as a percentage (e.g. 5.5).
+        apparent_attenuation: Expected apparent attenuation as a fraction
+            in (0, 1] (e.g. 0.75).
+        v_ferm: Target cold fermenter volume, in liters.
+        topology: Either ``"r_l_to_g"`` or ``"runoff_ratio"``.
+        intensive_value: ``R_L:G`` (L/kg) or ``r`` (dimensionless).
+        grain_bill: The malt specification vector.
+        s_late_add: Late-addition extract mass, in kg.
+        v_kettle_dead: Unrecoverable kettle/chiller dead space, in liters.
+        delta_v_evap: Calibrated kettle boil-off volume, in liters.
+        v_dead: Mash tun dead space, in liters.
+        eta_conv: Mash conversion efficiency as a fraction.
+        f_shrink: Thermal contraction coefficient (default 4%).
+    """
+
+    target_abv: float
+    apparent_attenuation: float
+    v_ferm: float
+    topology: str
+    intensive_value: float
+    grain_bill: Sequence[GrainBillEntry]
+    s_late_add: float
+    v_kettle_dead: float
+    delta_v_evap: float
+    v_dead: float
+    eta_conv: float
+    f_shrink: float = F_SHRINK_DEFAULT
+
+
+@dataclass(frozen=True)
+class BatchSolverResult:
+    """Full result of a batch-sparge solve.
+
+    Attributes:
+        sg_post_boil: Post-boil specific gravity from Phase 1.
+        v_pre_boil: Derived pre-boil kettle volume, in liters.
+        s_post_boil_target: Required post-boil extract mass, in kg.
+        m_grist: Converged dry grist mass, in kg.
+        cascade: The Phase 4 stage volume and gravity cascade.
+    """
+
+    sg_post_boil: float
+    v_pre_boil: float
+    s_post_boil_target: float
+    m_grist: float
+    cascade: StageCascade
+
+
+def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
+    """Top-level orchestrator composing Phases 1-4.
+
+    Pipeline:
+
+    1. Phase 1: isolate ``SG_post_boil`` from the target ABV and attenuation.
+    2. Phase 2: reverse kettle mechanics to derive ``V_pre_boil`` and
+       ``S_post_boil_target``.
+    3. Phase 3: resolve ``M_grist`` via Brent's method.
+    4. Phase 4: cascade stage volumes and gravities.
+
+    Args:
+        inputs: The frozen ``BatchSolverInput`` bundle.
+
+    Returns:
+        A frozen ``BatchSolverResult`` with all derived anchors.
+
+    Raises:
+        SolverValidationError: Propagated from any phase's validation gate.
+
+    See ``unified-treatment.md`` §5.
+    """
+    extract_potential = composite_extract_potential(inputs.grain_bill)
+    mc_bar = composite_moisture_fraction(inputs.grain_bill)
+
+    # Phase 1: cold-side inverse resolution.
+    sg_post_boil = solve_sg_post_boil_from_abv(
+        inputs.target_abv, inputs.apparent_attenuation
+    )
+
+    # Phase 2: volumetric reversal & extract targeting.
+    reversal = resolve_volumetric_reversal(
+        v_ferm=inputs.v_ferm,
+        sg_post_boil=sg_post_boil,
+        v_kettle_dead=inputs.v_kettle_dead,
+        delta_v_evap=inputs.delta_v_evap,
+        s_late_add=inputs.s_late_add,
+        f_shrink=inputs.f_shrink,
+    )
+
+    # Phase 3: grist mass resolution.
+    m_grist = solve_grist_mass(
+        v_pre_boil=reversal.v_pre_boil,
+        r_l_to_g=inputs.intensive_value,
+        extract_potential=extract_potential,
+        mc_bar=mc_bar,
+        eta_conv=inputs.eta_conv,
+        s_post_boil_target=reversal.s_post_boil_target,
+        s_late_add=inputs.s_late_add,
+        v_dead=inputs.v_dead,
+    )
+
+    # Phase 4: stage volume & gravity cascade.
+    cascade = resolve_stage_cascade(
+        m_grist=m_grist,
+        v_pre_boil=reversal.v_pre_boil,
+        topology=inputs.topology,
+        intensive_value=inputs.intensive_value,
+        extract_potential=extract_potential,
+        mc_bar=mc_bar,
+        eta_conv=inputs.eta_conv,
+        v_dead=inputs.v_dead,
+    )
+
+    return BatchSolverResult(
+        sg_post_boil=sg_post_boil,
+        v_pre_boil=reversal.v_pre_boil,
+        s_post_boil_target=reversal.s_post_boil_target,
+        m_grist=m_grist,
+        cascade=cascade,
+    )
