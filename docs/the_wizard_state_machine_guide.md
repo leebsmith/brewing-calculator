@@ -52,6 +52,20 @@ The "rules" for the state machine—including its states, transitions, and logic
 
 ---
 
+## 3a. Current Step Roster
+
+The wizard currently implements the following steps (as of the yeast step card addition):
+
+| Step | Partial | Purpose |
+| :--- | :--- | :--- |
+| 1 | `step-equipment-profile.html` | Equipment Profile (vessel capacities, losses) |
+| 2 | `step-batch-metadata.html` | Batch Metadata & Boil Solver (2-DOF pill selector) |
+| 3 | `step-yeast-selection.html` | Yeast Selection (strain, attenuation, manufacturer filter) |
+| 4 | `step-fermentables.html` | Fermentables (Two-Tier Grist + Hamilton allocator) |
+| 5 | `step-mash-profile.html` | Mash Profile (temperature rests) |
+
+Steps 6–12 (Master Solver, Water Chemistry, Hops, Fermentation Schedule, Dry Hops, Ledger) are specified in `plans/master-frontend-ui-requirements.md` §4 but not yet implemented as partials.
+
 ## 4. Modifying Steps: Adding or Reordering
 
 ### Adding a New Step
@@ -62,6 +76,15 @@ The "rules" for the state machine—including its states, transitions, and logic
   1. Update the `manifest` object if new data fields are needed.
   2. Add step-specific validation inside `markStepComplete`.
   3. Update `invalidateDownstream` if downstream effects apply.
+
+#### Worked Example: Step 3 (Yeast Selection)
+
+The yeast step demonstrates the full pattern:
+
+* **Manifest fields:** `manifest.yeast_id` and `manifest.yeast_attenuation_pct`.
+* **Validation in `markStepComplete(3)`:** Rejects progression if `yeast_id` is null, or if `yeast_attenuation_pct` falls outside the selected strain's `low_attenuation` / `high_attenuation` bounds (surfacing `MSG_YEAST_REQUIRED` or `MSG_YEAST_ATTENUATION_RANGE` via `$store.ui.add`).
+* **Catalog dependency:** Reads from `$store.catalog.yeasts`, populated by `fetchCatalog()` on auth state change.
+* **Filtering getters:** `filteredYeasts` and `yeastManufacturers` are computed getters on the `wizard` component, not stored state.
 
 ### Changing the Order of Existing Steps
 * Requires comprehensive renumbering across **all** HTML directives (`x-data`, `:class`, `x-show`, `@click`) and JavaScript validation checks inside `frontend/script.js`.

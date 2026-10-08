@@ -203,13 +203,13 @@ The primary calculation workspace is a progressive 12-step accordion that functi
 [ Step 2: Batch Metadata (Target OG, Vol, Boil Time) ]
               │
               ▼
-[ Step 3: Fermentables (Grain Bill & Sugars) ]
+[ Step 3: Yeast Selection (Strain, Attenuation %, Manufacturer Filter) ]
               │
               ▼
-[ Step 4: Mash Profile (Thickness, Strike Temp, Conversion Efficiency) ]
+[ Step 4: Fermentables (Grain Bill & Sugars) ]
               │
               ▼
-[ Step 5: Yeast & Fermentation Profile (Strain Selection, Attenuation %, Predicted FG & ABV) ]
+[ Step 5: Mash Profile (Thickness, Strike Temp, Conversion Efficiency) ]
               │
               ▼
 [ Step 6: Master Solver (Root-finder: Total Grain Mass, V_strike, V1, V2) ] ◄── Critical Solver Node
@@ -276,7 +276,18 @@ The primary calculation workspace is a progressive 12-step accordion that functi
   * **Concentration Adjustment:** Total extract points are conserved across chilling ($V_{\text{post}} \times (SG_{\text{post}} - 1.0) = V_{\text{target}} \times (OG - 1.0)$), ensuring $OG > SG_{\text{post}}$ due to thermal contraction.
 * **Synthesized Output:** Target Total Kettle Extract ($S_{\text{kettle}}$ in $\text{L}\cdot\degree$), Pre-boil to post-boil summary cascade, and solver status badge.
 
-#### Step 3: Fermentables (Two-Tier Grist Architecture)
+#### Step 3: Yeast Selection
+* **Purpose:** Selects the fermentation strain and establishes the attenuation envelope used to predict FG and ABV.
+* **DAG Preconditions:** Step 2 valid.
+* **Inputs & Controls:**
+  * Yeast Primitive selector (Name, Manufacturer, Apparent Attenuation %, Alcohol Tolerance).
+  * Manufacturer filter dropdown (`yeastManufacturerFilter`).
+  * Real-time full-text search across yeast `name` and `manufacturer` (`yeastSearchQuery`).
+  * Editable attenuation override (`yeast_attenuation_pct`), validated against the selected strain's `low_attenuation` / `high_attenuation` bounds.
+* **Synthesized Output:** Selected strain summary card and attenuation range badge.
+* **Validation Contract:** `markStepComplete(3)` requires `manifest.yeast_id` to be set and `manifest.yeast_attenuation_pct` to fall within the strain's published range.
+
+#### Step 4: Fermentables (Two-Tier Grist Architecture)
 * **Purpose:** Defines the fermentables bill segregated into major sugar contributors (proportional %) and trace additions (absolute mass), unified via a synthesized read-only summary table.
 * **DAG Preconditions:** Step 2 valid.
 * **Two-Tier Table Structure:**
@@ -299,19 +310,12 @@ The primary calculation workspace is a progressive 12-step accordion that functi
     * *Live Result Counter:* Dedicated accessible count indicator (`aria-live="polite"`, e.g., `"Showing 14 available malts"`).
     * *Keyboard Semantics:* The `Esc` key is strictly dedicated to dismissing the drawer without closing the parent recipe modal.
 
-#### Step 4: Mash Profile
+#### Step 5: Mash Profile
 * **Purpose:** Configures temperature rests, durations, mash thickness, and conversion efficiency.
-* **DAG Preconditions:** Step 3 valid.
+* **DAG Preconditions:** Step 4 valid.
 * **Inputs & Controls:**
   * Infusion Step Table: Step Name (Protein Rest, Saccharification, Mash Out), Target Temp (`UnitInput`), Duration (min).
 * **Synthesized Output:** Mash Schedule timeline card and conversion efficiency metrics.
-
-#### Step 5: Mash Profile
-* **Purpose:** Configures temperature rests and durations (routed to brew day plan).
-* **DAG Preconditions:** Step 4 valid.
-* **Inputs & Controls:**
-  * Infusion Step Table: Step Name (e.g., Protein Rest, Saccharification, Mash Out), Target Temp (`UnitInput`), Duration (min).
-* **Synthesized Output:** Mash Schedule timeline card.
 
 #### Step 6: Master Solver (The Engine)
 * **Purpose:** Solves the Master Batch Sparge Equation via backend root-finding (`scipy.optimize.root_scalar`).
@@ -360,20 +364,9 @@ The primary calculation workspace is a progressive 12-step accordion that functi
   * Bitterness Contribution: Input as target IBUs or percentage of total bitterness.
 * **Synthesized Output:** Resolved hop mass ($g$), individual addition IBUs, and cumulative batch IBU tally.
 
-#### Step 9: Yeast Selection & Attenuation
-* **Purpose:** Predicts final gravity (FG) and Alcohol by Volume (ABV).
-* **DAG Preconditions:** Step 2 (Target OG) and Step 3 (Malt types) configured.
-* **Inputs & Controls:**
-  * Select Yeast Primitive (Name, Apparent Attenuation %, Alcohol Tolerance).
-* **Synthesized Output Cards:**
-  * Predicted Final Gravity ($FG$).
-  * Predicted ABV ($\%$):
-    $$\text{ABV} = (\text{Target OG} - \text{FG}) \times 131.25$$
-  * Apparent Attenuation and Alcohol Tolerance safety check badge.
-
-#### Step 10: Fermentation Schedule
+#### Step 9: Fermentation Schedule
 * **Purpose:** Establishes temperature stages and duration for cold-side cellar operations.
-* **DAG Preconditions:** Step 9 configured.
+* **DAG Preconditions:** Step 3 (Yeast) and Step 6 (Master Solver) configured.
 * **Inputs & Controls:**
   * Phase Table: Phase Name (Primary, Diacetyl Rest, Cold Crash), Target Temp (`UnitInput`), Duration (Days).
 * **Synthesized Output:** Interactive Fermentation Timeline.
