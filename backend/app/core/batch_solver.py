@@ -578,3 +578,195 @@ def solve_grist_mass(
         )
 
     return brentq(residual, a, b)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4: Stage Volume & Gravity Cascade
+# ---------------------------------------------------------------------------
+#
+# Post-convergence cascade. Dispatches on the solver constraint topology:
+#   * "r_l_to_g"      -> {V_pre_boil, R_L:G}
+#   * "runoff_ratio"  -> {V_pre_boil, r}
+
+
+def first_runnings_volume(
+    v_strike: float,
+    v_mc: float,
+    v_sol: float,
+    v_ret: float,
+) -> float:
+    """Compute the first-runnings volume ``V_run1`` via the tun mass balance.
+
+    ``V_run1 = V_strike + V_mc + V_sol - V_ret``
+
+    See ``unified-treatment.md`` §2 (Runoff Volumetrics and Kettle Balance).
+    """
+    return v_strike + v_mc + v_sol - v_ret
+
+
+def second_runnings_volume(v_pre_boil: float, v_run1: float) -> float:
+    """Compute the second-runnings volume ``V_run2``.
+
+    ``V_run2 = V_pre_boil - V_run1``
+
+    See ``unified-treatment.md`` §2 (Runoff Volumetrics and Kettle Balance).
+    """
+    return v_pre_boil - v_run1
+
+
+def stage_extract_split(
+    s_conv: float,
+    v_ret: float,
+    v_strike: float,
+    v_mc: float,
+    v_sol: float,
+    v_sparge: float,
+) -> tuple[float, float]:
+    """Split the converted extract into first- and second-runnings masses.
+
+    ``R_f1 = V_ret / (V_strike + V_mc + V_sol)``
+    ``R_f2 = V_ret / (V_sparge + V_ret)``
+    ``S_run1 = S_conv * (1 - R_f1)``
+    ``S_run2 = (S_conv * R_f1) * (1 - R_f2)``
+
+    See ``unified-treatment.md`` §2 (Stage Extract Distribution and Specific
+    Gravity).
+    """
+    r_f1 = v_ret / (v_strike + v_mc + v_sol)
+    r_f2 = v_ret / (v_sparge + v_ret)
+    s_run1 = s_conv * (1.0 - r_f1)
+    s_run2 = (s_conv * r_f1) * (1.0 - r_f2)
+    return s_run1, s_run2
+
+
+def calculate_sg_pre_boil(
+    s_run1: float,
+    s_run2: float,
+    v_pre_boil: float,
+    gamma: float = GAMMA_METRIC,
+) -> float:
+    """Phase 4: assemble the consolidated pre-boil specific gravity.
+
+    ``SG_pre_boil = 1 + ((S_run1 + S_run2) * gamma) / (1000 * V_pre_boil)``
+
+    See ``unified-treatment.md`` §2 and §6.
+    """
+    return 1.0 + (((s_run1 + s_run2) * gamma) / (1000.0 * v_pre_boil))
+
+
+@dataclass(frozen=True)
+class StageCascade:
+    """Result of Phase 4: the post-convergence stage volumes and gravities.
+
+    Attributes:
+        v_strike: Strike volume, in liters.
+        v_run1: First-runnings volume, in liters.
+        v_run2: Second-runnings volume, in liters.
+        v_sparge: Sparge volume, in liters.
+        s_run1: First-runnings extract mass, in kg.
+        s_run2: Second-runnings extract mass, in kg.
+        sg_pre_boil: Consolidated pre-boil specific gravity.
+    """
+
+    v_strike: float
+    v_run1: float
+    v_run2: float
+    v_sparge: float
+    s_run1: float
+    s_run2: float
+    sg_pre_boil: float
+
+
+def resolve_stage_cascade(
+    m_grist: float,
+    v_pre_boil: float,
+    topology: str,
+    intensive_value: float,
+    extract_potential: float,
+    mc_bar: float,
+    eta_conv: float,
+    v_dead: float,
+    k_abs_true: float = K_ABS_TRUE_METRIC,
+    v_bar: float = V_BAR_METRIC,
+    gamma: float = GAMMA_METRIC,
+) -> StageCascade:
+    """Phase 4: cascade stage volumes and gravities post-convergence.
+
+    Dispatches on ``topology``:
+
+    * ``"r_l_to_g"``: ``V_strike = R_L:G * M_grist``; ``V_run1`` from the tun
+      mass balance; ``V_run2 = V_sparge = V_pre_boil - V_run1``.
+    * ``"runoff_ratio"``: ``V_sparge = V_run2 = V_pre_boil / (r + 1)``;
+      ``V_run1 = V_pre_boil - V_run2``; ``V_strike`` is reversed from the tun
+      mass balance to absorb retention.
+
+    Args:
+        m_grist: Converged dry grist mass, in kg (from Phase 3).
+        v_pre_boil: Derived pre-boil kettle volume, in liters (from Phase 2).
+        topology: Either ``"r_l_to_g"`` or ``"runoff_ratio"``.
+        intensive_value: ``R_L:G`` (L/kg) or ``r`` (dimensionless), matching
+            ``topology``.
+        extract_potential: Composite dry-basis potential factor ``E``.
+        mc_bar: Composite moisture fraction ``MC_bar``.
+        eta_conv: Mash conversion efficiency as a fraction.
+        v_dead: Mash tun dead space, in liters.
+        k_abs_true: True husk absorption coefficient, in L/kg.
+        v_bar: Apparent specific volume of dissolved extract, in L/kg.
+        gamma: Gravity-points conversion constant, in GU·L/kg.
+
+    Returns:
+        A frozen ``StageCascade`` with the derived volumes and gravities.
+
+    Raises:
+        SolverValidationError: If ``topology`` is unknown or the intensive
+            value is non-positive.
+
+    See ``unified-treatment.md`` §5 Phase 4.
+    """
+    if topology not in ("r_l_to_g", "runoff_ratio"):
+        raise SolverValidationError(
+            "UNKNOWN_TOPOLOGY",
+            f"Unknown constraint topology: {topology!r}.",
+        )
+    if intensive_value <= 0.0:
+        raise SolverValidationError(
+            "INVALID_INTENSIVE_VALUE",
+            f"Intensive constraint must be positive; got {intensive_value}.",
+        )
+
+    v_mc = moisture_volume(m_grist, mc_bar)
+    s_conv = converted_extract(m_grist, extract_potential, eta_conv)
+    v_sol = solute_displacement_volume(s_conv, v_bar)
+    v_ret = retained_volume(m_grist, k_abs_true, v_dead)
+
+    if topology == "r_l_to_g":
+        v_strike = intensive_value * m_grist
+        v_run1 = first_runnings_volume(v_strike, v_mc, v_sol, v_ret)
+        v_run2 = second_runnings_volume(v_pre_boil, v_run1)
+        v_sparge = v_run2
+    else:  # "runoff_ratio"
+        v_sparge = v_pre_boil / (intensive_value + 1.0)
+        v_run2 = v_sparge
+        v_run1 = v_pre_boil - v_run2
+        # Reverse the tun mass balance to absorb retention and displacement.
+        v_strike = v_run1 + v_ret - v_mc - v_sol
+
+    s_run1, s_run2 = stage_extract_split(
+        s_conv=s_conv,
+        v_ret=v_ret,
+        v_strike=v_strike,
+        v_mc=v_mc,
+        v_sol=v_sol,
+        v_sparge=v_sparge,
+    )
+    sg_pre_boil = calculate_sg_pre_boil(s_run1, s_run2, v_pre_boil, gamma)
+
+    return StageCascade(
+        v_strike=v_strike,
+        v_run1=v_run1,
+        v_run2=v_run2,
+        v_sparge=v_sparge,
+        s_run1=s_run1,
+        s_run2=s_run2,
+        sg_pre_boil=sg_pre_boil,
+    )
