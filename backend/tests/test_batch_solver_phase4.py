@@ -37,6 +37,7 @@ def cascade_case():
         mc_bar=0.042,
         eta_conv=0.75,
         v_dead=0.5,
+        delta_v_evap=3.0,
     )
 
 
@@ -120,6 +121,15 @@ def test_resolve_stage_cascade_r_l_to_g_returns_consistent_volumes(cascade_case)
     assert result.v_strike == pytest.approx(15.0)
     assert result.v_run1 + result.v_run2 == pytest.approx(cascade_case["v_pre_boil"])
     assert result.v_sparge == pytest.approx(result.v_run2)
+
+
+def test_resolve_stage_cascade_v_post_boil_is_kettle_balance(cascade_case):
+    result = resolve_stage_cascade(
+        **cascade_case, topology="r_l_to_g", intensive_value=3.0
+    )
+    assert result.v_post_boil == pytest.approx(
+        cascade_case["v_pre_boil"] - cascade_case["delta_v_evap"]
+    )
 
 
 def test_resolve_stage_cascade_r_l_to_g_is_pure(cascade_case):
