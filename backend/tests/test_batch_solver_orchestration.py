@@ -61,8 +61,16 @@ def test_solve_batch_is_pure(standard_inputs):
 
 
 def test_solve_batch_runoff_ratio_topology(standard_inputs):
+    # The runoff_ratio topology statically splits V_pre_boil, so the sparge
+    # volume must stay proportionate to the grist mass. A smaller fermenter
+    # volume keeps the split in the physically reachable regime.
     inputs = BatchSolverInput(
-        **{**standard_inputs.__dict__, "topology": "runoff_ratio", "intensive_value": 1.0}
+        **{
+            **standard_inputs.__dict__,
+            "v_ferm": 10.0,
+            "topology": "runoff_ratio",
+            "intensive_value": 1.0,
+        }
     )
     result = solve_batch(inputs)
     assert math.isfinite(result.m_grist)
