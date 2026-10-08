@@ -152,10 +152,13 @@ def solve_sg_post_boil_from_abv(target_abv: float, apparent_attenuation: float) 
     
     return asbc_plato_to_sg(target_oe_plato)
 
-def calculate_sg_pre_boil(s_run1: float, s_run2: float, v_pre_boil: float, gamma: float = 46.21) -> float:
+def calculate_sg_pre_boil(s_run1: float, s_run2: float, v_pre_boil: float, gamma: float = 385.5) -> float:
     """
     Phase 4: Pre-Boil Gravity Assembly
     Derives the consolidated pre-boil specific gravity from recovered stage extracts.
+
+    gamma is the metric gravity-points conversion constant in GU·L/kg (385.5),
+    consistent with the metric standards declared in inputs-and-outputs.md.
     """
     return 1.0 + (((s_run1 + s_run2) * gamma) / (1000.0 * v_pre_boil))
 ```
