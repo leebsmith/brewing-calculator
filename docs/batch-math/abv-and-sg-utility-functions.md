@@ -39,10 +39,13 @@ def solve_sg_post_boil_from_abv(target_abv: float, apparent_attenuation: float) 
     
     return asbc_plato_to_sg(target_oe_plato)
 
-def calculate_sg_pre_boil(s_run1: float, s_run2: float, v_pre_boil: float, gamma: float = 46.21) -> float:
+def calculate_sg_pre_boil(s_run1: float, s_run2: float, v_pre_boil: float, gamma: float = 385.5) -> float:
     """
     Phase 4: Pre-Boil Gravity Assembly
     Derives the consolidated pre-boil specific gravity from recovered stage extracts.
+
+    gamma is the metric gravity-points conversion constant in GU·L/kg (385.5),
+    consistent with the metric standards declared in inputs-and-outputs.md.
     """
     return 1.0 + (((s_run1 + s_run2) * gamma) / (1000.0 * v_pre_boil))
 
@@ -55,4 +58,4 @@ def calculate_sg_pre_boil(s_run1: float, s_run2: float, v_pre_boil: float, gamma
 * **1D Root-Finding Application:** `solve_sg_post_boil_from_abv()` directly mirrors the mathematical architecture of the grist mass solver. By wrapping the Cutaia formula in a residual scalar function and utilizing Brent's Method over a strict 0.0 to 40.0 Plato bracket, it mathematically isolates the exact Original Gravity target.
 
 
-* **Gravity Assembly Constants:** The `calculate_sg_pre_boil()` function relies directly on the consolidated extraction mass ($S_{\text{run 1}} + S_{\text{run 2}}$) and defaults to the US Customary gravity conversion scalar of $\gamma = 46.21$. If the workflow executes in metric ($L$/$kg$), $\gamma$ must be updated to $385.5$ when calling the function.
+* **Gravity Assembly Constants:** The `calculate_sg_pre_boil()` function relies directly on the consolidated extraction mass ($S_{\text{run 1}} + S_{\text{run 2}}$) and defaults to the metric gravity conversion scalar of $\gamma = 385.5\text{ GU}\cdot\text{L/kg}$, consistent with the metric standards declared in `inputs-and-outputs.md`. If the workflow executes in US Customary units ($gal$/$lb$), $\gamma$ must be overridden to $46.21$ when calling the function.
