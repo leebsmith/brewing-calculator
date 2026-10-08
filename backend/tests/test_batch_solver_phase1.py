@@ -102,11 +102,12 @@ def test_solve_sg_post_boil_increases_with_abv():
     assert high > low
 
 
-def test_solve_sg_post_boil_increases_with_attenuation():
-    # Higher attenuation needs a higher OG to hit the same ABV.
-    low = solve_sg_post_boil_from_abv(5.0, 0.60)
-    high = solve_sg_post_boil_from_abv(5.0, 0.85)
-    assert high > low
+def test_solve_sg_post_boil_decreases_with_attenuation():
+    # To hit a fixed ABV, lower attenuation requires a higher OG: less of the
+    # sugar is fermented, so more must be present to begin with.
+    low_aa = solve_sg_post_boil_from_abv(5.0, 0.60)
+    high_aa = solve_sg_post_boil_from_abv(5.0, 0.85)
+    assert low_aa > high_aa
 
 
 def test_solve_sg_post_boil_rejects_non_positive_abv():
