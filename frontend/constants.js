@@ -110,7 +110,18 @@ export const BREW_CONSTANTS = {
     // Step 2: Yeast Selection
     'step2_yeast_attenuation_pct': 'percentage',
     // Step 5: Batch Sparge Solver
-    'step5_intensive_value': 'compound'
+    'step5_intensive_value': 'compound',
+    'step5_sg_post_boil': 'gravity',
+    'step5_v_pre_boil': 'volume',
+    'step5_s_post_boil_target': 'mass',
+    'step5_m_grist': 'mass',
+    'step5_v_strike': 'volume',
+    'step5_v_run1': 'volume',
+    'step5_v_run2': 'volume',
+    'step5_v_sparge': 'volume',
+    'step5_s_run1': 'mass',
+    'step5_s_run2': 'mass',
+    'step5_sg_pre_boil': 'gravity'
   },
 
   UNIT_DOMAIN_MASS: 'mass',

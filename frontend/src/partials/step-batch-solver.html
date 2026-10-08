@@ -86,20 +86,20 @@
                         <table class="data-table">
                             <tbody>
                             <tr>
-                                <td>Post-Boil Gravity (SG)</td>
-                                <td class="text-right tabular-nums font-bold" x-text="batchSolverResult.sg_post_boil.toFixed(4)"></td>
+                                <td>Post-Boil Gravity</td>
+                                <td class="text-right tabular-nums font-bold" x-text="gravityDisplay(batchSolverResult.sg_post_boil, 'step5_sg_post_boil') + ' ' + $store.units.getLabel('step5_sg_post_boil')"></td>
                             </tr>
                             <tr>
-                                <td>Pre-Boil Volume (L)</td>
-                                <td class="text-right tabular-nums font-bold" x-text="batchSolverResult.v_pre_boil.toFixed(2)"></td>
+                                <td>Pre-Boil Volume</td>
+                                <td class="text-right tabular-nums font-bold" x-text="volDisplay(batchSolverResult.v_pre_boil, 'step5_v_pre_boil') + ' ' + $store.units.getLabel('step5_v_pre_boil')"></td>
                             </tr>
                             <tr>
-                                <td>Post-Boil Extract Target (kg)</td>
-                                <td class="text-right tabular-nums font-bold" x-text="batchSolverResult.s_post_boil_target.toFixed(4)"></td>
+                                <td>Post-Boil Extract Target</td>
+                                <td class="text-right tabular-nums font-bold" x-text="massDisplay(batchSolverResult.s_post_boil_target, 'step5_s_post_boil_target') + ' ' + $store.units.getLabel('step5_s_post_boil_target')"></td>
                             </tr>
                             <tr>
-                                <td>Grist Mass (kg)</td>
-                                <td class="text-right tabular-nums font-bold" x-text="batchSolverResult.m_grist.toFixed(3)"></td>
+                                <td>Grist Mass</td>
+                                <td class="text-right tabular-nums font-bold" x-text="massDisplay(batchSolverResult.m_grist, 'step5_m_grist') + ' ' + $store.units.getLabel('step5_m_grist')"></td>
                             </tr>
                             </tbody>
                         </table>
@@ -111,33 +111,33 @@
                             <thead>
                             <tr>
                                 <th>Stage</th>
-                                <th class="text-right">Volume (L)</th>
-                                <th class="text-right">Extract (kg)</th>
-                                <th class="text-right">Gravity (SG)</th>
+                                <th class="text-right">Volume</th>
+                                <th class="text-right">Extract</th>
+                                <th class="text-right">Gravity</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr>
                                 <td>Strike</td>
-                                <td class="text-right tabular-nums" x-text="batchSolverResult.cascade.v_strike.toFixed(2)"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_strike, 'step5_v_strike') + ' ' + $store.units.getLabel('step5_v_strike')"></td>
                                 <td class="text-right tabular-nums">—</td>
                                 <td class="text-right tabular-nums">—</td>
                             </tr>
                             <tr>
                                 <td>First Runnings</td>
-                                <td class="text-right tabular-nums" x-text="batchSolverResult.cascade.v_run1.toFixed(2)"></td>
-                                <td class="text-right tabular-nums" x-text="batchSolverResult.cascade.s_run1.toFixed(4)"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_run1, 'step5_v_run1') + ' ' + $store.units.getLabel('step5_v_run1')"></td>
+                                <td class="text-right tabular-nums" x-text="massDisplay(batchSolverResult.cascade.s_run1, 'step5_s_run1') + ' ' + $store.units.getLabel('step5_s_run1')"></td>
                                 <td class="text-right tabular-nums">—</td>
                             </tr>
                             <tr>
                                 <td>Second Runnings</td>
-                                <td class="text-right tabular-nums" x-text="batchSolverResult.cascade.v_run2.toFixed(2)"></td>
-                                <td class="text-right tabular-nums" x-text="batchSolverResult.cascade.s_run2.toFixed(4)"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_run2, 'step5_v_run2') + ' ' + $store.units.getLabel('step5_v_run2')"></td>
+                                <td class="text-right tabular-nums" x-text="massDisplay(batchSolverResult.cascade.s_run2, 'step5_s_run2') + ' ' + $store.units.getLabel('step5_s_run2')"></td>
                                 <td class="text-right tabular-nums">—</td>
                             </tr>
                             <tr>
                                 <td>Sparge</td>
-                                <td class="text-right tabular-nums" x-text="batchSolverResult.cascade.v_sparge.toFixed(2)"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_sparge, 'step5_v_sparge') + ' ' + $store.units.getLabel('step5_v_sparge')"></td>
                                 <td class="text-right tabular-nums">—</td>
                                 <td class="text-right tabular-nums">—</td>
                             </tr>
@@ -145,7 +145,7 @@
                                 <td>Pre-Boil (consolidated)</td>
                                 <td class="text-right tabular-nums">—</td>
                                 <td class="text-right tabular-nums">—</td>
-                                <td class="text-right tabular-nums font-bold" x-text="batchSolverResult.cascade.sg_pre_boil.toFixed(4)"></td>
+                                <td class="text-right tabular-nums font-bold" x-text="gravityDisplay(batchSolverResult.cascade.sg_pre_boil, 'step5_sg_pre_boil') + ' ' + $store.units.getLabel('step5_sg_pre_boil')"></td>
                             </tr>
                             </tbody>
                         </table>
