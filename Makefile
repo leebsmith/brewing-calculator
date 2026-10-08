@@ -12,6 +12,7 @@ CLOUD_RUN_REGION := us-east4
 seeds:
 	@echo "Making 'seeds' database files"
 	cd backend && uv run python ../scripts/build_fermentables.py
+	cd backend && uv run python ../scripts/build_yeasts.py
 
 # Target to start local emulators and development servers using concurrently
 local-dev:
