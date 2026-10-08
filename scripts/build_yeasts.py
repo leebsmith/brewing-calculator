@@ -958,17 +958,18 @@ def determine_yeast_parameters(name: str, manufacturer: str) -> dict:
     slug = slugify(name)
     spec = YEAST_SPECS.get(slug, {})
 
-    # 1. Apparent attenuation %
+    # 1. Apparent attenuation (stored as a FRACTION in [0, 1], matching the
+    #    percentage domain's base unit in the frontend units store).
     if "attenuation_pct" in spec:
-        attenuation_pct = float(spec["attenuation_pct"])
+        attenuation_pct = float(spec["attenuation_pct"]) / 100.0
     else:
         # Manufacturer-based fallback
         if manufacturer in ("Wyeast", "White Labs", "Imperial Yeast", "Omega Yeast"):
-            attenuation_pct = 75.0
+            attenuation_pct = 0.75
         elif manufacturer in ("Lallemand", "Fermentis"):
-            attenuation_pct = 76.0
+            attenuation_pct = 0.76
         else:
-            attenuation_pct = 75.0
+            attenuation_pct = 0.75
 
     # 2. Flocculation character
     if "flocculation" in spec:
@@ -982,9 +983,10 @@ def determine_yeast_parameters(name: str, manufacturer: str) -> dict:
     else:
         alcohol_tolerance_abv = 10.0
 
-    # 4. Attenuation bounds (+/- 7% deviation from stated attenuation)
-    low_attenuation = round(attenuation_pct * 0.93, 1)
-    high_attenuation = round(attenuation_pct * 1.07, 1)
+    # 4. Attenuation bounds (+/- 7% deviation from stated attenuation).
+    #    Rounded to 4 decimals to preserve 0.1% resolution in fraction form.
+    low_attenuation = round(attenuation_pct * 0.93, 4)
+    high_attenuation = round(attenuation_pct * 1.07, 4)
 
     # 5. Sensory / Strain Notes
     if "notes" in spec:

@@ -115,7 +115,7 @@ export const BREW_CONSTANTS = {
   MSG_TARGET_OG_REQUIRED: 'Target original gravity must be between 1.010 and 1.200.',
   MSG_PROFILE_NAME_REQUIRED: 'Profile name is required.',
   MSG_YEAST_REQUIRED: 'Please select a yeast strain.',
-  MSG_YEAST_ATTENUATION_RANGE: (low, high) => `Attenuation must be between ${low}% and ${high}%.`,
+  MSG_YEAST_ATTENUATION_RANGE: (low, high) => `Attenuation must be between ${(low * 100).toFixed(1)}% and ${(high * 100).toFixed(1)}%.`,
   MSG_STEP_CONFIGURED_TEMPLATE: (stepNum) => `Step ${stepNum} configured.`,
   MSG_PROFILE_SAVED: 'Equipment profile saved successfully.',
   // Updated MSG_PROFILE_DELETED to avoid conflict with the string literal from report

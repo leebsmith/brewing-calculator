@@ -94,7 +94,7 @@
                                 <span class="font-medium" x-text="y.name"></span>
                             </td>
                             <td x-text="y.manufacturer"></td>
-                            <td class="text-right tabular-nums" x-text="y.low_attenuation + '–' + y.high_attenuation + '%'"></td>
+                            <td class="text-right tabular-nums" x-text="$store.units.toDisplay('percentage', y.low_attenuation, 'step3_yeast_attenuation_pct') + '–' + $store.units.toDisplay('percentage', y.high_attenuation, 'step3_yeast_attenuation_pct') + $store.units.getLabel('step3_yeast_attenuation_pct')"></td>
                             <td x-text="y.flocculation"></td>
                             <td class="text-right tabular-nums" x-text="y.alcohol_tolerance_abv + '%'"></td>
                             <td class="text-right">
@@ -148,13 +148,13 @@
                             <input
                                 type="number"
                                 step="0.1"
-                                :min="selectedYeast.low_attenuation"
-                                :max="selectedYeast.high_attenuation"
+                                :min="$store.units.toDisplay('percentage', selectedYeast.low_attenuation, 'step3_yeast_attenuation_pct')"
+                                :max="$store.units.toDisplay('percentage', selectedYeast.high_attenuation, 'step3_yeast_attenuation_pct')"
                                 :value="yeastAttenuationDisplay()"
                                 @change="onYeastAttenuationChange($event.target.value)"
                                 class="form-input tabular-nums"
                             />
-                            <span class="form-hint" x-text="'Valid range: ' + selectedYeast.low_attenuation + '% – ' + selectedYeast.high_attenuation + '%'"></span>
+                            <span class="form-hint" x-text="'Valid range: ' + $store.units.toDisplay('percentage', selectedYeast.low_attenuation, 'step3_yeast_attenuation_pct') + $store.units.getLabel('step3_yeast_attenuation_pct') + ' – ' + $store.units.toDisplay('percentage', selectedYeast.high_attenuation, 'step3_yeast_attenuation_pct') + $store.units.getLabel('step3_yeast_attenuation_pct')"></span>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Strain Details</label>

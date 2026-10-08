@@ -1993,6 +1993,7 @@ Alpine.data('wizard', () => {
         }
         const yeast = Alpine.store('catalog').getYeastById(this.manifest.yeast_id);
         if (yeast) {
+          // Both the manifest and the catalog store attenuation as a fraction.
           const att = Number(this.manifest.yeast_attenuation_pct);
           if (isNaN(att) || att < yeast.low_attenuation || att > yeast.high_attenuation) {
             Alpine.store('ui').add(
@@ -2067,32 +2068,29 @@ Alpine.data('wizard', () => {
     onYeastAttenuationChange(displayVal) {
       const yeast = this.selectedYeast;
       if (!yeast) return;
-      // The percentage domain's base unit is a FRACTION (0..1), but the
-      // manifest stores yeast_attenuation_pct as a PERCENT (0..100). Convert
-      // the display value to a fraction for toBase(), then back to a percent
-      // for storage.
+      // Both the catalog and the manifest store attenuation as a FRACTION
+      // (0..1), which is the percentage domain's base unit. toBase() converts
+      // the display value (e.g. "78" in % mode) straight to a fraction.
       const fraction = Alpine.store('units')
         ? Alpine.store('units').toBase('percentage', parseFloat(displayVal), 'step3_yeast_attenuation_pct')
         : parseFloat(displayVal) / 100;
       if (isNaN(fraction)) return;
-      const pct = fraction * 100;
-      if (pct < yeast.low_attenuation || pct > yeast.high_attenuation) {
+      if (fraction < yeast.low_attenuation || fraction > yeast.high_attenuation) {
         Alpine.store('ui').add(
           BREW_CONSTANTS.MSG_YEAST_ATTENUATION_RANGE(yeast.low_attenuation, yeast.high_attenuation),
           'error'
         );
         return;
       }
-      this.manifest.yeast_attenuation_pct = pct;
+      this.manifest.yeast_attenuation_pct = fraction;
     },
 
     yeastAttenuationDisplay() {
       if (this.manifest.yeast_attenuation_pct == null) return '';
-      // Convert the stored percent to a fraction before toDisplay(), which
-      // expects the percentage domain's base unit (fraction).
-      const fraction = this.manifest.yeast_attenuation_pct / 100;
+      // The manifest already stores a fraction, which is the percentage
+      // domain's base unit, so it can be passed to toDisplay() directly.
       return Alpine.store('units')
-        ? Alpine.store('units').toDisplay('percentage', fraction, 'step3_yeast_attenuation_pct')
+        ? Alpine.store('units').toDisplay('percentage', this.manifest.yeast_attenuation_pct, 'step3_yeast_attenuation_pct')
         : this.manifest.yeast_attenuation_pct;
     }
   };
