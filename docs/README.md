@@ -12,6 +12,7 @@ implementation work, and which are retained only for historical context.
 | Status | Meaning |
 | :--- | :--- |
 | **Current** | Matches the code. Safe to rely on for implementation. |
+| **Aspirational** | Specifies behavior that is designed but not yet implemented. Safe to build against; do not assume it reflects shipped code. |
 | **Partially Stale** | Directionally correct, but has drifted from the code in specific, identifiable ways. Read with the noted caveats. |
 | **Reference** | Rationale, principles, or decision records. Not a spec, and not subject to drift — these describe *why*, not *what*. |
 | **Historical** | Describes an earlier design state that has been superseded. Retained for derivation rationale only. Do not use for implementation. |
@@ -24,7 +25,18 @@ implementation work, and which are retained only for historical context.
 | [Understanding the Wizard State Machine](the_wizard_state_machine_guide.md) | `createWizardNavigation`, `createEquipmentManager`, the `wizard` orchestrator, `WIZARD_STEPS`, and the step roster. |
 | [Vessel Loss Model](../plans/vessel-loss-model.md) | Canonical loss taxonomy. Matches `templates.py` and `ThermodynamicSolver` loss helpers. |
 | [Malt Entry Table Implementation Plan](../plans/malt-entry-table-implementation.md) | Matches `$store.maltGrid` — Hamilton allocator, `MAX_MAJOR_MALTS`, `filteredCatalog`, drawer state machine. |
-| [Batch Sparging Mathematics: Canonical Mass and Volume Balance](batch-math/unified-treatment.md) | Canonical batch-sparge math. Consistent with the solver's gravity-points convention. |
+### Aspirational
+
+Specifies behavior that is designed but not yet implemented. Safe to build
+against; do not assume it reflects shipped code. The `ThermodynamicSolver`
+currently implements only the boil-side thermodynamics (2-DOF solver, loss
+helpers, packaged-volume bridge). The master batch-sparge equation, retention
+kinetics, lauter efficiency, and 1D root-finding for grist mass are specified
+here but not yet built.
+
+| Document | Scope |
+| :--- | :--- |
+| [Batch Sparging Mathematics: Canonical Mass and Volume Balance](batch-math/unified-treatment.md) | Canonical batch-sparge math. Target spec for the unimplemented Step 6 Master Solver. |
 | [Inputs and Outputs](batch-math/inputs-and-outputs.md) | Prerequisite inputs, physical constants, and constraint topology for the batch-sparge pipeline. |
 
 ### Partially Stale
@@ -83,9 +95,10 @@ When documents conflict, resolve in this order:
 
 1. **The code.** `frontend/script.js`, `frontend/constants.js`, `backend/app/schemas/*.py`, and the test suite are the ultimate source of truth.
 2. **Current documents** (above). These are maintained in lockstep with the code.
-3. **Partially Stale documents.** Read with the noted caveats; prefer the code where they disagree.
-4. **Reference documents.** Consult for rationale and decision history, not for current behavior.
-5. **Historical documents** (in `docs/archive/`). Do not use for implementation. Consult only for derivation rationale.
+3. **Aspirational documents.** Safe to build against, but describe unimplemented behavior. Do not assume they reflect shipped code.
+4. **Partially Stale documents.** Read with the noted caveats; prefer the code where they disagree.
+5. **Reference documents.** Consult for rationale and decision history, not for current behavior.
+6. **Historical documents** (in `docs/archive/`). Do not use for implementation. Consult only for derivation rationale.
 
 Within the Current tier, the following precedence applies:
 
