@@ -38,6 +38,18 @@ This directory contains the canonical, static seed datasets and in-memory loader
 * **Filtering Criteria:** Pure fermentable sugars, candi syrups, honey, molasses, and dry sugar adjuncts added directly to the boil or whirlpool.
 * **Enrichment & Defaults:** Extract potential calibrated to 100% dry yield equivalents (e.g., Dextrose: 1.046 SG, Sucrose: 1.046 SG, Candi Syrup: 1.032 SG).
 
+### 2.3 Brewing Yeasts (`yeasts.json`)
+* **Source:** Curated from [Beer Analytics Yeast Catalog](https://www.beer-analytics.com/yeasts/) across eight commercial yeast labs (Wyeast, White Labs, Imperial Yeast, Lallemand, Fermentis, Omega Yeast, Bootleg Biology, East Coast Yeast).
+* **Ingestion Script:** `scripts/build_yeasts.py`.
+* **Record Count:** 200+ validated yeast strain records.
+* **Filtering Criteria:** Commercially available brewing strains only. Includes *Saccharomyces* (ale, lager, kveik, saison, Belgian), *Brettanomyces*, and lactic acid bacteria (*Lactobacillus*) blends.
+* **Enrichment & Defaults:**
+  * **Apparent Attenuation:** Strain-specific `attenuation_pct` sourced from the `YEAST_SPECS` lookup table, with manufacturer-based fallback (75.0% for liquid labs, 76.0% for dry yeast labs).
+  * **Attenuation Bounds:** `low_attenuation` and `high_attenuation` derived as ±7% deviation from the stated `attenuation_pct`, defining the valid override envelope enforced by Step 3's validation contract.
+  * **Flocculation:** Categorical character (`Low`, `Medium-Low`, `Medium`, `Medium-High`, `High`).
+  * **Alcohol Tolerance:** Strain-specific ABV ceiling (`alcohol_tolerance_abv`), ranging from 5.0% (LAB) to 25.0% (super high-gravity strains).
+  * **Sensory Notes:** Strain-specific flavor descriptors (e.g., "banana and clove phenolics", "horsey, smoky, and cherry-pie phenolics").
+
 ---
 
 ## 3. Generic Ingestion Protocol for Future Seed Data
@@ -72,6 +84,7 @@ When building new ingredient catalogs (such as Hops, Yeasts, or Water Profiles),
 * Add cached loader functions in `backend/app/seeds/__init__.py`:
   * `load_seed_<primitive>() -> list[<PrimitiveClass>]` (decorated with `@lru_cache(maxsize=1)`).
   * `get_seed_<primitive>_by_id(id: str) -> <PrimitiveClass> | None`.
+* **Reference implementations:** `load_seed_malts` / `get_seed_malt_by_id`, `load_seed_sugars` / `get_seed_sugar_by_id`, `load_seed_yeasts` / `get_seed_yeast_by_id`, and `load_seed_equipment_profiles` / `get_seed_equipment_profile_by_id` all follow this pattern.
 * Add comprehensive test assertions in `backend/tests/test_seeds.py`:
   * Minimum expected entity count.
   * Uniqueness of all identifier slugs (`seen_ids`).
