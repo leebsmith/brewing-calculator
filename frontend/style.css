@@ -35,8 +35,7 @@ body {
 
 code,
 kbd,
-samp,
-pre {
+samp {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
 }
@@ -1404,13 +1403,6 @@ pre {
   gap: var(--space-2);
 }
 
-.prompt-choice-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding-top: var(--space-2);
-}
-
 .btn-prompt-choice {
   text-align: left;
   justify-content: flex-start;
@@ -1506,44 +1498,6 @@ pre {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.segmented-control {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  background-color: var(--sys-surface-subtle);
-  padding: var(--space-1);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--sys-border-subtle);
-}
-
-.segmented-control-item {
-  flex: 1;
-  padding: var(--space-1-5) var(--space-3);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-medium);
-  border-radius: var(--radius-md);
-  border: none;
-  background-color: var(--color-transparent);
-  color: var(--sys-text-secondary);
-  cursor: pointer;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.segmented-control-item:hover {
-  color: var(--sys-text-primary);
-}
-
-.segmented-control-item.is-active {
-  background-color: var(--sys-surface-default);
-  color: var(--sys-text-primary);
-  font-weight: var(--font-weight-semibold);
-  box-shadow: var(--sys-shadow-sm);
 }
 
 /* --- Table & Card Component Helpers --- */
