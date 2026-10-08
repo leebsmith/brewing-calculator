@@ -18,11 +18,13 @@ def asbc_sg_to_plato(sg: float) -> float:
 def cutaia_abv(oe_plato: float, apparent_attenuation: float) -> float:
     """Calculates ABV using the Cutaia et al. (2009) empirical model."""
     ae_plato = oe_plato * (1.0 - apparent_attenuation)
-    re_plato = (0.1808 * oe_plato) + (0.8192 * ae_plato)
-    
-    abw = 0.38726 * (oe_plato - re_plato) + 0.00307 * ((oe_plato - re_plato)**2)
+
+    # Alcohol by weight (w/w %) via Cutaia, Reid, & Speers (2009)
+    abw = (0.372 + 0.00357 * oe_plato) * (oe_plato - ae_plato)
+
+    # Convert AE to specific gravity for volumetric expansion
     fg_sg = asbc_plato_to_sg(ae_plato)
-    
+
     abv = abw * (fg_sg / 0.791)
     return abv
 
