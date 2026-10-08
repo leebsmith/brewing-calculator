@@ -58,11 +58,25 @@ Validation codes: `INVALID_FERM_VOLUME`, `INVALID_SHRINKAGE`,
 
 Tests: `backend/tests/test_batch_solver_phase2.py`.
 
-### Stage 1.3 — Phase 3: Grist Mass Resolution (1D Root-Finding)
+### Stage 1.3 — Phase 3: Grist Mass Resolution (1D Root-Finding) (DONE)
 
 Brent's method on the cubic residual `P(M_grist)` over the bracketing interval
-`[a, b]` from `unified-treatment.md` §4. Consumes the derived
-`{V_pre_boil, R_L:G}` or `{V_pre_boil, r}` pair.
+`[a, b]` from `unified-treatment.md` §4. Functions:
+
+* `grist_mass_bracket(s_post_boil_target, s_late_add, extract_potential)` —
+  returns the guaranteed `[a, b]` bracket.
+* `grist_mass_residual(m_grist, ...)` — the cleared-denominator cubic
+  `P(M_grist)`.
+* `solve_grist_mass(...)` — orchestrator that builds the bracket, checks the
+  sign change, and runs `brentq`.
+
+Scope: `{V_pre_boil, R_L:G}` topology only. The `{V_pre_boil, r}` topology is
+deferred to Stage 1.4.
+
+Validation codes: `INVALID_EXTRACT_POTENTIAL`, `EXTRACT_TARGET_NON_POSITIVE`,
+`DEGENERATE_BRACKET`, `BRACKET_NO_SIGN_CHANGE`.
+
+Tests: `backend/tests/test_batch_solver_phase3.py`.
 
 ### Stage 1.4 — Phase 4: Stage Volume & Gravity Cascade
 
@@ -81,6 +95,6 @@ schema and route.
 | 1.0 | Shared pure helpers | DONE |
 | 1.1 | Phase 1: cold-side inverse | DONE |
 | 1.2 | Phase 2: volumetric reversal | DONE |
-| 1.3 | Phase 3: grist mass root-finding | TODO |
+| 1.3 | Phase 3: grist mass root-finding | DONE |
 | 1.4 | Phase 4: stage volume & gravity cascade | TODO |
 | 1.5 | Orchestration & API wiring | TODO |

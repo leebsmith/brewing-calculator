@@ -412,3 +412,169 @@ def resolve_volumetric_reversal(
         s_post_boil_target=s_post_boil_target,
         v_pre_boil=v_pre_boil,
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: Grist Mass Resolution (1D Root-Finding)
+# ---------------------------------------------------------------------------
+#
+# Stage 1.3 implements only the {V_pre_boil, R_L:G} constraint topology.
+# The {V_pre_boil, r} topology is deferred to Stage 1.4.
+
+
+def grist_mass_bracket(
+    s_post_boil_target: float,
+    s_late_add: float,
+    extract_potential: float,
+) -> tuple[float, float]:
+    """Compute the guaranteed bracketing interval ``[a, b]`` for ``M_grist``.
+
+    ``a = max(0.0, (S_post_boil_target - S_late_add) / E)``
+    ``b = (S_post_boil_target - S_late_add) / (0.50 * E)``
+
+    See ``unified-treatment.md`` §4.
+    """
+    delta_s = s_post_boil_target - s_late_add
+    a = max(0.0, delta_s / extract_potential)
+    b = delta_s / (0.50 * extract_potential)
+    return a, b
+
+
+def grist_mass_residual(
+    m_grist: float,
+    v_pre_boil: float,
+    r_l_to_g: float,
+    extract_potential: float,
+    mc_bar: float,
+    eta_conv: float,
+    s_post_boil_target: float,
+    s_late_add: float,
+    v_dead: float,
+    k_abs_true: float = K_ABS_TRUE_METRIC,
+    v_bar: float = V_BAR_METRIC,
+) -> float:
+    """Evaluate the cleared-denominator cubic residual ``P(M_grist)``.
+
+    ``P(M) = (eta_conv * E * M) * [D1(M) * D2(M) - V_ret(M)^2]
+             - (S_target - S_late) * D1(M) * D2(M)``
+
+    where, under the ``{V_pre_boil, R_L:G}`` topology:
+
+    * ``V_strike = R_L:G * M``
+    * ``c_vol = MC_bar / rho_water + v_bar * eta_conv * E``
+    * ``D1(M) = V_strike + c_vol * M``
+    * ``D2(M) = V_sparge + V_dead + k_abs_true * M``
+    * ``V_sparge = V_pre_boil - V_run1``, with ``V_run1`` derived from the tun
+      mass balance (see below).
+
+    Because ``V_sparge`` itself depends on ``M`` under this topology, the
+    residual is evaluated by first computing ``V_run1`` from the tun mass
+    balance and then ``V_sparge = V_pre_boil - V_run1``.
+
+    See ``unified-treatment.md`` §4.
+    """
+    v_strike = r_l_to_g * m_grist
+    c_vol = (mc_bar / RHO_WATER_METRIC) + (v_bar * eta_conv * extract_potential)
+
+    v_mc = moisture_volume(m_grist, mc_bar)
+    s_conv = converted_extract(m_grist, extract_potential, eta_conv)
+    v_sol = solute_displacement_volume(s_conv, v_bar)
+    v_ret = retained_volume(m_grist, k_abs_true, v_dead)
+
+    v_run1 = v_strike + v_mc + v_sol - v_ret
+    v_sparge = v_pre_boil - v_run1
+
+    d1 = v_strike + (c_vol * m_grist)
+    d2 = v_sparge + v_dead + (k_abs_true * m_grist)
+
+    delta_s = s_post_boil_target - s_late_add
+    return (eta_conv * extract_potential * m_grist) * (
+        (d1 * d2) - (v_ret**2)
+    ) - (delta_s * d1 * d2)
+
+
+def solve_grist_mass(
+    v_pre_boil: float,
+    r_l_to_g: float,
+    extract_potential: float,
+    mc_bar: float,
+    eta_conv: float,
+    s_post_boil_target: float,
+    s_late_add: float,
+    v_dead: float,
+    k_abs_true: float = K_ABS_TRUE_METRIC,
+    v_bar: float = V_BAR_METRIC,
+) -> float:
+    """Phase 3: resolve the dry grist mass ``M_grist`` via Brent's method.
+
+    Implements the ``{V_pre_boil, R_L:G}`` constraint topology only.
+
+    Args:
+        v_pre_boil: Derived pre-boil kettle volume, in liters (from Phase 2).
+        r_l_to_g: Liquor-to-grist ratio, in L/kg.
+        extract_potential: Composite dry-basis potential factor ``E``.
+        mc_bar: Composite moisture fraction ``MC_bar``.
+        eta_conv: Mash conversion efficiency as a fraction.
+        s_post_boil_target: Required post-boil extract mass, in kg.
+        s_late_add: Late-addition extract mass, in kg.
+        v_dead: Mash tun dead space, in liters.
+        k_abs_true: True husk absorption coefficient, in L/kg.
+        v_bar: Apparent specific volume of dissolved extract, in L/kg.
+
+    Returns:
+        The converged dry grist mass ``M_grist``, in kg.
+
+    Raises:
+        SolverValidationError: If the bracket is degenerate or the residual
+            does not change sign across it.
+
+    See ``unified-treatment.md`` §4 and §5 Phase 3.
+    """
+    if extract_potential <= 0.0:
+        raise SolverValidationError(
+            "INVALID_EXTRACT_POTENTIAL",
+            f"Composite extract potential must be positive; got {extract_potential}.",
+        )
+    if (s_post_boil_target - s_late_add) <= 0.0:
+        raise SolverValidationError(
+            "EXTRACT_TARGET_NON_POSITIVE",
+            (
+                f"Post-boil extract target ({s_post_boil_target:.4f} kg) must "
+                f"exceed late-addition extract ({s_late_add:.4f} kg)."
+            ),
+        )
+
+    a, b = grist_mass_bracket(s_post_boil_target, s_late_add, extract_potential)
+    if b <= a:
+        raise SolverValidationError(
+            "DEGENERATE_BRACKET",
+            f"Grist mass bracket is degenerate: a={a}, b={b}.",
+        )
+
+    def residual(m_grist: float) -> float:
+        return grist_mass_residual(
+            m_grist=m_grist,
+            v_pre_boil=v_pre_boil,
+            r_l_to_g=r_l_to_g,
+            extract_potential=extract_potential,
+            mc_bar=mc_bar,
+            eta_conv=eta_conv,
+            s_post_boil_target=s_post_boil_target,
+            s_late_add=s_late_add,
+            v_dead=v_dead,
+            k_abs_true=k_abs_true,
+            v_bar=v_bar,
+        )
+
+    f_a = residual(a)
+    f_b = residual(b)
+    if f_a * f_b > 0.0:
+        raise SolverValidationError(
+            "BRACKET_NO_SIGN_CHANGE",
+            (
+                f"Grist mass residual does not change sign on [{a:.4f}, "
+                f"{b:.4f}]: f(a)={f_a:.6f}, f(b)={f_b:.6f}."
+            ),
+        )
+
+    return brentq(residual, a, b)
