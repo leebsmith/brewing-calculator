@@ -22,6 +22,18 @@ export const BREW_CONSTANTS = {
   DEFAULT_HLT_COIL_FLOOR_L: 0.0,
   DEFAULT_HLT_STARTING_VOLUME_L: 35.0,
 
+  // Wizard Step Roster
+  // Single source of truth for which steps are implemented. Update this list
+  // when adding a new step partial, and update invalidateDownstream's
+  // downstream set accordingly. Steps are 1-indexed.
+  WIZARD_STEPS: [1, 2, 3, 4, 5],
+
+  // Steps that become dirty when an upstream step changes. These are the
+  // solved/derived steps (Master Solver, Water Chemistry, Hops, Fermentation,
+  // Dry Hops, Ledger). Kept separate from WIZARD_STEPS because a step can be
+  // implemented but not yet downstream-invalidatable (e.g. a pure input step).
+  WIZARD_DOWNSTREAM_STEPS: [6, 7, 8, 9, 10, 11, 12],
+
   // Grist Bill Limits
   MAX_MAJOR_MALTS: 8,
 

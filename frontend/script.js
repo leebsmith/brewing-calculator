@@ -639,13 +639,23 @@ export function createWizardNavigation() {
       if (!this.completedSteps.includes(stepNumber)) {
         this.completedSteps.push(stepNumber);
       }
-      this.highWaterMark = Math.max(this.highWaterMark, stepNumber + 1);
-      this.activeStep = stepNumber + 1;
+      // Clamp advancement to the last implemented step. Without this, completing
+      // the final step would set activeStep to a number with no matching panel,
+      // collapsing the accordion to nothing.
+      const lastStep = BREW_CONSTANTS.WIZARD_STEPS[BREW_CONSTANTS.WIZARD_STEPS.length - 1];
+      const nextStep = Math.min(stepNumber + 1, lastStep);
+      this.highWaterMark = Math.max(this.highWaterMark, nextStep);
+      this.activeStep = nextStep;
       Alpine.store('ui').add(BREW_CONSTANTS.MSG_STEP_CONFIGURED_TEMPLATE(stepNumber), 'success');
     },
 
     invalidateDownstream(fromStepNumber) {
-      this.dirtySteps = [7, 8, 9, 10, 12, 13].filter(step => step > fromStepNumber);
+      // Derived from the canonical downstream roster in constants.js rather
+      // than a hardcoded literal, so adding/removing a step only requires
+      // editing one place.
+      this.dirtySteps = BREW_CONSTANTS.WIZARD_DOWNSTREAM_STEPS.filter(
+        step => step > fromStepNumber
+      );
     },
 
     toggleExpansionMode() {
@@ -1756,6 +1766,20 @@ Alpine.data('wizard', () => {
     },
 
     init() {
+      // Dev-time guardrail: every declared wizard step must have a matching
+      // panel in the DOM. Catches partial-numbering drift at load time rather
+      // than at click time.
+      if (typeof document !== 'undefined') {
+        const missing = BREW_CONSTANTS.WIZARD_STEPS.filter(
+          (n) => !document.getElementById(`step-panel-${n}`)
+        );
+        if (missing.length > 0) {
+          console.warn(
+            `[wizard] Declared steps have no matching #step-panel-N in the DOM: ${missing.join(', ')}`
+          );
+        }
+      }
+
       // Event bus listener for recipe recalculation & step invalidation
       window.addEventListener('recipe:recalculate', () => {
         this.runBoilSolver();
