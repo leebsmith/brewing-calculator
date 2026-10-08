@@ -25,6 +25,9 @@ export const BREW_CONSTANTS = {
   // Grist Bill Limits
   MAX_MAJOR_MALTS: 8,
 
+  // Yeast Selection Limits
+  MAX_VISIBLE_YEASTS: 25,
+
   // Default Batch Manifest Settings
   DEFAULT_BATCH_NAME: 'Untitled Batch',
   DEFAULT_EQUIPMENT_PROFILE_ID: 'herms-30l',

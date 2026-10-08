@@ -2026,6 +2026,22 @@ Alpine.data('wizard', () => {
       });
     },
 
+    // Bounded view of the filtered yeast set. The full filtered list is still
+    // available via `filteredYeasts` (used for the result counter), but only
+    // the first MAX_VISIBLE_YEASTS rows are rendered into the DOM to bound
+    // both the DOM node count and the accordion panel height.
+    get visibleYeasts() {
+      return this.filteredYeasts.slice(0, BREW_CONSTANTS.MAX_VISIBLE_YEASTS);
+    },
+
+    get yeastResultCount() {
+      return this.filteredYeasts.length;
+    },
+
+    get isYeastListTruncated() {
+      return this.filteredYeasts.length > BREW_CONSTANTS.MAX_VISIBLE_YEASTS;
+    },
+
     get yeastManufacturers() {
       return Alpine.store('catalog') ? Alpine.store('catalog').yeastManufacturers : [];
     },

@@ -85,6 +85,7 @@ The yeast step demonstrates the full pattern:
 * **Validation in `markStepComplete(3)`:** Rejects progression if `yeast_id` is null, or if `yeast_attenuation_pct` falls outside the selected strain's `low_attenuation` / `high_attenuation` bounds (surfacing `MSG_YEAST_REQUIRED` or `MSG_YEAST_ATTENUATION_RANGE` via `$store.ui.add`).
 * **Catalog dependency:** Reads from `$store.catalog.yeasts`, populated by `fetchCatalog()` on auth state change.
 * **Filtering getters:** `filteredYeasts` and `yeastManufacturers` are computed getters on the `wizard` component, not stored state.
+* **Bounded rendering:** The table iterates `visibleYeasts` (a `slice(0, MAX_VISIBLE_YEASTS)` of `filteredYeasts`, capped at 25) rather than the full filtered set. The full count is surfaced via `yeastResultCount` and an `aria-live="polite"` counter above the table. This bounds both DOM node count and accordion panel height while preserving the filter/search discovery UX.
 
 ### Changing the Order of Existing Steps
 * Requires comprehensive renumbering across **all** HTML directives (`x-data`, `:class`, `x-show`, `@click`) and JavaScript validation checks inside `frontend/script.js`.

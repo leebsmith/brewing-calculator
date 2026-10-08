@@ -57,8 +57,17 @@
                 </div>
             </div>
 
-            <!-- Results Table -->
-            <div class="data-table-container">
+            <!-- Live Result Counter -->
+            <div
+                class="catalog-result-counter text-xs"
+                aria-live="polite"
+                x-text="isYeastListTruncated
+                    ? `Showing ${visibleYeasts.length} of ${yeastResultCount} matching strains — refine search or manufacturer filter to narrow results`
+                    : `Showing ${yeastResultCount} matching strains`"
+            ></div>
+
+            <!-- Results Table (scrollable, capped at MAX_VISIBLE_YEASTS rows) -->
+            <div class="data-table-container data-table-container-scroll">
                 <table class="data-table">
                     <thead>
                     <tr>
@@ -71,7 +80,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <template x-for="y in filteredYeasts" :key="y.id">
+                    <template x-for="y in visibleYeasts" :key="y.id">
                         <tr :class="{ 'is-selected': manifest.yeast_id === y.id }">
                             <td>
                                 <span class="font-medium" x-text="y.name"></span>

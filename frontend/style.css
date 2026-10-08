@@ -1008,6 +1008,21 @@ samp {
   background-color: var(--sys-surface-default);
 }
 
+/* Bounded-height variant: caps the visible row count and scrolls the
+   remainder. Used by the yeast selection table to prevent 200+ rows from
+   inflating the accordion panel. The sticky thead keeps column headers
+   visible during vertical scroll. */
+.data-table-container-scroll {
+  max-height: 28rem;
+  overflow-y: auto;
+}
+
+.data-table-container-scroll .data-table thead {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
 .data-table {
   width: 100%;
   text-align: left;
