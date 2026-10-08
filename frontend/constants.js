@@ -26,7 +26,7 @@ export const BREW_CONSTANTS = {
   // Single source of truth for which steps are implemented. Update this list
   // when adding a new step partial, and update invalidateDownstream's
   // downstream set accordingly. Steps are 1-indexed.
-  WIZARD_STEPS: [1, 2, 3, 4, 5],
+  WIZARD_STEPS: [1, 2, 3, 4, 5, 6],
 
   // Steps that become dirty when an upstream step changes. These are the
   // solved/derived steps (Master Solver, Water Chemistry, Hops, Fermentation,
@@ -106,7 +106,9 @@ export const BREW_CONSTANTS = {
     'step2_preboil_gravity': 'gravity',
     'step2_postboil_gravity': 'gravity',
     // Step 3: Yeast Selection
-    'step3_yeast_attenuation_pct': 'percentage'
+    'step3_yeast_attenuation_pct': 'percentage',
+    // Step 6: Batch Sparge Solver
+    'step6_intensive_value': 'compound'
   },
 
   UNIT_DOMAIN_MASS: 'mass',
@@ -154,4 +156,8 @@ export const BREW_CONSTANTS = {
   MSG_SOLVER_SINGULAR_PAIR: 'Invalid system: results in a singular matrix (underdetermined or degenerate).',
   MSG_SOLVER_SAME_VARIABLE: 'Cannot select the same variable twice.',
   MSG_SOLVER_UNKNOWN_VARIABLE: 'Unknown variable identifier.',
+
+  // Batch Sparge Solver (POST /api/solve-batch)
+  MSG_BATCH_SOLVER_FAILED: 'Batch solver request failed.',
+  MSG_BATCH_SOLVER_NO_GRIST: 'Add at least one major malt before solving the batch.',
 };

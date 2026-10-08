@@ -2032,6 +2032,88 @@ Alpine.data('wizard', () => {
       nav.markStepComplete.call(this, stepNumber);
     },
 
+    // --- Step 6: Batch Sparge Solver ---
+    // Constraint topology for the new POST /api/solve-batch endpoint.
+    // 'r_l_to_g'      -> {V_pre_boil, R_L:G}  (intensive_value is L/kg)
+    // 'runoff_ratio'  -> {V_pre_boil, r}      (intensive_value is dimensionless)
+    batchSolverTopology: 'r_l_to_g',
+    batchSolverIntensiveValue: 3.0,
+    batchSolverResult: null,
+    batchSolverError: null,
+    batchSolverLoading: false,
+
+    async solveBatch() {
+      this.batchSolverError = null;
+      this.batchSolverResult = null;
+
+      const rows = Alpine.store('maltGrid').majorMalts;
+      if (!rows || rows.length === 0) {
+        this.batchSolverError = BREW_CONSTANTS.MSG_BATCH_SOLVER_NO_GRIST;
+        console.error('[batchSolver]', this.batchSolverError);
+        return;
+      }
+
+      // Grain-bill mapping from the Hamilton-normalized majorMalts grid.
+      // The Hamilton largest-remainder allocator guarantees Σ pct === 100.0
+      // for any non-empty bill (see maltGrid.normalizeDraft), so w_i = pct/100
+      // sums to exactly 1.0 and no client-side re-normalization is needed.
+      const grain_bill = rows.map((r) => ({
+        w_i: (parseFloat(r.pct) || 0) / 100.0,
+        dbfg_i: parseFloat(r.potential_fraction) || 0.0,
+        mc_i: parseFloat(r.moisture_pct) || 0.0,
+      }));
+
+      const eq = this.manifest.equipment || {};
+      const payload = {
+        target_abv: parseFloat(this.manifest.target_abv) || 5.5,
+        apparent_attenuation: parseFloat(this.manifest.yeast_attenuation_pct) || 0.75,
+        v_ferm: parseFloat(this.manifest.target_volume_l) || 20.0,
+        topology: this.batchSolverTopology,
+        intensive_value: parseFloat(this.batchSolverIntensiveValue) || 3.0,
+        grain_bill,
+        s_late_add: 0.0,
+        v_kettle_dead: parseFloat(eq.kettle_dead_space_l) || 0.0,
+        delta_v_evap: (parseFloat(eq.boil_off_rate_l_per_hr) || 0.0) *
+          ((parseFloat(this.manifest.boil_time_min) || 60) / 60.0),
+        v_dead: parseFloat(eq.mash_dead_space_l) || 0.0,
+        eta_conv: parseFloat(eq.conversion_efficiency) || 0.90,
+        f_shrink: parseFloat(eq.shrinkage_pct) || 0.04,
+      };
+
+      this.batchSolverLoading = true;
+      try {
+        const res = await apiFetch('/api/solve-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.status === 422) {
+          const errData = await res.json().catch(() => ({}));
+          const detail = errData.detail || {};
+          // Log-only per spec: no toast for solver validation failures.
+          console.error(
+            `[batchSolver] validation failed (${detail.code || 'UNKNOWN'}): ${detail.message || 'no message'}`
+          );
+          this.batchSolverError = detail.message || BREW_CONSTANTS.MSG_BATCH_SOLVER_FAILED;
+          return;
+        }
+
+        if (!res.ok) {
+          console.error(`[batchSolver] HTTP ${res.status}: ${res.statusText}`);
+          this.batchSolverError = BREW_CONSTANTS.MSG_BATCH_SOLVER_FAILED;
+          return;
+        }
+
+        this.batchSolverResult = await res.json();
+      } catch (err) {
+        console.error('[batchSolver] request failed:', err);
+        this.batchSolverError = BREW_CONSTANTS.MSG_BATCH_SOLVER_FAILED;
+      } finally {
+        this.batchSolverLoading = false;
+      }
+    },
+
     // --- Step 3: Yeast Selection ---
     yeastSearchQuery: '',
     yeastManufacturerFilter: '',
