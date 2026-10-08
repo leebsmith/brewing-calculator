@@ -48,7 +48,7 @@ These equations track the dissolved extract mass transferring during each runoff
 ## 3. Constraint Topology & Degrees of Freedom
 The liquid volumetric subsystem possesses two degrees of freedom ($N_{\text{liq}} = 2$) and requires exactly two independent constraints containing at least one extensive variable to uniquely resolve the mathematical system. Within a top-down, target-driven recipe formulation workflow, $\{V_{\text{pre boil}}, r\}$ and $\{V_{\text{pre boil}}, R_{L:G}\}$ are the only practical constraint pairs.
 
-In both topologies, the pre-boil kettle volume ($V_{\text{pre boil}}$) is supplied as a **user input**, not derived. It is the extensive anchor of the pair; the intensive partner ($R_{L:G}$ or $r$) is the second input. All downstream volumetric quantities — including the cold fermenter volume ($V_{\text{ferm}}$) and the cold kettle volume ($V_{\text{kettle, cold}}$) — are **derived outputs** of the cascade, computed by reversing the boil-off and thermal contraction chain.
+In both topologies, the cold fermenter volume ($V_{\text{ferm}}$) is supplied as the **primary user input** and serves as the extensive anchor of the workflow. The intensive partner ($R_{L:G}$ or $r$) is the second input. The pre-boil kettle volume ($V_{\text{pre boil}}$) is a **derived output**, computed by working backward through the boil-off and thermal contraction chain before the root-finding solver initializes.
 
 ### The $\{V_{\text{pre boil}}, R_{L:G}\}$ Constraint Topology
 This configuration aligns with standard brewing practice by establishing a fixed pre-boil volume constraint while enforcing a specific physical mash thickness.
@@ -88,12 +88,13 @@ The pipeline begins by mathematically isolating the precise Original Gravity con
 * State Lock: The solver isolates the Original Gravity ($SG_{\text{post boil}}$ at $20^\circ\text{C}$) as an immutable constraint for the hot-side phase.
 
 ### Phase 2: Volumetric Reversal & Extract Targeting
-The system calculates absolute mass boundaries by reversing kettle boil-off and contraction mechanics. The extensive anchor $V_{\text{pre boil}}$ is a **user input**; the cold-side volumes below are **derived outputs** of this phase.
+The system calculates absolute mass boundaries by reversing kettle boil-off and contraction mechanics. The cold fermenter volume $V_{\text{ferm}}$ is the **primary user input**; the pre-boil volume $V_{\text{pre boil}}$ below is a **derived output** of this phase.
 
-* Total Cold Kettle Volume: $V_{\text{kettle, cold}} = \left[ V_{\text{pre boil}} - \Delta V_{\text{evap}} + (\bar{v} \cdot S_{\text{late add.}}) - V_{\text{kettle dead}} \right] \cdot (1 - f_{\text{shrink}})$
+* Total Cold Kettle Volume: $V_{\text{kettle, cold}} = V_{\text{ferm}} + \left[ V_{\text{kettle dead}} \cdot (1 - f_{\text{shrink}}) \right]$
 * Total Extract Target: $S_{\text{post boil}}^{\text{target}} = \frac{1000 \cdot (SG_{\text{post boil}} - 1) \cdot V_{\text{kettle, cold}}}{\gamma}$
 * Validation Gate: The finite state machine confirms $S_{\text{post boil}}^{\text{target}} - S_{\text{late add.}} > 0$ to prevent bracketing a negative grist mass.
-* Derived Cold Fermenter Volume: $V_{\text{ferm}} = V_{\text{kettle, cold}} - \left[ V_{\text{kettle dead}} \cdot (1 - f_{\text{shrink}}) \right]$
+* Extensive Pre-Boil Anchor: Derives the required kettle target volume:
+$$\begin{aligned} V_{\text{pre boil}} &= \frac{V_{\text{ferm}}}{(1 - f_{\text{shrink}})} + V_{\text{kettle dead}} + \Delta V_{\text{evap}} - (\bar{v} \cdot S_{\text{late add.}}) \end{aligned}$$
 
 
 ### Phase 3: Grist Mass Resolution (1D Root-Finding)

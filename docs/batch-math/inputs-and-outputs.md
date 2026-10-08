@@ -7,9 +7,8 @@ To resolve the master batch equations outlined in the "Batch Sparging Mathematic
 * Target Endpoints:
    * Desired Alcohol by Volume (ABV)
    * Apparent Attenuation (AA)
-   * Target cold fermenter volume ($V_{\text{ferm}}$)
 * Operational Input Pair:
-   * Target pre-boil kettle volume ($V_{\text{pre boil}}$) paired with either the Liquor-to-Grist Ratio ($R_{L:G}$) or the Runoff Ratio ($r$)
+   * Target cold fermenter volume ($V_{\text{ferm}}$) paired with either the Liquor-to-Grist Ratio ($R_{L:G}$) or the Runoff Ratio ($r$). The pre-boil kettle volume ($V_{\text{pre boil}}$) is a derived output of the volumetric reversal phase, not a direct input.
 * Recipe Parameters:
    * Late addition extract mass ($S_{\text{late add.}}$)
    * Malt specification vector, which includes mass fractions ($w_i$), dry-basis fine-grind potential ($\text{DBFG}_i$), and moisture content ($\text{MC}_i$)
@@ -37,16 +36,16 @@ Additionally, the gravity points conversion constant ($\gamma$) utilizes a metri
 
 The calculation cascade and solver behavior for the physical stage volumes shift fundamentally depending on which operational constraint pair is selected.
 
-The $\{V_{\text{pre boil}}, R_{L:G}\}$ Constraint Topology
-In this configuration, the strike volume scales linearly with the grist mass, forcing the sparge volume to dynamically absorb fluid retention shifts to hit the static pre-boil target.
+The $\{V_{\text{ferm}}, R_{L:G}\}$ Constraint Topology
+In this configuration, the strike volume scales linearly with the grist mass, forcing the sparge volume to dynamically absorb fluid retention shifts to hit the derived pre-boil target.
 
 * Strike Volume ($V_{\text{strike}}$): Calculated dynamically inside the root-finding solver loop as a linear function of the dry grist mass ($V_{\text{strike}} = R_{L:G} \cdot M_{\text{grist}}$).
 * First Runnings ($V_{\text{run 1}}$): Derived via the mash tun mass balance by taking the strike volume, adding intrinsic grain moisture and solute displacement, and subtracting the total retained volume.
 * Second Runnings ($V_{\text{run 2}}$): Evaluated by subtracting the first runnings from the extensive pre-boil kettle anchor ($V_{\text{pre boil}} - V_{\text{run 1}}$).
 * Sparge Volume ($V_{\text{sparge}}$): In a single-batch sparge, this is physically identical to the second runnings, expanding dynamically to satisfy the kettle target.
 
-The $\{V_{\text{pre boil}}, r\}$ Constraint Topology
-Pairing a fixed pre-boil volume with a runoff ratio triggers a mathematical simplification that treats the runoff volumes as static constants independent of the dynamic grist calculations.
+The $\{V_{\text{ferm}}, r\}$ Constraint Topology
+Pairing a fixed fermenter volume with a runoff ratio triggers a mathematical simplification that treats the runoff volumes as static constants independent of the dynamic grist calculations.
 
 * Sparge Volume ($V_{\text{sparge}}$) and Second Runnings ($V_{\text{run 2}}$): Calculated as a statically linked fraction of the total pre-boil target before the solver even executes ($V_{\text{sparge}} = V_{\text{run 2}} = \frac{V_{\text{pre boil}}}{r + 1}$).
 * First Runnings ($V_{\text{run 1}}$): Dictated entirely by the ratio and pre-boil volume, evaluated statically as the remainder of the total target ($V_{\text{pre boil}} - V_{\text{run 2}}$).
