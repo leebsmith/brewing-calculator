@@ -24,3 +24,7 @@ firebase-debug.log
 .firebase/
 frontend/dist/
 .agents/
+.aider*
+
+# A build artifact
+requirements.txt
