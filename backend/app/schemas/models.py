@@ -56,6 +56,7 @@ class StageCascadeModel(BaseModel):
     s_run1: float
     s_run2: float
     sg_pre_boil: float
+    v_post_boil: float
 
 
 class BatchSolverResponse(BaseModel):

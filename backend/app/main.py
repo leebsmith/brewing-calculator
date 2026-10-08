@@ -194,6 +194,7 @@ def solve_batch_endpoint(
             s_run1=result.cascade.s_run1,
             s_run2=result.cascade.s_run2,
             sg_pre_boil=result.cascade.sg_pre_boil,
+            v_post_boil=result.cascade.v_post_boil,
         ),
     )
 

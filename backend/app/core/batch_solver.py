@@ -700,6 +700,7 @@ class StageCascade:
     s_run1: float
     s_run2: float
     sg_pre_boil: float
+    v_post_boil: float
 
 
 def resolve_stage_cascade(
@@ -711,6 +712,7 @@ def resolve_stage_cascade(
     mc_bar: float,
     eta_conv: float,
     v_dead: float,
+    delta_v_evap: float,
     k_abs_true: float = K_ABS_TRUE_METRIC,
     v_bar: float = V_BAR_METRIC,
     gamma: float = GAMMA_METRIC,
@@ -786,6 +788,11 @@ def resolve_stage_cascade(
     )
     sg_pre_boil = calculate_sg_pre_boil(s_run1, s_run2, v_pre_boil, gamma)
 
+    # Hot-side kettle balance: V_post_boil_hot = V_pre_boil - delta_v_evap.
+    # (Late-addition displacement is not yet modeled on the hot side; when it
+    # is, add ``+ v_bar * s_late_add`` here and thread ``s_late_add`` through.)
+    v_post_boil = v_pre_boil - delta_v_evap
+
     return StageCascade(
         v_strike=v_strike,
         v_run1=v_run1,
@@ -794,6 +801,7 @@ def resolve_stage_cascade(
         s_run1=s_run1,
         s_run2=s_run2,
         sg_pre_boil=sg_pre_boil,
+        v_post_boil=v_post_boil,
     )
 
 
@@ -918,6 +926,7 @@ def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
         mc_bar=mc_bar,
         eta_conv=inputs.eta_conv,
         v_dead=inputs.v_dead,
+        delta_v_evap=inputs.delta_v_evap,
     )
 
     return BatchSolverResult(
