@@ -180,7 +180,7 @@ class MaltPrimitive(BaseModel):
     category: MaltCategory
     potential_sg: float = Field(..., description="Extract potential in SG, e.g., 1.037")
     potential_dry_basis: float = Field(..., description="Decimal yield, e.g., 0.80")
-    color_srm: float
+    color_lovibond: float
     moisture_pct: float = 0.04
     di_ph: float | None = None
     buffer_index: float | None = None
@@ -196,7 +196,10 @@ class HopPrimitive(BaseModel):
 class YeastPrimitive(BaseModel):
     id: str
     name: str
+    manufacturer: str
     attenuation_pct: float
+    low_attenuation: float
+    high_attenuation: float
     flocculation: str
     alcohol_tolerance_abv: float
     notes: str | None = None
@@ -205,8 +208,49 @@ class SugarPrimitive(BaseModel):
     id: str
     name: str
     potential_sg: float
-    color_srm: float
+    color_lovibond: float
     notes: str | None = None
+```
+````
+
+docs/calculator-domain-model.md
+````markdown
+<<<<<<< SEARCH
+### 5.2 Tier 2: Templates (`templates.py`)
+```python
+from pydantic import BaseModel, Field
+
+class EquipmentProfile(BaseModel):
+    id: str
+    name: str
+    mash_dead_space_l: float
+    grain_absorption_factor_l_per_kg: float = 0.96
+    conversion_efficiency: float = 0.95
+    boil_off_rate_l_per_hr: float
+    trub_loss_l: float
+    shrinkage_pct: float = 0.04
+    hlt_min_volume_l: float = 0.0  # HERMS coil submersion volume floor
+    max_kettle_volume_l: float
+
+class GrainBillItem(BaseModel):
+    malt_id: str
+    percentage: float  # Proportional fraction (sum = 100%)
+
+class GrainBillTemplate(BaseModel):
+    id: str
+    name: str
+    items: list[GrainBillItem]
+
+class WaterProfile(BaseModel):
+    id: str
+    name: str
+    calcium_ppm: float
+    magnesium_ppm: float
+    sodium_ppm: float
+    sulfate_ppm: float
+    chloride_ppm: float
+    bicarbonate_ppm: float
+    alkalinity_caco3_ppm: float
 ```
 
 ### 5.2 Tier 2: Templates (`templates.py`)
