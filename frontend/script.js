@@ -1993,22 +1993,6 @@ Alpine.data('wizard', () => {
         }
       }
 
-      // Validate Step 2
-      if (stepNumber === 2) {
-        if (!this.manifest.name || this.manifest.name.trim() === '') {
-          Alpine.store('ui').add(BREW_CONSTANTS.MSG_BATCH_NAME_REQUIRED, 'error');
-          return;
-        }
-        if (!this.manifest.target_volume_l || this.manifest.target_volume_l <= 0) {
-          Alpine.store('ui').add(BREW_CONSTANTS.MSG_TARGET_VOLUME_REQUIRED, 'error');
-          return;
-        }
-        if (!this.manifest.target_og || this.manifest.target_og < 1.010 || this.manifest.target_og > 1.200) {
-          Alpine.store('ui').add(BREW_CONSTANTS.MSG_TARGET_OG_REQUIRED, 'error');
-          return;
-        }
-      }
-
       // Validate Step 3 (Yeast Selection)
       if (stepNumber === 3) {
         if (!this.manifest.yeast_id) {

@@ -26,7 +26,10 @@ export const BREW_CONSTANTS = {
   // Single source of truth for which steps are implemented. Update this list
   // when adding a new step partial, and update invalidateDownstream's
   // downstream set accordingly. Steps are 1-indexed.
-  WIZARD_STEPS: [1, 2, 3, 4, 5, 6],
+  // NOTE: Step 2 (Batch Metadata) was retired; the roster intentionally skips
+  // it. The wizard.init() guardrail only warns about declared steps that lack
+  // a matching #step-panel-N, so omitting 2 here silences the false positive.
+  WIZARD_STEPS: [1, 3, 4, 5, 6],
 
   // Steps that become dirty when an upstream step changes. These are the
   // solved/derived steps (Master Solver, Water Chemistry, Hops, Fermentation,
