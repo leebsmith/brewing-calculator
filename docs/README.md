@@ -46,23 +46,25 @@ the code and should not be treated as specs.
 | [Design Requirements: Color Theming and Typography](design_requirements/color_theming_and_typography.md) | Rationale for the semantic token architecture, 60-30-10 rule, dark-mode elevation, and modular type scale. Realized in `tokens.css` / `style.css`. |
 | [Design Requirements: General Accordion Principles](design_requirements/general_accordion_principles.md) | Rationale for accordion affordances, hit targets, expansion models, and a11y semantics. Realized in the step-card accordion. |
 
-### Historical
+### Historical (Archived)
 
 Retained for derivation rationale and audit trail. Superseded by the Current
-documents above.
+documents above. All files in this tier have been moved to
+[`docs/archive/`](archive/) to keep the active documentation directory
+uncluttered.
 
 | Document | Superseded By |
 | :--- | :--- |
-| [Foundational Architecture Report — Reverse Engineering and Audit](Foundational-Architecture-Report-Reverse-Engineering-and-Aud.md) | `calculator-domain-model.md`, `vessel-loss-model.md` |
-| [Master Batch Sparge Equation](master_batch_sparge_eqn.md) | `batch-math/unified-treatment.md` |
-| [Canonical Batch Sparge Equation](batch-math/canonical-batch-sparge-equation.md) | `batch-math/unified-treatment.md` |
-| [Calculations Cascade](batch-math/calculations-cascade.md) | `batch-math/unified-treatment.md` §5 |
-| [Optimal Constraint Topology](batch-math/optimal-constraint-topology.md) | `batch-math/unified-treatment.md` §3 |
-| [Top-Down Recipe Formulation Workflow](batch-math/top-down-recipe-formulation-workflow.md) | `batch-math/unified-treatment.md` §5 |
-| [Bi-Directional Hydration Spec](bi-directional-hydration-spec.md) | `$store.units.hydrate` / `commit` / `sanitize` (binary-invariant redesign) |
-| [Calculator Design Spec (PDF)](calculator-design-spec.pdf) | `calculator_design_spec.md`, `calculator-domain-model.md` |
-| [Good Enough Chemistry Calculator Spec (PDF)](good-enough-chemistry-calculator-spec.pdf) | `calculator-domain-model.md` §4 |
-| [SPA Wizard UI Design Plan](SPA%20Wizard%20UI%20Design%20Plan%20-%20Google%20Docs.md) | `plans/master-frontend-ui-requirements.md` |
+| [Foundational Architecture Report — Reverse Engineering and Audit](archive/Foundational-Architecture-Report-Reverse-Engineering-and-Aud.md) | `calculator-domain-model.md`, `vessel-loss-model.md` |
+| [Master Batch Sparge Equation](archive/master_batch_sparge_eqn.md) | `batch-math/unified-treatment.md` |
+| [Canonical Batch Sparge Equation](archive/canonical-batch-sparge-equation.md) | `batch-math/unified-treatment.md` |
+| [Calculations Cascade](archive/calculations-cascade.md) | `batch-math/unified-treatment.md` §5 |
+| [Optimal Constraint Topology](archive/optimal-constraint-topology.md) | `batch-math/unified-treatment.md` §3 |
+| [Top-Down Recipe Formulation Workflow](archive/top-down-recipe-formulation-workflow.md) | `batch-math/unified-treatment.md` §5 |
+| [Bi-Directional Hydration Spec](archive/bi-directional-hydration-spec.md) | `$store.units.hydrate` / `commit` / `sanitize` (binary-invariant redesign) |
+| [Calculator Design Spec (PDF)](archive/calculator-design-spec.pdf) | `calculator_design_spec.md`, `calculator-domain-model.md` |
+| [Good Enough Chemistry Calculator Spec (PDF)](archive/good-enough-chemistry-calculator-spec.pdf) | `calculator-domain-model.md` §4 |
+| [SPA Wizard UI Design Plan](archive/SPA%20Wizard%20UI%20Design%20Plan%20-%20Google%20Docs.md) | `plans/master-frontend-ui-requirements.md` |
 
 ### Operational Guides
 
@@ -83,7 +85,7 @@ When documents conflict, resolve in this order:
 2. **Current documents** (above). These are maintained in lockstep with the code.
 3. **Partially Stale documents.** Read with the noted caveats; prefer the code where they disagree.
 4. **Reference documents.** Consult for rationale and decision history, not for current behavior.
-5. **Historical documents.** Do not use for implementation. Consult only for derivation rationale.
+5. **Historical documents** (in `docs/archive/`). Do not use for implementation. Consult only for derivation rationale.
 
 Within the Current tier, the following precedence applies:
 
