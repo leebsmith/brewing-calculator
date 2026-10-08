@@ -115,8 +115,9 @@ def test_solve_grist_mass_is_pure(standard_case):
 
 
 def test_solve_grist_mass_increases_with_extract_target(standard_case):
+    # Both targets must be feasible within the 25 L pre-boil anchor.
     low = solve_grist_mass(**{**standard_case, "s_post_boil_target": 2.0})
-    high = solve_grist_mass(**{**standard_case, "s_post_boil_target": 4.0})
+    high = solve_grist_mass(**{**standard_case, "s_post_boil_target": 3.0})
     assert high > low
 
 
@@ -134,10 +135,9 @@ def test_solve_grist_mass_rejects_non_positive_extract_target(standard_case):
     assert exc.value.code == "EXTRACT_TARGET_NON_POSITIVE"
 
 
-def test_solve_grist_mass_rejects_degenerate_bracket(standard_case):
-    # A tiny extract target with a large late addition drives b <= a.
+def test_solve_grist_mass_rejects_infeasible_target(standard_case):
+    # A 4 kg extract target exceeds what the 25 L pre-boil anchor can supply,
+    # so the residual stays negative across the whole bracket.
     with pytest.raises(SolverValidationError) as exc:
-        solve_grist_mass(
-            **{**standard_case, "s_post_boil_target": 0.5, "s_late_add": 0.49}
-        )
-    assert exc.value.code in {"DEGENERATE_BRACKET", "BRACKET_NO_SIGN_CHANGE"}
+        solve_grist_mass(**{**standard_case, "s_post_boil_target": 4.0})
+    assert exc.value.code == "BRACKET_NO_SIGN_CHANGE"
