@@ -48,7 +48,12 @@ These equations track the dissolved extract mass transferring during each runoff
 ## 3. Constraint Topology & Degrees of Freedom
 The liquid volumetric subsystem possesses two degrees of freedom ($N_{\text{liq}} = 2$) and requires exactly two independent constraints containing at least one extensive variable to uniquely resolve the mathematical system. Within a top-down, target-driven recipe formulation workflow, $\{V_{\text{pre boil}}, r\}$ and $\{V_{\text{pre boil}}, R_{L:G}\}$ are the only practical constraint pairs.
 
-In both topologies, the cold fermenter volume ($V_{\text{ferm}}$) is supplied as the **primary user input** and serves as the extensive anchor of the workflow. The intensive partner ($R_{L:G}$ or $r$) is the second input. The pre-boil kettle volume ($V_{\text{pre boil}}$) is a **derived output**, computed by working backward through the boil-off and thermal contraction chain before the root-finding solver initializes.
+A distinction must be drawn between the **application input state** and the **solver constraint topology**:
+
+* **Application Perspective (Independent User Inputs):** The desired cold fermenter volume ($V_{\text{ferm}}$) is collected as an independent "Target Endpoint" alongside the intensive constraint ($R_{L:G}$ or $r$). The user-facing input pairs are therefore $\{V_{\text{ferm}}, R_{L:G}\}$ and $\{V_{\text{ferm}}, r\}$.
+* **Solver Perspective (Mathematical Constraints):** The liquid volumetric subsystem solver explicitly requires $\{V_{\text{pre boil}}, R_{L:G}\}$ or $\{V_{\text{pre boil}}, r\}$ to resolve the matrix. The pre-boil kettle volume ($V_{\text{pre boil}}$) is the extensive anchor consumed by the root-finder.
+
+The computational pipeline bridges the two layers via the **Volumetric Reversal** phase: $V_{\text{ferm}}$ is used to work backward through kettle dead space, thermal contraction, and boil-off to establish $V_{\text{pre boil}}$. Once complete, the derived $\{V_{\text{pre boil}}, R_{L:G}\}$ or $\{V_{\text{pre boil}}, r\}$ pair is passed into the 1D root-finding solver.
 
 ### The $\{V_{\text{pre boil}}, R_{L:G}\}$ Constraint Topology
 This configuration aligns with standard brewing practice by establishing a fixed pre-boil volume constraint while enforcing a specific physical mash thickness.
@@ -88,7 +93,7 @@ The pipeline begins by mathematically isolating the precise Original Gravity con
 * State Lock: The solver isolates the Original Gravity ($SG_{\text{post boil}}$ at $20^\circ\text{C}$) as an immutable constraint for the hot-side phase.
 
 ### Phase 2: Volumetric Reversal & Extract Targeting
-The system calculates absolute mass boundaries by reversing kettle boil-off and contraction mechanics. The cold fermenter volume $V_{\text{ferm}}$ is the **primary user input**; the pre-boil volume $V_{\text{pre boil}}$ below is a **derived output** of this phase.
+The system calculates absolute mass boundaries by reversing kettle boil-off and contraction mechanics. This phase is the **bridge** between the application input state ($V_{\text{ferm}}$) and the solver constraint topology ($V_{\text{pre boil}}$): the cold fermenter volume $V_{\text{ferm}}$ is the **primary user input**, and the pre-boil volume $V_{\text{pre boil}}$ below is the **derived output** handed to the root-finder.
 
 * Total Cold Kettle Volume: $V_{\text{kettle, cold}} = V_{\text{ferm}} + \left[ V_{\text{kettle dead}} \cdot (1 - f_{\text{shrink}}) \right]$
 * Total Extract Target: $S_{\text{post boil}}^{\text{target}} = \frac{1000 \cdot (SG_{\text{post boil}} - 1) \cdot V_{\text{kettle, cold}}}{\gamma}$
@@ -100,7 +105,7 @@ $$\begin{aligned} V_{\text{pre boil}} &= \frac{V_{\text{ferm}}}{(1 - f_{\text{sh
 ### Phase 3: Grist Mass Resolution (1D Root-Finding)
 With boundaries successfully validated, the system evaluates the root grist mass.
 
-* Brent's Method Execution: Pairing the extensive boundary ($V_{\text{pre boil}}$) with the selected intensive constraint ($R_{L:G}$ or $r$), the system executes Brent's Method on the polynomial until $M_{\text{grist}}$ fully converges.
+* Brent's Method Execution: Pairing the derived extensive boundary ($V_{\text{pre boil}}$) with the selected intensive constraint ($R_{L:G}$ or $r$), the system executes Brent's Method on the polynomial until $M_{\text{grist}}$ fully converges. Note that the solver consumes the **derived** $\{V_{\text{pre boil}}, \cdot\}$ pair, not the user-facing $\{V_{\text{ferm}}, \cdot\}$ pair.
 
 ### Phase 4: Stage Volume & Gravity Cascade
 Post-convergence, physical volumes are cascaded dependent on the chosen constraint pair.
