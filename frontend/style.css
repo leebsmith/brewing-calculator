@@ -1015,6 +1015,18 @@ samp {
 .data-table-container-scroll {
   max-height: 28rem;
   overflow-y: auto;
+  overflow-x: auto;
+}
+
+/* Header cells in fixed-layout tables must wrap rather than overflow into
+   adjacent columns. The yeast table's 6 columns are narrow enough that
+   multi-word headers ("Manufacturer", "Flocculation") would otherwise
+   visually collide. */
+.data-table.is-fixed thead th {
+  white-space: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: var(--line-height-tight);
 }
 
 .data-table-container-scroll .data-table thead {
