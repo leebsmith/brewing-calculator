@@ -788,7 +788,8 @@ samp {
   padding: var(--space-4);
   background-color: var(--sys-surface-overlay);
   backdrop-filter: var(--sys-backdrop-blur);
-  container: modal-bounds / size;
+  container-name: modal-bounds;
+  container-type: size;
 }
 
 .modal-dialog {
@@ -844,7 +845,7 @@ samp {
   max-width: var(--container-modal-workspace, 72rem);
 }
 
-@container modal-bounds (max-width: 800px) {
+@container (max-width: 800px) {
   .modal-dialog-workspace {
     border-radius: var(--radius-sm);
     padding: var(--space-2);
