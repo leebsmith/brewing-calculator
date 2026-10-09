@@ -89,11 +89,10 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Max HLT Volume</span>
-                    <span class="text-danger text-xs">(assumes HLT starts full)</span>
                     <button type="button" @click="$store.units.toggle('step1_max_hlt_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_max_hlt_volume_l') }" x-text="$store.units.getLabel('step1_max_hlt_volume_l')" title="Click to toggle unit"></button>
                 </label>
                 <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.max_hlt_volume_l, 'step1_max_hlt_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_hlt_volume_l', $event.target.value, 'step1_max_hlt_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
-                <span class="form-hint">Hot Liquor Tank initial fill capacity. The solver assumes the HLT is filled to this volume at brew-day start.</span>
+                <span class="form-hint">Maximum HLT capacity. The batch-level starting volume is set in Step 5 and defaults to this value.</span>
             </div>
 
             <!-- HLT Min Coil Floor -->
@@ -104,16 +103,6 @@
                 </label>
                 <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.hlt_coil_floor_l, 'step1_hlt_coil_floor_l')" @input="setVolDisplay(manifest.equipment, 'hlt_coil_floor_l', $event.target.value, 'step1_hlt_coil_floor_l'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">HERMS coil submersion floor</span>
-            </div>
-
-            <!-- HLT Starting Volume -->
-            <div class="form-group">
-                <label class="form-label">
-                    <span>HLT Starting Volume</span>
-                    <button type="button" @click="$store.units.toggle('step1_hlt_starting_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_hlt_starting_volume_l') }" x-text="$store.units.getLabel('step1_hlt_starting_volume_l')" title="Click to toggle unit"></button>
-                </label>
-                <input type="number" step="0.5" min="0" :value="volDisplay(manifest.equipment.hlt_starting_volume_l, 'step1_hlt_starting_volume_l')" @input="setVolDisplay(manifest.equipment, 'hlt_starting_volume_l', $event.target.value, 'step1_hlt_starting_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
-                <span class="form-hint">Liquor in the HLT at brew-day start</span>
             </div>
 
             <!-- HLT Dead Space -->
