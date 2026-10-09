@@ -2,6 +2,8 @@
 
 **Status:** Complete — all twelve questions resolved. Implementation may proceed.
 
+> **Note on this document:** This file is the design record. It is not the implementation spec. The editor engineer works from this document plus the implementation instructions that reference it by section number. Do not treat this file as a source of truth for current disk state of any other file.
+
 ## Context
 
 The Mash Card is **primarily an input card**, with an optional summary readout.
