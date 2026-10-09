@@ -68,9 +68,11 @@ def test_solve_batch_returns_200_with_full_response_shape(client, valid_payload)
         "cascade",
         "max_achievable_abv",
         "hlt",
+        "mash_thickness_l_per_kg",
     }
 
-    # Cascade shape, including the Stage 5 v_post_boil field.
+    # Cascade shape, including the Stage 5 v_post_boil field and the
+    # solver-resolved mash thickness the Mash Card reads.
     assert set(body["cascade"].keys()) == {
         "v_strike",
         "v_run1",
@@ -80,6 +82,7 @@ def test_solve_batch_returns_200_with_full_response_shape(client, valid_payload)
         "s_run2",
         "sg_pre_boil",
         "v_post_boil",
+        "mash_thickness_l_per_kg",
     }
 
 
@@ -98,6 +101,14 @@ def test_solve_batch_anchors_are_physically_plausible(client, valid_payload):
     )
     # Max achievable ABV is echoed back and exceeds the target.
     assert body["max_achievable_abv"] > valid_payload["target_abv"]
+    # Under the r_l_to_g topology the resolved mash thickness is the input
+    # R_L:G verbatim, surfaced both at the top level and on the cascade.
+    assert body["mash_thickness_l_per_kg"] == pytest.approx(
+        valid_payload["intensive_value"]
+    )
+    assert body["cascade"]["mash_thickness_l_per_kg"] == pytest.approx(
+        valid_payload["intensive_value"]
+    )
     # HLT water budget is present and internally consistent.
     hlt = body["hlt"]
     assert hlt["v_hlt_debt"] == pytest.approx(
@@ -118,6 +129,11 @@ def test_solve_batch_runoff_ratio_topology(client, valid_payload):
     # r = 1.0 -> equal runnings: V_run1 == V_run2 == V_pre_boil / 2.
     assert body["cascade"]["v_run1"] == pytest.approx(body["v_pre_boil"] / 2.0)
     assert body["cascade"]["v_run2"] == pytest.approx(body["v_pre_boil"] / 2.0)
+    # Under runoff_ratio the mash thickness is an output, derived as
+    # V_strike / M_grist, not the input intensive value (which is r here).
+    assert body["mash_thickness_l_per_kg"] == pytest.approx(
+        body["cascade"]["v_strike"] / body["m_grist"]
+    )
 
 
 # ---------------------------------------------------------------------------
