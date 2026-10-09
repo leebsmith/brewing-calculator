@@ -77,10 +77,11 @@ Mash-out is a separate always-present step at 168–170 °F (75.5–76.7 °C). I
 - **Duration** — user-editable hold time.
 - **Mash-out type flag** — whether it's a true mash-out (infusion/decoction to raise temp) or just a hold.
 
-### 5. Ordering & constraints
-- Are rests always displayed in ascending temperature order, or in the order the user enabled them?
-- Can the user reorder?
-- Do we enforce monotonically increasing temperature across enabled rests, or allow arbitrary order?
+### 5. Ordering & constraints — RESOLVED
+
+Rests are **always displayed in ascending temperature order**. The order is **enforced**, not arbitrary. The user **cannot reorder** rests manually — the sort is derived from the "use" temperature of each enabled rest.
+
+This means the dough-in rest (first, marked "→") and the mash-out step (last) are naturally bookends, and any enabled rests fall between them in temperature order.
 
 ### 6. Summary readout
 What should it show? Candidates: total mash time, total water used (strike + infusions), strike water temp, predicted first-runnings gravity, mash pH estimate. Which matter?
@@ -117,3 +118,4 @@ _(Record answers here as we resolve each question. Do not begin implementation u
 - **Q1 (Alpha-Amylase Rest range):** 68–72 °C (154–162 °F). Target: alpha-amylase. Objective: dextrinization — body and reduced fermentability.
 - **Q3 (Dough-in fields):** Only strike water temp is user-editable; everything else is solver-derived. Dough-in is the first rest, marked with "→".
 - **Q11 (UI shape):** Three-part card — style dropdown + rest checkbox table, "Configure Rests" modal (via `<load>` include) for editing use-temp/duration, and a summary table on the base card that recapitulates the modal and computes strike water temp.
+- **Q5 (Ordering & constraints):** Rests always displayed in ascending temperature order. Enforced, not arbitrary. No manual reordering — sort is derived from each rest's "use" temperature.
