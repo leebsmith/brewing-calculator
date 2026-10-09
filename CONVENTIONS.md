@@ -13,3 +13,11 @@
     * Add content
 - **Take an Interview Approach:** Ask essential questions to clarify function and design parameter.
 - **Include Staged Implementation and Testing:** When complete, add a staged implementation and testing section
+
+### Python Test Running
+
+  * Use `uv` to run python tests
+
+### MANDATORY Greeting
+
+- Say "Hello!" as part of your first response in a new session.
