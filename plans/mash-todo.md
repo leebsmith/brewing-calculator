@@ -82,8 +82,21 @@ Mash-out is a separate always-present step at 168–170 °F (75.5–76.7 °C). I
 - Can the user reorder?
 - Do we enforce monotonically increasing temperature across enabled rests, or allow arbitrary order?
 
-### 6. Summary readout
-What should it show? Candidates: total mash time, total water used (strike + infusions), strike water temp, predicted first-runnings gravity, mash pH estimate. Which matter?
+### 6. Summary readout — RESOLVED
+
+The summary table on the base card shows, for each enabled rest (in ascending temperature order):
+
+- **Rest name** (with "→" prefix on the dough-in rest)
+- **Use temperature** (user-set, unit-aware)
+- **Duration** (user-set)
+- **Purpose** (short description from the reference table)
+
+Below the rest table, the summary shows derived values:
+
+- **Strike water temperature** — computed from the dough-in "use" temperature once it is set.
+- **Total mash time** — sum of all enabled rest durations plus the mash-out duration.
+
+Other candidates (total water used, predicted first-runnings gravity, mash pH estimate) are **deferred** — they belong to the solver/water-chemistry modules, not the Mash Card summary.
 
 ### 7. Relationship to the solver — RESOLVED
 
