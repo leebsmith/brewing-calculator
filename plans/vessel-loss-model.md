@@ -251,12 +251,16 @@ they are physically distinct and may be tuned independently:
 | `hlt_dead_space_l` | HLT | Dead space | Equipment |
 | `hlt_transfer_loss_l` | HLT | Transfer | Equipment |
 | `hlt_coil_floor_l` | HLT | Constraint (not a loss) | Equipment |
-| `hlt_starting_volume_l` | HLT | Batch parameter | Batch |
 
 The `Scope` column distinguishes **equipment-level** fields (properties of the
 hardware, stored in the equipment profile) from **batch-level** fields
-(properties of a particular brew day, stored in the manifest). Only
-`hlt_starting_volume_l` is batch-level.
+(properties of a particular brew day, stored in the manifest).
+
+`hlt_starting_volume_l` is **batch-level** and therefore lives on the batch
+solver request, not on the equipment profile. The frontend pre-fills it from
+the equipment profile's `max_hlt_volume_l` (fill-to-capacity default), but the
+brewer may override it for a given brew day — e.g. under-filling the HLT to
+avoid heating unnecessary liquor on a small batch.
 
 ### 5.2 Application: Collapse to Scalars
 
@@ -363,11 +367,12 @@ scalar, because HLT liquor is water and does not carry extract.
 - ~~Should transfer losses be estimated from hose diameter and length, or
   entered directly by the user?~~ **Resolved:** direct entry. Estimation from
   geometry is deferred indefinitely.
-- Should `hlt_starting_volume_l` default to `max_hlt_volume_l` (fill to
+- ~~Should `hlt_starting_volume_l` default to `max_hlt_volume_l` (fill to
   capacity), or to a computed "just enough" value derived from the batch's
-  total water demand? Filling to capacity is simpler and matches common
-  practice, but a computed default would avoid heating unnecessary liquor.
-  (Deferred — default to `max_hlt_volume_l` for v1.)
+  total water demand?~~ **Resolved:** the field is batch-level and lives on the
+  batch solver request. The frontend pre-fills it from `max_hlt_volume_l`
+  (fill-to-capacity default), and the brewer may override it per brew day. A
+  computed "just enough" default remains a possible future enhancement.
 - Should the HLT top-up be surfaced as an explicit user-facing field, or
   computed silently and shown as a read-only derived value? (Deferred —
   computed and shown read-only, consistent with the solver's other derived

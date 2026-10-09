@@ -14,7 +14,6 @@ DEFAULT_HLT_DEAD_SPACE_L: Final[float] = 0.946           # 0.25 gal hose/pump lo
 DEFAULT_HLT_TRANSFER_LOSS_L: Final[float] = 0.946        # 0.25 gal hose/pump loss
 DEFAULT_TRUB_LOSS_L: Final[float] = 1.5
 DEFAULT_HLT_COIL_FLOOR_L: Final[float] = 0.0
-DEFAULT_HLT_STARTING_VOLUME_L: Final[float] = 35.0
 
 
 class EquipmentProfile(BaseModel):
@@ -43,7 +42,6 @@ class EquipmentProfile(BaseModel):
     conversion_efficiency: float = Field(default=DEFAULT_CONVERSION_EFFICIENCY, gt=0, le=1.0, description="Mash starch conversion efficiency fraction (0.0 to 1.0)")
     shrinkage_pct: float = Field(default=DEFAULT_SHRINKAGE_PCT, ge=0, le=0.20, description="Wort cooling shrinkage contraction percentage fraction")
     hlt_coil_floor_l: float = Field(default=DEFAULT_HLT_COIL_FLOOR_L, ge=0, description="Minimum volume floor to submerge HERMS coil in liters (constraint, not a loss)")
-    hlt_starting_volume_l: float = Field(default=DEFAULT_HLT_STARTING_VOLUME_L, ge=0, description="Volume of liquor in the HLT at the start of the brew day in liters (batch-level parameter)")
     is_custom: bool = Field(default=False, description="Flag indicating user-created custom profile")
 
 

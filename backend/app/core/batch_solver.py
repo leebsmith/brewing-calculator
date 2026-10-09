@@ -894,6 +894,11 @@ class BatchSolverInput:
         v_dead: Mash tun dead space, in liters.
         eta_conv: Mash conversion efficiency as a fraction.
         f_shrink: Thermal contraction coefficient (default 4%).
+        hlt_starting_volume_l: Volume of liquor in the HLT at the start of the
+            brew day, in liters. Batch-level parameter; the frontend pre-fills
+            it from the equipment profile's ``max_hlt_volume_l``. Consumed by
+            the HLT water budget (top-up and deliverable sparge volume), not
+            by the extract mass balance.
     """
 
     target_abv: float
@@ -908,6 +913,7 @@ class BatchSolverInput:
     v_dead: float
     eta_conv: float
     f_shrink: float = F_SHRINK_DEFAULT
+    hlt_starting_volume_l: float = 0.0
 
 
 @dataclass(frozen=True)

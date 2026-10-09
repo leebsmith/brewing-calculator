@@ -46,6 +46,15 @@ class BatchSolverRequest(BaseModel):
     v_dead: float = Field(0.0, ge=0, description="Mash tun dead space (L)")
     eta_conv: float = Field(..., gt=0, le=1, description="Conversion efficiency")
     f_shrink: float = Field(0.04, ge=0, lt=1, description="Thermal contraction")
+    hlt_starting_volume_l: float = Field(
+        ...,
+        ge=0,
+        description=(
+            "Volume of liquor in the HLT at the start of the brew day (L). "
+            "Batch-level parameter; the frontend pre-fills this from the "
+            "equipment profile's max_hlt_volume_l."
+        ),
+    )
 
 
 class StageCascadeModel(BaseModel):
