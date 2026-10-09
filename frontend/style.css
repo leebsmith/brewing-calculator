@@ -845,8 +845,7 @@ samp {
   max-width: var(--container-modal-workspace, 72rem);
 }
 
-/* stylelint-disable-next-line at-rule-no-unknown -- @container with named container is valid CSS */
-@container modal-bounds (max-width: 800px) {
+@container modal-bounds (max-width: 800px) { /* stylelint-disable-line at-rule-no-unknown -- @container with named container is valid CSS */
   .modal-dialog-workspace {
     border-radius: var(--radius-sm);
     padding: var(--space-2);
