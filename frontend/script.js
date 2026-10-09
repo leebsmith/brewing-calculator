@@ -158,6 +158,17 @@ const UNIT_REGISTRY = {
       'qt/lb':  { label: 'qt/lb',  to_base: (v) => v * 2.08635, from_base: (v) => v / 2.08635, precision: 2 }
     }
   },
+  mash_thickness: {
+    // Volume-per-mass ratio (L/kg <-> qt/lb). Numerically identical to the
+    // `compound` domain, but registered separately because the Mash Card's
+    // mash-thickness field is a distinct user preference from the Step 5
+    // intensive value (design record Q8).
+    base_unit: 'L/kg',
+    units: {
+      'L/kg':   { label: 'L/kg',   to_base: (v) => v, from_base: (v) => v, precision: 2 },
+      'qt/lb':  { label: 'qt/lb',  to_base: (v) => v * 2.08635, from_base: (v) => v / 2.08635, precision: 2 }
+    }
+  },
   extract_potential: {
     base_unit: 'L·°/kg',
     units: {

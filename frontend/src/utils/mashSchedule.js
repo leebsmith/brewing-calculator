@@ -239,16 +239,62 @@ export function isRestTempOutOfRange(restId, useTempC) {
 }
 
 /**
+ * Braukaiser empirical Limit of Attenuation (LoA) parameters.
+ *
+ * Ported from the reference implementation:
+ *
+ *   estimated_loa = base_attenuation
+ *                 - (target_temp_c - base_temp_c) * attenuation_drop_per_c
+ *
+ * clamped to [loa_min_pct, loa_max_pct]. Valid for standard malt blends
+ * within 63–70 °C. The baseline is 82% at 63 °C, dropping 3.5 percentage
+ * points per °C of rest temperature.
+ */
+export const BRAUKAISER_BASE_ATTENUATION_PCT = 82.0;
+export const BRAUKAISER_BASE_TEMP_C = 63.0;
+export const BRAUKAISER_DROP_PER_C = 3.5;
+export const BRAUKAISER_LOA_MIN_PCT = 60.0;
+export const BRAUKAISER_LOA_MAX_PCT = 88.0;
+
+/**
+ * Estimate the Limit of Attenuation (LoA) for a single saccharification rest.
+ *
+ * Direct port of the Braukaiser empirical model. Returns a percentage in
+ * [60, 88], clamped. Valid for standard malt blends within 63–70 °C.
+ *
+ * @param {number} targetTempC - Saccharification rest temperature, in °C.
+ * @param {number} [baseAttenuationPct] - Malt-specific baseline attenuation.
+ * @param {number} [baseTempC] - Temperature at which the baseline applies.
+ * @param {number} [dropPerC] - Attenuation drop per °C above the baseline.
+ * @returns {number} Estimated LoA as a percentage, or NaN if input is invalid.
+ */
+export function estimateSingleRestLoaPct(
+  targetTempC,
+  baseAttenuationPct = BRAUKAISER_BASE_ATTENUATION_PCT,
+  baseTempC = BRAUKAISER_BASE_TEMP_C,
+  dropPerC = BRAUKAISER_DROP_PER_C
+) {
+  const temp = Number(targetTempC);
+  if (isNaN(temp)) {
+    console.error('estimateSingleRestLoaPct: target temperature must be numeric.');
+    return NaN;
+  }
+  const estimated = baseAttenuationPct - (temp - baseTempC) * dropPerC;
+  return Math.max(BRAUKAISER_LOA_MIN_PCT, Math.min(BRAUKAISER_LOA_MAX_PCT, estimated));
+}
+
+/**
  * Estimate the Limit of Attenuation (LOA) from the mash schedule.
  *
  * Informational only — does not feed the solver (design record Q6b). Uses the
- * Braukaiser model, which weights each rest's contribution by its duration and
- * its position relative to the beta/alpha amylase activity windows.
+ * Braukaiser model per saccharification rest, then duration-weights the
+ * per-rest results into a single schedule-level estimate.
  *
- * The model is a first-order approximation: each enabled saccharification rest
- * contributes a fermentability weight proportional to its duration, scaled by
- * how close its temperature sits to the beta-amylase optimum (63 °C, favoring
- * fermentability) versus the alpha-amylase optimum (72 °C, favoring body).
+ * The Braukaiser model is defined for a single-infusion rest. A step mash has
+ * several saccharification rests, so each enabled saccharification rest is
+ * scored with `estimateSingleRestLoaPct` and the scores are combined by
+ * duration. This preserves the model's per-rest behavior while producing one
+ * readout for the summary table.
  *
  * @param {Array<object>} rests - Rest entries with `rest_id`, `enabled`,
  *   `use_temp_c`, and `duration_min`.
@@ -256,9 +302,6 @@ export function isRestTempOutOfRange(restId, useTempC) {
  *   or NaN when no saccharification rest is enabled.
  */
 export function estimateLimitOfAttenuation(rests) {
-  const BETA_OPTIMUM_C = 63;
-  const ALPHA_OPTIMUM_C = 72;
-
   let weightedSum = 0;
   let totalDuration = 0;
 
@@ -275,24 +318,18 @@ export function estimateLimitOfAttenuation(rests) {
       rest.rest_id === 'beta_alpha_amylase';
     if (!isSaccharification) continue;
 
-    // Normalize the rest temperature onto the beta→alpha axis. A rest at the
-    // beta optimum contributes maximum fermentability (weight 1); a rest at
-    // the alpha optimum contributes minimum (weight 0).
-    const span = ALPHA_OPTIMUM_C - BETA_OPTIMUM_C;
-    const normalized = (rest.use_temp_c - BETA_OPTIMUM_C) / span;
-    const fermentabilityWeight = Math.min(1, Math.max(0, 1 - normalized));
+    const loaPct = estimateSingleRestLoaPct(rest.use_temp_c);
+    if (isNaN(loaPct)) continue;
 
-    weightedSum += fermentabilityWeight * rest.duration_min;
+    weightedSum += loaPct * rest.duration_min;
     totalDuration += rest.duration_min;
   }
 
   if (totalDuration === 0) return NaN;
 
-  // Map the weighted fermentability onto an apparent attenuation fraction.
-  // The 0.70–0.85 band brackets typical ale/lager apparent attenuation.
-  const MIN_AA = 0.70;
-  const MAX_AA = 0.85;
-  return MIN_AA + (MAX_AA - MIN_AA) * (weightedSum / totalDuration);
+  // Duration-weighted mean LoA, converted from percent to the manifest's
+  // canonical attenuation fraction.
+  return (weightedSum / totalDuration) / 100.0;
 }
 
 /**

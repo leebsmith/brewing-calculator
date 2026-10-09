@@ -22,11 +22,17 @@ import {
   DOUGH_IN_REST,
   MASH_OUT_REST,
   MASH_PRESETS,
+  BRAUKAISER_BASE_ATTENUATION_PCT,
+  BRAUKAISER_BASE_TEMP_C,
+  BRAUKAISER_DROP_PER_C,
+  BRAUKAISER_LOA_MIN_PCT,
+  BRAUKAISER_LOA_MAX_PCT,
   getCanonicalRest,
   canonicalOrderIndex,
   sortRestsByTemperature,
   calculateStrikeWaterTempC,
   isRestTempOutOfRange,
+  estimateSingleRestLoaPct,
   estimateLimitOfAttenuation,
   createDefaultMashSchedule,
   applyMashPreset,
@@ -342,6 +348,33 @@ describe('Pure Functions Tests', () => {
       });
     });
 
+    describe('estimateSingleRestLoaPct', () => {
+      test('should return the baseline attenuation at the base temperature', () => {
+        assert.strictEqual(
+          estimateSingleRestLoaPct(BRAUKAISER_BASE_TEMP_C),
+          BRAUKAISER_BASE_ATTENUATION_PCT
+        );
+      });
+
+      test('should drop by the per-degree constant above the base temperature', () => {
+        const expected = BRAUKAISER_BASE_ATTENUATION_PCT - BRAUKAISER_DROP_PER_C;
+        assert.strictEqual(estimateSingleRestLoaPct(BRAUKAISER_BASE_TEMP_C + 1), expected);
+      });
+
+      test('should clamp to the minimum at high temperatures', () => {
+        assert.strictEqual(estimateSingleRestLoaPct(100), BRAUKAISER_LOA_MIN_PCT);
+      });
+
+      test('should clamp to the maximum at low temperatures', () => {
+        assert.strictEqual(estimateSingleRestLoaPct(0), BRAUKAISER_LOA_MAX_PCT);
+      });
+
+      test('should return NaN for non-numeric input', () => {
+        assert.ok(Number.isNaN(estimateSingleRestLoaPct('abc')));
+        assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      });
+    });
+
     describe('estimateLimitOfAttenuation', () => {
       test('should return NaN when no saccharification rest is enabled', () => {
         const rests = [
@@ -360,11 +393,27 @@ describe('Pure Functions Tests', () => {
         assert.ok(beta > alpha, 'beta rest should yield higher attenuation');
       });
 
-      test('should stay within the [0.70, 0.85] band', () => {
+      test('should return the Braukaiser baseline as a fraction at 63 C', () => {
+        const loa = estimateLimitOfAttenuation([
+          { rest_id: 'beta_amylase', enabled: true, use_temp_c: 63, duration_min: 60 },
+        ]);
+        expectClose(loa, BRAUKAISER_BASE_ATTENUATION_PCT / 100.0);
+      });
+
+      test('should duration-weight multiple saccharification rests', () => {
+        // 30 min at 63 C (82%) + 30 min at 65 C (75%) -> 78.5% -> 0.785
+        const loa = estimateLimitOfAttenuation([
+          { rest_id: 'beta_amylase', enabled: true, use_temp_c: 63, duration_min: 30 },
+          { rest_id: 'alpha_amylase', enabled: true, use_temp_c: 65, duration_min: 30 },
+        ]);
+        expectClose(loa, 0.785);
+      });
+
+      test('should stay within the Braukaiser clamp band', () => {
         const loa = estimateLimitOfAttenuation([
           { rest_id: 'beta_alpha_amylase', enabled: true, use_temp_c: 66, duration_min: 60 },
         ]);
-        assert.ok(loa >= 0.70 && loa <= 0.85);
+        assert.ok(loa >= BRAUKAISER_LOA_MIN_PCT / 100.0 && loa <= BRAUKAISER_LOA_MAX_PCT / 100.0);
       });
     });
 
