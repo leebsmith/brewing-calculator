@@ -90,6 +90,7 @@ The solver response now carries `v_hlt_debt`, `v_hlt_after_strike`,
       numeric shortfall would require either backend changes (to include the
       values in `detail`) or a `MSG_SOLVER_ERRORS` shape change; deferred as
       not worth the churn for a rare error path.
+- [x] **Resolved:** no further action. §2.4 is closed.
 
 ### 2.5 Water-plan summary step (resolved — inline panel)
 
