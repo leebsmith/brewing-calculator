@@ -40,6 +40,7 @@ def valid_payload():
         "v_dead": 0.946,
         "eta_conv": 0.90,
         "f_shrink": 0.04,
+        "hlt_starting_volume_l": 38.0,
     }
 
 
@@ -134,6 +135,14 @@ def test_solve_batch_rejects_attenuation_above_one(client, valid_payload):
 
 def test_solve_batch_rejects_non_positive_v_ferm(client, valid_payload):
     payload = {**valid_payload, "v_ferm": 0.0}
+    response = client.post("/api/solve-batch", json=payload)
+    assert response.status_code == 422
+
+
+def test_solve_batch_rejects_missing_hlt_starting_volume(client, valid_payload):
+    # hlt_starting_volume_l is a required batch-level field; omitting it is a
+    # schema violation (422), not a solver error.
+    payload = {k: v for k, v in valid_payload.items() if k != "hlt_starting_volume_l"}
     response = client.post("/api/solve-batch", json=payload)
     assert response.status_code == 422
 
