@@ -54,8 +54,7 @@
     "at-rule-no-unknown": [
       true,
       {
-        "ignoreAtRules": ["container"],
-        "message": "@container is valid CSS (container queries); it is whitelisted here because stylelint-config-standard predates it."
+        "ignoreAtRules": ["container"]
       }
     ],
     "selector-max-specificity": "0,4,0",
