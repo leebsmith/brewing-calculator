@@ -86,7 +86,7 @@ describe('Malt Grid Store Tests (Grain Bill Editor)', () => {
         parts: 10.0,
         pct: 100.0,
         potential_fraction: 0.80,
-        color_srm: 1.8,
+        color_lovibond: 1.8,
         moisture_pct: 0.04,
         di_ph: 5.75,
         buffer_index: 45.0,
@@ -105,8 +105,8 @@ describe('Malt Grid Store Tests (Grain Bill Editor)', () => {
 
   test('Test 1: normalizeDraft writes exactly 100.0% (Hamilton invariant)', () => {
     maltGrid.openModal();
-    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_srm: 9.0 });
-    maltGrid.addMajorMalt({ id: 'malt_crystal60', name: 'Crystal 60', category: 'CRYSTAL', potential_fraction: 0.74, color_srm: 60.0 });
+    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_lovibond: 9.0 });
+    maltGrid.addMajorMalt({ id: 'malt_crystal60', name: 'Crystal 60', category: 'CRYSTAL', potential_fraction: 0.74, color_lovibond: 60.0 });
 
     const total = maltGrid.draftMajorMalts.reduce((s, r) => s + r.pct, 0);
     assert.strictEqual(Number(total.toFixed(1)), 100.0);
@@ -128,7 +128,7 @@ describe('Malt Grid Store Tests (Grain Bill Editor)', () => {
 
   test('Test 3: saveModal commits the normalized draft to the saved bill', () => {
     maltGrid.openModal();
-    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_srm: 9.0 });
+    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_lovibond: 9.0 });
     maltGrid.saveModal();
 
     assert.strictEqual(maltGrid.modalOpen, false);
@@ -142,13 +142,13 @@ describe('Malt Grid Store Tests (Grain Bill Editor)', () => {
     // Already has 1 row; add up to the limit.
     const limit = BREW_CONSTANTS.MAX_MAJOR_MALTS;
     for (let i = maltGrid.draftMajorMalts.length; i < limit; i++) {
-      maltGrid.addMajorMalt({ id: `malt_${i}`, name: `Malt ${i}`, category: 'BASE', potential_fraction: 0.80, color_srm: 2.0 });
+      maltGrid.addMajorMalt({ id: `malt_${i}`, name: `Malt ${i}`, category: 'BASE', potential_fraction: 0.80, color_lovibond: 2.0 });
     }
     assert.strictEqual(maltGrid.draftMajorMalts.length, limit);
     assert.strictEqual(maltGrid.isAtMajorMaltLimit, true);
 
     // One more must be rejected with a toast.
-    maltGrid.addMajorMalt({ id: 'malt_overflow', name: 'Overflow', category: 'BASE', potential_fraction: 0.80, color_srm: 2.0 });
+    maltGrid.addMajorMalt({ id: 'malt_overflow', name: 'Overflow', category: 'BASE', potential_fraction: 0.80, color_lovibond: 2.0 });
     assert.strictEqual(maltGrid.draftMajorMalts.length, limit);
     assert.strictEqual(ui.toasts.length, 1);
     assert.strictEqual(ui.toasts[0].type, 'error');
@@ -158,7 +158,7 @@ describe('Malt Grid Store Tests (Grain Bill Editor)', () => {
     maltGrid.openModal();
     const limit = BREW_CONSTANTS.MAX_MAJOR_MALTS;
     for (let i = maltGrid.draftMajorMalts.length; i < limit; i++) {
-      maltGrid.addMajorMalt({ id: `malt_${i}`, name: `Malt ${i}`, category: 'BASE', potential_fraction: 0.80, color_srm: 2.0 });
+      maltGrid.addMajorMalt({ id: `malt_${i}`, name: `Malt ${i}`, category: 'BASE', potential_fraction: 0.80, color_lovibond: 2.0 });
     }
     const before = maltGrid.draftMajorMalts.length;
     maltGrid.cloneAndEdit(maltGrid.draftMajorMalts[0].row_id);
@@ -169,7 +169,7 @@ describe('Malt Grid Store Tests (Grain Bill Editor)', () => {
 
   test('Test 6: updateParts clamps negatives to zero and re-normalizes', () => {
     maltGrid.openModal();
-    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_srm: 9.0 });
+    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_lovibond: 9.0 });
     maltGrid.updateParts('row_default_1', -5.0);
     assert.strictEqual(maltGrid.draftMajorMalts[0].parts, 0);
     // With one row at 0 parts and one at 10, the 10-part row takes 100%.
@@ -179,7 +179,7 @@ describe('Malt Grid Store Tests (Grain Bill Editor)', () => {
 
   test('Test 7: removeMajorMalt clears inspector state for the removed row', () => {
     maltGrid.openModal();
-    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_srm: 9.0 });
+    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_lovibond: 9.0 });
     const targetId = maltGrid.draftMajorMalts[1].row_id;
     maltGrid.inspectRow(targetId);
     assert.strictEqual(maltGrid.drawerMode, 'inspect');
@@ -192,8 +192,8 @@ describe('Malt Grid Store Tests (Grain Bill Editor)', () => {
 
   test('Test 8: summary totals agree with per-row weighted contributions', () => {
     maltGrid.openModal();
-    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_srm: 9.0 });
-    maltGrid.addMajorMalt({ id: 'malt_crystal60', name: 'Crystal 60', category: 'CRYSTAL', potential_fraction: 0.74, color_srm: 60.0 });
+    maltGrid.addMajorMalt({ id: 'malt_munich', name: 'Munich', category: 'BASE', potential_fraction: 0.78, color_lovibond: 9.0 });
+    maltGrid.addMajorMalt({ id: 'malt_crystal60', name: 'Crystal 60', category: 'CRYSTAL', potential_fraction: 0.74, color_lovibond: 60.0 });
 
     // Sum of per-row weighted contributions must equal the summary total
     // (Hamilton guarantees Σ pct === 100.0, so the shares sum to 1.0).

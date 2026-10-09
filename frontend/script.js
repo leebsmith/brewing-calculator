@@ -710,7 +710,7 @@ Alpine.store('maltGrid', {
       parts: 10.0,
       pct: 100.0,
       potential_fraction: 0.80,
-      color_srm: 1.8,
+      color_lovibond: 1.8,
       moisture_pct: 0.04,
       di_ph: 5.75,
       buffer_index: 45.0,
@@ -738,7 +738,7 @@ Alpine.store('maltGrid', {
     const rows = this.modalOpen ? this.draftMajorMalts : this.majorMalts;
     const totalPct = rows.reduce((sum, r) => sum + (r.pct || 0), 0);
     if (totalPct <= 0) return 0.0;
-    const weightedSum = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.color_srm) || 0)), 0);
+    const weightedSum = rows.reduce((sum, r) => sum + ((r.pct || 0) * (parseFloat(r.color_lovibond) || 0)), 0);
     return weightedSum / totalPct;
   },
 
@@ -792,9 +792,9 @@ Alpine.store('maltGrid', {
   },
 
   maltColorDisplay(row) {
-    const srm = parseFloat(row.color_srm) || 0;
+    const lovibond = parseFloat(row.color_lovibond) || 0;
     const unitsStore = Alpine.store('units');
-    return unitsStore ? unitsStore.toDisplay('color', srm) : Number(srm.toFixed(1));
+    return unitsStore ? unitsStore.toDisplay('color', lovibond) : Number(lovibond.toFixed(1));
   },
 
   maltPotentialDisplay(row) {
@@ -944,7 +944,7 @@ Alpine.store('maltGrid', {
       parts: 10.0,
       pct: 0.0,
       potential_fraction: catalogItem.potential_fraction ?? (catalogItem.potential_sg ? (catalogItem.potential_sg - 1.0) / 0.046 : 0.75),
-      color_srm: catalogItem.color_srm || 2.0,
+      color_lovibond: catalogItem.color_lovibond || 2.0,
       moisture_pct: catalogItem.moisture_pct || 0.04,
       di_ph: catalogItem.di_ph || 5.75,
       buffer_index: catalogItem.buffer_index || 45.0,
