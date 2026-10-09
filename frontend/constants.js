@@ -50,6 +50,11 @@ export const BREW_CONSTANTS = {
   DEFAULT_TARGET_OG: 1.055,
   DEFAULT_BOIL_TIME_MIN: 60,
 
+  // Mash Card defaults (design record Q3, Q10)
+  // Grain temperature is batch-specific and user-editable; it is NOT sourced
+  // from the equipment profile. Default on first entry is 20.0 °C.
+  DEFAULT_GRAIN_TEMP_C: 20.0,
+
   // Extract Potential Reference Constants (Pure Sucrose / Grist Scaling)
   SUCROSE_POTENTIAL_PPG: 46.21,
   IMPERIAL_POTENTIAL_SCALING_FACTOR: 46.21,
@@ -78,6 +83,11 @@ export const BREW_CONSTANTS = {
     temperature: ['C', 'F'],
     gravity: ['Plato', 'SG'],
     compound: ['L/kg', 'qt/lb'],
+    // Mash thickness is a volume-per-mass ratio (L/kg <-> qt/lb). It is a
+    // distinct domain from `compound` because the Mash Card's mash-thickness
+    // field is a separate user preference from the Step 5 intensive value,
+    // even though the conversion pair is numerically identical.
+    mash_thickness: ['L/kg', 'qt/lb'],
     extract_potential: ['L·°/kg', 'gal·°/lb'],
     total_extract: ['L·°', 'gal·pts'],
     // Color is stored as Lovibond (the unit used by malts.json and
@@ -125,7 +135,13 @@ export const BREW_CONSTANTS = {
     // HLT water budget (batch-level input + derived outputs)
     'step5_hlt_starting_volume_l': 'volume',
     'step5_v_hlt_top_up': 'volume',
-    'step5_v_sparge_deliverable': 'volume'
+    'step5_v_sparge_deliverable': 'volume',
+    // Step 6: Mash Card
+    'step6_grain_temp_c': 'temperature',
+    'step6_strike_water_temp_c': 'temperature',
+    'step6_mash_thickness': 'mash_thickness',
+    'step6_rest_use_temp_c': 'temperature',
+    'step6_mash_out_temp_c': 'temperature'
   },
 
   UNIT_DOMAIN_MASS: 'mass',
@@ -135,6 +151,7 @@ export const BREW_CONSTANTS = {
   UNIT_DOMAIN_GRAVITY: 'gravity',
   UNIT_DOMAIN_PERCENTAGE: 'percentage',
   UNIT_DOMAIN_COMPOUND: 'compound',
+  UNIT_DOMAIN_MASH_THICKNESS: 'mash_thickness',
   UNIT_DOMAIN_EXTRACT_POTENTIAL: 'extract_potential',
   UNIT_DOMAIN_TOTAL_EXTRACT: 'total_extract',
 

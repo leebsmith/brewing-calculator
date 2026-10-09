@@ -16,6 +16,23 @@ import {
   allocateProportionalPercentages
 } from '../src/utils/pureFunctions.js';
 
+import {
+  C_GRAIN_KCAL_PER_KG_C,
+  CANONICAL_RESTS,
+  DOUGH_IN_REST,
+  MASH_OUT_REST,
+  MASH_PRESETS,
+  getCanonicalRest,
+  canonicalOrderIndex,
+  sortRestsByTemperature,
+  calculateStrikeWaterTempC,
+  isRestTempOutOfRange,
+  estimateLimitOfAttenuation,
+  createDefaultMashSchedule,
+  applyMashPreset,
+  markScheduleCustom
+} from '../src/utils/mashSchedule.js';
+
 // Mirror of the constants used by the module under test.
 const BREW_CONSTANTS = {
   IMPERIAL_POTENTIAL_SCALING_FACTOR: 46.21,
@@ -198,6 +215,232 @@ describe('Pure Functions Tests', () => {
     test('should treat negative parts as zero', () => {
       const result = allocateProportionalPercentages([{ parts: -5 }, { parts: 10 }]);
       assert.deepStrictEqual(result, [0.0, 100.0]);
+    });
+  });
+
+  // Tests for mashSchedule.js
+  describe('mashSchedule', () => {
+
+    describe('calculateStrikeWaterTempC', () => {
+      test('should return the target temperature when grain is at target', () => {
+        // When T_target === T_grain, the correction term is zero.
+        assert.strictEqual(calculateStrikeWaterTempC(66, 66, 2.6), 66);
+      });
+
+      test('should apply the metric C_grain constant', () => {
+        // T_strike = 66 + (0.41 / 2.6) * (66 - 20)
+        const expected = 66 + (C_GRAIN_KCAL_PER_KG_C / 2.6) * (66 - 20);
+        expectClose(calculateStrikeWaterTempC(66, 20, 2.6), expected);
+      });
+
+      test('should return a higher strike temp for a thinner mash', () => {
+        const thick = calculateStrikeWaterTempC(66, 20, 2.0);
+        const thin = calculateStrikeWaterTempC(66, 20, 4.0);
+        assert.ok(thick > thin, 'thicker mash needs hotter strike water');
+      });
+
+      test('should return NaN for a non-positive mash thickness', () => {
+        assert.ok(Number.isNaN(calculateStrikeWaterTempC(66, 20, 0)));
+        assert.ok(Number.isNaN(calculateStrikeWaterTempC(66, 20, -1)));
+        assert.strictEqual(consoleErrorSpy.mock.callCount(), 2);
+      });
+
+      test('should return NaN for non-numeric inputs', () => {
+        assert.ok(Number.isNaN(calculateStrikeWaterTempC('abc', 20, 2.6)));
+        assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      });
+    });
+
+    describe('sortRestsByTemperature', () => {
+      test('should sort enabled rests into ascending temperature order', () => {
+        const rests = [
+          { rest_id: 'alpha_amylase', use_temp_c: 70 },
+          { rest_id: 'protein', use_temp_c: 52 },
+          { rest_id: 'beta_amylase', use_temp_c: 63 },
+        ];
+        const sorted = sortRestsByTemperature(rests);
+        assert.deepStrictEqual(
+          sorted.map((r) => r.rest_id),
+          ['protein', 'beta_amylase', 'alpha_amylase']
+        );
+      });
+
+      test('should break temperature ties by canonical order', () => {
+        const rests = [
+          { rest_id: 'alpha_amylase', use_temp_c: 65 },
+          { rest_id: 'beta_amylase', use_temp_c: 65 },
+        ];
+        const sorted = sortRestsByTemperature(rests);
+        // beta_amylase precedes alpha_amylase in canonical order.
+        assert.deepStrictEqual(
+          sorted.map((r) => r.rest_id),
+          ['beta_amylase', 'alpha_amylase']
+        );
+      });
+
+      test('should sort null-temperature rests after those with a temperature', () => {
+        const rests = [
+          { rest_id: 'dough_in', use_temp_c: null },
+          { rest_id: 'protein', use_temp_c: 52 },
+        ];
+        const sorted = sortRestsByTemperature(rests);
+        assert.deepStrictEqual(
+          sorted.map((r) => r.rest_id),
+          ['protein', 'dough_in']
+        );
+      });
+
+      test('should not mutate the input array', () => {
+        const rests = [
+          { rest_id: 'alpha_amylase', use_temp_c: 70 },
+          { rest_id: 'protein', use_temp_c: 52 },
+        ];
+        const snapshot = JSON.parse(JSON.stringify(rests));
+        sortRestsByTemperature(rests);
+        assert.deepStrictEqual(rests, snapshot);
+      });
+    });
+
+    describe('canonicalOrderIndex', () => {
+      test('should place dough-in first and mash-out last', () => {
+        assert.ok(canonicalOrderIndex('dough_in') < canonicalOrderIndex('phytase'));
+        assert.ok(canonicalOrderIndex('mash_out') > canonicalOrderIndex('beta_alpha_amylase'));
+      });
+    });
+
+    describe('getCanonicalRest', () => {
+      test('should resolve bookends and canonical rests', () => {
+        assert.strictEqual(getCanonicalRest('dough_in'), DOUGH_IN_REST);
+        assert.strictEqual(getCanonicalRest('mash_out'), MASH_OUT_REST);
+        assert.strictEqual(getCanonicalRest('protein').name, 'Protein Rest');
+      });
+
+      test('should return null for an unknown rest id', () => {
+        assert.strictEqual(getCanonicalRest('nope'), null);
+      });
+    });
+
+    describe('isRestTempOutOfRange', () => {
+      test('should flag a value below the recommended range', () => {
+        assert.strictEqual(isRestTempOutOfRange('protein', 45), true);
+      });
+
+      test('should flag a value above the recommended range', () => {
+        assert.strictEqual(isRestTempOutOfRange('protein', 60), true);
+      });
+
+      test('should not flag a value inside the range', () => {
+        assert.strictEqual(isRestTempOutOfRange('protein', 52), false);
+      });
+
+      test('should not flag dough-in (no recommended range)', () => {
+        assert.strictEqual(isRestTempOutOfRange('dough_in', 999), false);
+      });
+
+      test('should not flag a null temperature', () => {
+        assert.strictEqual(isRestTempOutOfRange('protein', null), false);
+      });
+    });
+
+    describe('estimateLimitOfAttenuation', () => {
+      test('should return NaN when no saccharification rest is enabled', () => {
+        const rests = [
+          { rest_id: 'protein', enabled: true, use_temp_c: 52, duration_min: 20 },
+        ];
+        assert.ok(Number.isNaN(estimateLimitOfAttenuation(rests)));
+      });
+
+      test('should return a higher LOA for a beta-amylase rest than an alpha rest', () => {
+        const beta = estimateLimitOfAttenuation([
+          { rest_id: 'beta_amylase', enabled: true, use_temp_c: 63, duration_min: 60 },
+        ]);
+        const alpha = estimateLimitOfAttenuation([
+          { rest_id: 'alpha_amylase', enabled: true, use_temp_c: 72, duration_min: 60 },
+        ]);
+        assert.ok(beta > alpha, 'beta rest should yield higher attenuation');
+      });
+
+      test('should stay within the [0.70, 0.85] band', () => {
+        const loa = estimateLimitOfAttenuation([
+          { rest_id: 'beta_alpha_amylase', enabled: true, use_temp_c: 66, duration_min: 60 },
+        ]);
+        assert.ok(loa >= 0.70 && loa <= 0.85);
+      });
+    });
+
+    describe('createDefaultMashSchedule', () => {
+      test('should include dough-in and mash-out as enabled bookends', () => {
+        const schedule = createDefaultMashSchedule();
+        const doughIn = schedule.rests.find((r) => r.rest_id === 'dough_in');
+        const mashOut = schedule.rests.find((r) => r.rest_id === 'mash_out');
+        assert.strictEqual(doughIn.enabled, true);
+        assert.strictEqual(mashOut.enabled, true);
+      });
+
+      test('should include every canonical rest, disabled by default', () => {
+        const schedule = createDefaultMashSchedule();
+        for (const rest of CANONICAL_RESTS) {
+          const entry = schedule.rests.find((r) => r.rest_id === rest.rest_id);
+          assert.ok(entry, `missing ${rest.rest_id}`);
+          assert.strictEqual(entry.enabled, false);
+        }
+      });
+
+      test('should default grain_temp_c to 20.0 and preset_id to custom', () => {
+        const schedule = createDefaultMashSchedule();
+        assert.strictEqual(schedule.grain_temp_c, 20.0);
+        assert.strictEqual(schedule.preset_id, 'custom');
+      });
+    });
+
+    describe('applyMashPreset', () => {
+      test('should enable exactly the preset rests', () => {
+        const schedule = createDefaultMashSchedule();
+        const applied = applyMashPreset(schedule, 'german_pils');
+        const enabled = applied.rests.filter((r) => r.enabled).map((r) => r.rest_id).sort();
+        assert.deepStrictEqual(enabled, ['beta_amylase', 'alpha_amylase', 'dough_in', 'mash_out'].sort());
+      });
+
+      test('should not add or remove array entries', () => {
+        const schedule = createDefaultMashSchedule();
+        const applied = applyMashPreset(schedule, 'belgian_saison');
+        assert.strictEqual(applied.rests.length, schedule.rests.length);
+      });
+
+      test('should preserve a user-set temperature across preset switches', () => {
+        const schedule = createDefaultMashSchedule();
+        const protein = schedule.rests.find((r) => r.rest_id === 'protein');
+        protein.use_temp_c = 51.5;
+        const applied = applyMashPreset(schedule, 'belgian_saison');
+        const appliedProtein = applied.rests.find((r) => r.rest_id === 'protein');
+        assert.strictEqual(appliedProtein.use_temp_c, 51.5);
+      });
+
+      test('should return the input unchanged for an unknown preset', () => {
+        const schedule = createDefaultMashSchedule();
+        const result = applyMashPreset(schedule, 'nope');
+        assert.strictEqual(result, schedule);
+        assert.strictEqual(consoleErrorSpy.mock.callCount(), 1);
+      });
+
+      test('should not mutate the input schedule', () => {
+        const schedule = createDefaultMashSchedule();
+        const snapshot = JSON.parse(JSON.stringify(schedule));
+        applyMashPreset(schedule, 'german_pils');
+        assert.deepStrictEqual(schedule, snapshot);
+      });
+    });
+
+    describe('markScheduleCustom', () => {
+      test('should flip a named preset to custom', () => {
+        const schedule = { preset_id: 'german_pils', rests: [] };
+        assert.strictEqual(markScheduleCustom(schedule).preset_id, 'custom');
+      });
+
+      test('should return the same object when already custom', () => {
+        const schedule = { preset_id: 'custom', rests: [] };
+        assert.strictEqual(markScheduleCustom(schedule), schedule);
+      });
     });
   });
 

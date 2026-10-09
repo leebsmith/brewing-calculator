@@ -12,6 +12,17 @@ import {
   isTracePercentage,
   allocateProportionalPercentages,
 } from './src/utils/pureFunctions.js';
+import {
+  createDefaultMashSchedule,
+  applyMashPreset,
+  markScheduleCustom,
+  sortRestsByTemperature,
+  calculateStrikeWaterTempC,
+  estimateLimitOfAttenuation,
+  isRestTempOutOfRange,
+  getCanonicalRest,
+  MASH_PRESET_LABELS,
+} from './src/utils/mashSchedule.js';
 
 // Setup Alpine Native Plugins
 window.Alpine = Alpine;
@@ -1339,7 +1350,10 @@ Alpine.data('wizard', () => {
       postboil_gravity: 1.0,
       grain_bill: [],
       late_additions: [],
-      mash_profile: [],
+      // Mash Card schedule (design record Q10). Manifest-scoped, saved with
+      // the batch. Dough-in and mash-out are always present; optional rests
+      // carry an explicit `enabled` flag so preset switching is idempotent.
+      mash: createDefaultMashSchedule(),
       water_profile_id: null,
       hop_schedule: [],
       yeast_id: null,
@@ -1770,6 +1784,139 @@ Alpine.data('wizard', () => {
       return Alpine.store('units')
         ? Alpine.store('units').toDisplay('percentage', this.manifest.yeast_attenuation_pct, 'step2_yeast_attenuation_pct')
         : this.manifest.yeast_attenuation_pct;
+    },
+
+    // --- Step 6: Mash Card ---
+    // The mash schedule lives in `manifest.mash` (design record Q10). These
+    // helpers are thin presentation adapters over the pure helpers in
+    // src/utils/mashSchedule.js; all physics and ordering logic lives there.
+
+    get mashPresetLabels() {
+      return MASH_PRESET_LABELS;
+    },
+
+    // Rests in enforced ascending-temperature order (design record Q5). The
+    // sort is derived at render time; the stored array order is irrelevant.
+    get sortedMashRests() {
+      if (!this.manifest.mash) return [];
+      return sortRestsByTemperature(this.manifest.mash.rests);
+    },
+
+    // Only the enabled rests, in display order. Used by the summary table.
+    get enabledMashRests() {
+      return this.sortedMashRests.filter((r) => r.enabled);
+    },
+
+    getRestDefinition(restId) {
+      return getCanonicalRest(restId);
+    },
+
+    isRestOutOfRange(restId, useTempC) {
+      return isRestTempOutOfRange(restId, useTempC);
+    },
+
+    // Apply a named preset. Preset switching is idempotent and preserves the
+    // user's custom temps across toggles (design record Q2, Q10).
+    onMashPresetChange(presetId) {
+      if (!this.manifest.mash) return;
+      this.manifest.mash = applyMashPreset(this.manifest.mash, presetId);
+    },
+
+    // Any manual edit to a rest flips the dropdown to 'custom' (Q2, Q10).
+    onMashRestEdit() {
+      if (!this.manifest.mash) return;
+      this.manifest.mash = markScheduleCustom(this.manifest.mash);
+    },
+
+    // The dough-in rest's "use" temperature is the mash target temperature.
+    get doughInTargetTempC() {
+      if (!this.manifest.mash) return null;
+      const doughIn = this.manifest.mash.rests.find((r) => r.rest_id === 'dough_in');
+      return doughIn ? doughIn.use_temp_c : null;
+    },
+
+    // Mash thickness in L/kg (base units). Sourced from the Step 5 solver
+    // intensive value when the topology is 'r_l_to_g'; otherwise falls back
+    // to the default 1.25 qt/lb = 2.6079 L/kg.
+    get mashThicknessLPerKg() {
+      if (this.batchSolverTopology === 'r_l_to_g') {
+        return parseFloat(this.batchSolverIntensiveValue) || 2.6079;
+      }
+      return 2.6079;
+    },
+
+    // Derived strike water temperature, in °C (design record Q3a). Returns
+    // null until the dough-in target temperature is set.
+    get strikeWaterTempC() {
+      const target = this.doughInTargetTempC;
+      if (target == null || isNaN(target)) return null;
+      const grain = this.manifest.mash ? this.manifest.mash.grain_temp_c : null;
+      if (grain == null || isNaN(grain)) return null;
+      const result = calculateStrikeWaterTempC(target, grain, this.mashThicknessLPerKg);
+      return isNaN(result) ? null : result;
+    },
+
+    // Display adapters. The units store converts the metric result at the
+    // display boundary; no imperial formula is implemented (design record Q3).
+    strikeWaterTempDisplay() {
+      if (this.strikeWaterTempC == null) return '';
+      return Alpine.store('units')
+        ? Alpine.store('units').toDisplay('temperature', this.strikeWaterTempC, 'step6_strike_water_temp_c')
+        : this.strikeWaterTempC;
+    },
+
+    grainTempDisplay() {
+      if (!this.manifest.mash) return '';
+      return Alpine.store('units')
+        ? Alpine.store('units').toDisplay('temperature', this.manifest.mash.grain_temp_c, 'step6_grain_temp_c')
+        : this.manifest.mash.grain_temp_c;
+    },
+
+    setGrainTempDisplay(displayVal) {
+      if (!this.manifest.mash) return;
+      const baseVal = Alpine.store('units')
+        ? Alpine.store('units').toBase('temperature', parseFloat(displayVal), 'step6_grain_temp_c')
+        : parseFloat(displayVal);
+      this.manifest.mash.grain_temp_c = isNaN(baseVal) ? BREW_CONSTANTS.DEFAULT_GRAIN_TEMP_C : baseVal;
+    },
+
+    restUseTempDisplay(rest) {
+      if (rest.use_temp_c == null) return '';
+      return Alpine.store('units')
+        ? Alpine.store('units').toDisplay('temperature', rest.use_temp_c, 'step6_rest_use_temp_c')
+        : rest.use_temp_c;
+    },
+
+    setRestUseTempDisplay(rest, displayVal) {
+      const baseVal = Alpine.store('units')
+        ? Alpine.store('units').toBase('temperature', parseFloat(displayVal), 'step6_rest_use_temp_c')
+        : parseFloat(displayVal);
+      rest.use_temp_c = isNaN(baseVal) ? null : baseVal;
+      this.onMashRestEdit();
+    },
+
+    // Total mash time: sum of every enabled rest's duration (design record Q6).
+    get totalMashTimeMin() {
+      return this.enabledMashRests.reduce(
+        (sum, r) => sum + (parseFloat(r.duration_min) || 0),
+        0
+      );
+    },
+
+    // Limit of Attenuation readout (design record Q6b). Informational only;
+    // does not feed the solver.
+    get limitOfAttenuation() {
+      if (!this.manifest.mash) return null;
+      const loa = estimateLimitOfAttenuation(this.manifest.mash.rests);
+      return isNaN(loa) ? null : loa;
+    },
+
+    limitOfAttenuationDisplay() {
+      const loa = this.limitOfAttenuation;
+      if (loa == null) return '';
+      return Alpine.store('units')
+        ? Alpine.store('units').toDisplay('percentage', loa, 'step2_yeast_attenuation_pct')
+        : loa;
     }
   };
 });
