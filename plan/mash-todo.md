@@ -81,13 +81,13 @@ T_strike_c = T_target_c + (0.41 / mash_thickness_L_per_kg) * (T_target_c - T_gra
 
 where:
 - `T_target_c` = dough-in "use" temperature, in °C (user-editable)
-- `T_grain_c` = grain temperature, in °C (see below)
+- `T_grain_c` = grain temperature, in °C (user-editable, batch-specific; see below)
 - `mash_thickness_L_per_kg` = mash thickness in L/kg — the same value shown in the summary table. (Use the name `mash_thickness` consistently; do not introduce a separate `mash_thickness_ratio` variable.)
 - `0.41` = specific heat of dry malted barley in kcal/(kg·°C), which is the metric constant because water's specific heat is 1.0 kcal/(kg·°C) and its density is 1 kg/L
 
 **Display conversion is handled by the units store.** The formula runs in metric; the units store converts `T_strike_c` to °F for display when the user's temperature preference is imperial. The editor engineer should **not** implement the imperial formula separately — that would duplicate logic and risk drift. One formula, metric, converted at the display boundary.
 
-**`T_grain_c` source (v1):** the equipment profile schema (`backend/app/schemas/templates.py` → `EquipmentProfile`) does **not** have a grain-temperature field. For v1, hardcode `T_grain_c = 20.0` as a named constant (e.g., `DEFAULT_GRAIN_TEMP_C = 20.0`) in the same frontend module that computes `T_strike_c`. **Deferred:** adding a `grain_temp_c` field to `EquipmentProfile` and reading it here. Do not go looking for a field that does not exist.
+**`T_grain_c` source:** grain temperature is a **batch-specific, user-editable field** on the Mash Card. It is stored in the manifest alongside the rest schedule (see Q10) as `manifest.mash.grain_temp_c`. Default value on first entry is `20.0` °C. It is unit-aware (toggles with the temperature domain, °C ↔ °F) and is displayed in the summary readout alongside the derived strike water temperature. It is **not** sourced from the equipment profile — grain temperature varies batch-to-batch (grain stored in a cold garage vs. a warm kitchen), so it belongs with the recipe, not the rig.
 
 **Equipment thermal mass offset is deferred.** The advanced `T_tun` correction (heat absorbed by the mash tun walls) is out of scope for v1. If it is added later, it is an additive offset applied after the base formula. Do not implement it now.
 
@@ -111,7 +111,7 @@ This means the dough-in rest (first, marked "→") and the mash-out step (last) 
 
 ### 6. Summary readout — RESOLVED
 
-Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
+Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp, grain temperature (user-editable input), and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
 
 ### 6b. Limit of Attenuation (LOA) — RESOLVED
 
@@ -123,7 +123,7 @@ The solver pre-determines the dough-in step's strike water volume, mash thicknes
 
 ### 8. Units — RESOLVED
 
-Temperatures (°C ↔ °F), strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not.
+Temperatures (°C ↔ °F) — including every rest's "use" temperature, the mash-out target temp, the derived strike water temperature, **and the grain temperature input** — strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not.
 
 **New `UNIT_REGISTRY` domain required:** `mash_thickness`. Mash thickness is a ratio (volume per mass), not a `mass` field, and the existing `toDisplay(domain, baseValue, fieldKey)` signature takes a single domain and a single scalar — it cannot express "volume per mass." Add a `mash_thickness` domain with its own conversion pair (L/kg ↔ qt/lb). Temperatures and strike volume map onto the existing `temperature` and `volume` domains.
 
@@ -135,6 +135,35 @@ Temperatures (°C ↔ °F), strike volume (L ↔ gal), and mash thickness (L/kg 
 
 **Manifest-scoped, saved with the batch.** The mash schedule lives inside the `manifest` alongside the rest of the recipe. It is not equipment-profile-scoped. (Consistent with Q7.)
 
+Concrete shape:
+
+```
+manifest.mash = {
+  preset_id: 'custom' | 'belgian_saison' | 'german_pils' | ...,
+  grain_temp_c: <number>,   // batch-specific, user-editable, default 20.0
+  rests: [
+    {
+      rest_id: 'dough_in' | 'phytase' | 'ferulic' | 'beta_glucan' | 'protein' | 'beta_amylase' | 'alpha_amylase' | 'beta_alpha_amylase' | 'mash_out',
+      enabled: true | false,
+      use_temp_c: <number | null>,   // canonical storage unit: Celsius
+      duration_min: <number | null>,
+      // mash_out only:
+      is_true_mash_out: true | false
+    },
+    ...
+  ]
+}
+```
+
+Notes on the shape:
+
+- Canonical storage unit is Celsius for temperatures, consistent with the rest of the codebase (the solver uses metric internally; the units store handles display conversion). Durations are stored in minutes.
+- `grain_temp_c` is batch-specific and user-editable. It is **not** part of the equipment profile. Default on first entry is `20.0`.
+- `rest_id` is the stable key. The canonical rest order (Q5) is derived from a fixed list, not from array position, so the array can be stored in any order and the display sort is applied at render time.
+- `enabled` is explicit rather than "present in array = enabled." This makes preset switching idempotent: applying a preset just flips enabled flags and sets `use_temp_c` / `duration_min` to the preset's defaults, without adding/removing array entries. It also preserves the user's custom temps when they toggle a rest off and back on.
+- `preset_id` is stored so the dropdown can show the current selection. When the user edits any rest after applying a preset, `preset_id` flips to `'custom'` (same pattern as the grain bill's `is_custom` flag).
+- Dough-in and mash-out are always present in the array with `enabled: true` (they're bookends, not toggles). Dough-in's `use_temp_c` is solver-derived and may be null until the solver runs; mash-out is constrained to 75.5–76.7 °C per Q4.
+
 ### 11. UI shape — RESOLVED
 
 Three-part card, modeled on the grain bill editor:
@@ -145,20 +174,20 @@ Three-part card, modeled on the grain bill editor:
 
 ### 12. Step sequencing in the wizard — RESOLVED
 
-**Placement:** immediately following the Batch Sparge Solver. The solver pre-determines the dough-in step's strike water volume, mash thickness, and target dough-in temperature (Q3), so the Mash Card must come after it. The Mash Card also sits after the grain bill and after equipment selection: the grain bill supplies grain temperature and total grain mass (for strike-water-temp derivation), and the equipment profile supplies mash thickness defaults. Placing it earlier would force the user to backtrack.
+**Placement:** immediately following the Batch Sparge Solver. The solver pre-determines the dough-in step's strike water volume, mash thickness, and target dough-in temperature (Q3), so the Mash Card must come after it. The Mash Card also sits after the grain bill and after equipment selection: the grain bill supplies total grain mass (for strike-water-temp derivation), and the equipment profile supplies mash thickness defaults. Grain temperature is **not** sourced from the grain bill or equipment profile — it is a batch-specific input on the Mash Card itself (Q3). Placing the card earlier would force the user to backtrack.
 
 ## Resolution Log
 
 - **Q1 (Alpha-Amylase Rest range):** 68–72 °C (154–162 °F). Target: alpha-amylase. Objective: dextrinization — body and reduced fermentability.
 - **Q2 (Preset list):** Seven canonical rests (added Beta/Alpha-Amylase Rest, 62–72 °C, as the "single infusion" rest). Six named presets + Custom. Dough-in is the first rest (always present). Mash-out is a separate always-present step at 168–170 °F. Preset matrix recorded above. Selecting Custom clears all checkboxes; manually editing checks after a named preset auto-flips the dropdown to Custom.
-- **Q3 (Dough-in fields):** Dough-in is the first rest, marked with "→". Almost everything about it is pre-determined by the solver (strike water volume, mash thickness, target dough-in temp). The only user-editable field is strike water temperature, which is derived from the dough-in "use" temperature via the metric formula `T_strike_c = T_target_c + (0.41 / mash_thickness_L_per_kg) * (T_target_c - T_grain_c)`. `T_grain_c` is hardcoded to `DEFAULT_GRAIN_TEMP_C = 20.0` in v1 (the `EquipmentProfile` schema has no grain-temperature field; adding one is deferred). The `T_tun` equipment thermal-mass offset is deferred. Display conversion to °F is handled by the units store at the display boundary; no separate imperial formula is implemented.
+- **Q3 (Dough-in fields):** Dough-in is the first rest, marked with "→". Almost everything about it is pre-determined by the solver (strike water volume, mash thickness, target dough-in temp). The only user-editable field on the dough-in rest itself is strike water temperature, which is derived from the dough-in "use" temperature via the metric formula `T_strike_c = T_target_c + (0.41 / mash_thickness_L_per_kg) * (T_target_c - T_grain_c)`. `T_grain_c` is a **batch-specific, user-editable field** on the Mash Card (stored as `manifest.mash.grain_temp_c`, default `20.0` °C, unit-aware). It is not sourced from the equipment profile. The `T_tun` equipment thermal-mass offset is deferred. Display conversion to °F is handled by the units store at the display boundary; no separate imperial formula is implemented.
 - **Q4 (Mash-out fields):** Target temp (constrained to 168–170 °F), duration, and a true-mash-out vs. hold flag.
 - **Q5 (Ordering & constraints):** Rests always displayed in ascending temperature order. Enforced, not arbitrary. No manual reordering — sort is derived from each rest's "use" temperature. Equal "use" temperatures are ordered by canonical rest order (Q2's numbered list); the sort is stable and deterministic.
-- **Q6 (Summary readout):** Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
+- **Q6 (Summary readout):** Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp, grain temperature (user-editable input), and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
 - **Q6b (Limit of Attenuation):** Informational only; does not feed the solver (consistent with Q7). Computed frontend-side from the mash schedule using the Braukaiser model, in the same frontend module that derives strike water temp. Displayed as a read-only readout on the summary table.
 - **Q7 (Relationship to the solver):** The solver pre-determines the dough-in step's strike water volume, mash thickness, and target dough-in temperature (see Q3). The rest schedule itself does not feed `BatchSolverRequest`; rests affect fermentability and mash pH, not extract mass balance, and neither model exists yet. Schedule lives in the `manifest` and is used for display and strike-water-temp derivation. Promotion of the rest schedule into the solver request deferred until a fermentability/pH model is built.
-- **Q8 (Units):** Temperatures (°C ↔ °F), strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not. **New `UNIT_REGISTRY` domain required: `mash_thickness`** (volume-per-mass ratio; the existing single-domain `toDisplay` signature cannot express it). Temperatures and strike volume map onto existing `temperature` and `volume` domains.
+- **Q8 (Units):** Temperatures (°C ↔ °F) — including every rest's "use" temperature, the mash-out target temp, the derived strike water temperature, and the grain temperature input — strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not. **New `UNIT_REGISTRY` domain required: `mash_thickness`** (volume-per-mass ratio; the existing single-domain `toDisplay` signature cannot express it). Temperatures and strike volume map onto existing `temperature` and `volume` domains.
 - **Q9 (Validation):** Soft warn — inline amber note when a rest's "use" temperature is outside its recommended range. Non-blocking; clears when back in range.
-- **Q10 (Persistence):** Manifest-scoped, saved with the batch. Not equipment-profile-scoped. (Consistent with Q7.)
+- **Q10 (Persistence):** Manifest-scoped, saved with the batch. Not equipment-profile-scoped. (Consistent with Q7.) Shape: `manifest.mash = { preset_id, grain_temp_c, rests: [{ rest_id, enabled, use_temp_c, duration_min, is_true_mash_out? }] }`. `grain_temp_c` is batch-specific, user-editable, default `20.0`. Celsius canonical for temps, minutes for durations. `rest_id` is the stable key; `enabled` is explicit (preset switching is idempotent and preserves custom temps across toggles). `preset_id` flips to `'custom'` on any edit, matching the grain bill's `is_custom` pattern. Dough-in and mash-out are always present with `enabled: true`; dough-in's `use_temp_c` may be null until the solver runs.
 - **Q11 (UI shape):** Three-part card — style dropdown + rest checkbox table, "Configure Rests" modal for editing use-temp/duration, and a summary table on the base card that recapitulates the modal and computes strike water temp. Modal markup lives in a new partial under `frontend/src/partials/` (e.g. `frontend/src/partials/mash-rests-modal.html`) and is pulled in via the existing partial-include mechanism.
-- **Q12 (Step sequencing):** Mash Card sits immediately following the Batch Sparge Solver, and after the grain bill and after equipment selection — it depends on all three. The solver pre-determines the dough-in step's strike water volume, mash thickness, and target dough-in temperature (Q3); the grain bill supplies grain temperature and total grain mass; the equipment profile supplies mash thickness defaults.
+- **Q12 (Step sequencing):** Mash Card sits immediately following the Batch Sparge Solver, and after the grain bill and after equipment selection — it depends on all three. The solver pre-determines the dough-in step's strike water volume, mash thickness, and target dough-in temperature (Q3); the grain bill supplies total grain mass; the equipment profile supplies mash thickness defaults. Grain temperature is a batch-specific input on the Mash Card itself (Q3), not sourced from the grain bill or equipment profile.
