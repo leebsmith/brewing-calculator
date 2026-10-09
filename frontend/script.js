@@ -1498,6 +1498,14 @@ Alpine.data('wizard', () => {
       return 'dimensionless';
     },
 
+    // The mass unit implied by the active compound unit. 'L/kg' -> 'kg',
+    // 'qt/lb' -> 'lb'. Used by the intensive-value hint so its phrasing
+    // tracks the badge.
+    get intensiveValueMassUnit() {
+      const label = Alpine.store('units') ? Alpine.store('units').getLabel('step5_intensive_value') : 'L/kg';
+      return label === 'qt/lb' ? 'lb' : 'kg';
+    },
+
     // The two topologies interpret the intensive value in different units
     // (L/kg vs. dimensionless), so carrying a value across a topology switch
     // would silently reinterpret it. Reset to a sensible default per topology.

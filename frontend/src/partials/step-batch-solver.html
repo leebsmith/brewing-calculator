@@ -113,7 +113,7 @@
                             :value="intensiveValueDisplay()"
                             @input="setIntensiveValueDisplay($event.target.value)"
                     />
-                    <span class="form-hint" x-text="batchSolverTopology === 'r_l_to_g' ? 'Strike water per kg of grist.' : 'V_run1 / V_run2; 1.0 is equal runnings.'"></span>
+                    <span class="form-hint" x-text="batchSolverTopology === 'r_l_to_g' ? ('Strike water per ' + ($store.units.getLabel('step5_intensive_value') === 'qt/lb' ? 'lb' : 'kg') + ' of grist.') : 'V_run1 / V_run2; 1.0 is equal runnings.'"></span>
                 </div>
             </div>
 
