@@ -263,8 +263,8 @@
                             <tr>
                                 <td>
                                     <span>Sparge Deliverable</span>
-                                    <template x-if="hasSpargeSurplus">
-                                        <span class="text-xs text-muted" x-text="' (surplus: ' + spargeSurplusDisplay + ' ' + $store.units.getLabel('step5_v_sparge') + ')'"></span>
+                                    <template x-if="hasSurplusSpargeCapacity">
+                                        <span class="text-xs text-muted" x-text="' (surplus sparge capacity: ' + surplusSpargeCapacityDisplay + ' ' + $store.units.getLabel('step5_v_sparge') + ')'"></span>
                                     </template>
                                 </td>
                                 <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.hlt.v_sparge_deliverable, 'step5_v_sparge_deliverable') + ' ' + $store.units.getLabel('step5_v_sparge_deliverable')"></td>

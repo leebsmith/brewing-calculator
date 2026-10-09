@@ -1650,10 +1650,13 @@ Alpine.data('wizard', () => {
       return this.volDisplay(total, 'step5_v_sparge');
     },
 
-    // Surplus sparge is the volume the HLT can deliver beyond what the
-    // cascade demands. Positive only when the HLT is over-filled relative to
-    // the sparge requirement; the UI shows the footnote only in that case.
-    get spargeSurplusDisplay() {
+    // Surplus sparge capacity is the volume the HLT can deliver beyond what
+    // the cascade demands: v_sparge_deliverable - v_sparge_demand. It is a
+    // property of the HLT's state at the moment of sparging (excess deliverable
+    // capacity), NOT the liquor left in the HLT after the sparge. Positive
+    // only when the HLT is over-filled relative to the sparge requirement; the
+    // UI shows the footnote only in that case.
+    get surplusSpargeCapacityDisplay() {
       if (!this.batchSolverResult) return 0;
       const surplus =
         (this.batchSolverResult.hlt.v_sparge_deliverable || 0) -
@@ -1661,7 +1664,7 @@ Alpine.data('wizard', () => {
       return this.volDisplay(surplus, 'step5_v_sparge');
     },
 
-    get hasSpargeSurplus() {
+    get hasSurplusSpargeCapacity() {
       if (!this.batchSolverResult) return false;
       return (
         (this.batchSolverResult.hlt.v_sparge_deliverable || 0) >
