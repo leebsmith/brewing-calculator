@@ -56,8 +56,8 @@ section below for non-blocking follow-ups.
 ## Files to add to the new chat
 
 The frontend refactor is complete, so the frontend files are no longer needed
-for that work. The list below is retained for the remaining deferred items
-(integration test, HLT water accounting).
+for that work. The list below is retained for the remaining deferred item
+(HLT water accounting).
 
 - `backend/app/core/batch_solver.py`
 - `backend/app/core/utils.py`
@@ -91,7 +91,10 @@ are required to make Step 5 functional.
   test (`test_asbc_aliases_match_utils_exactly`) pins the two modules together
   so the divergence cannot silently return.
 - **Integration test** hitting the real `/api/solve-batch` route with a mocked
-  auth dependency.
+  auth dependency. DONE. `backend/tests/test_solve_batch_endpoint.py` exercises
+  the full HTTP stack via FastAPI's `TestClient`: happy path (both topologies),
+  auth gate, Pydantic request validation, and the `SolverValidationError` ->
+  HTTP 422 structured-detail mapping.
 - **HLT water accounting** — `plans/vessel-loss-model.md` §4.4/§4.5 describes
   HLT top-up and sparge salt dosing, not yet implemented in the UI.
 - **Row Inspector field-name mismatch** — RESOLVED / no longer present. The
