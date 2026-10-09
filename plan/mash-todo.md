@@ -136,7 +136,7 @@ Three-part card, modeled on the grain bill editor:
 
 ### 12. Step sequencing in the wizard — RESOLVED
 
-The Mash Card sits **after the grain bill and after equipment selection**. It depends on both: the grain bill supplies grain temperature and total grain mass (for strike-water-temp derivation), and the equipment profile supplies mash thickness defaults. Placing it earlier would force the user to backtrack.
+**Placement:** immediately following the Batch Sparge Solver. The solver produces the grain mass and extract potential that the Mash Card's frontend-side strike-water computation depends on (Q3), so the Mash Card must come after it. The Mash Card also sits after the grain bill and after equipment selection: the grain bill supplies grain temperature and total grain mass (for strike-water-temp derivation), and the equipment profile supplies mash thickness defaults. Placing it earlier would force the user to backtrack.
 
 ## Resolution Log
 
@@ -152,4 +152,4 @@ The Mash Card sits **after the grain bill and after equipment selection**. It de
 - **Q9 (Validation):** Soft warn — inline amber note when a rest's "use" temperature is outside its recommended range. Non-blocking; clears when back in range.
 - **Q10 (Persistence):** Manifest-scoped, saved with the batch. Not equipment-profile-scoped. (Consistent with Q7.)
 - **Q11 (UI shape):** Three-part card — style dropdown + rest checkbox table, "Configure Rests" modal for editing use-temp/duration, and a summary table on the base card that recapitulates the modal and computes strike water temp. Modal markup lives in a new partial under `frontend/src/partials/` (e.g. `frontend/src/partials/mash-rests-modal.html`) and is pulled in via the existing partial-include mechanism.
-- **Q12 (Step sequencing):** Mash Card sits after the grain bill and after equipment selection — it depends on both.
+- **Q12 (Step sequencing):** Mash Card sits immediately following the Batch Sparge Solver, and after the grain bill and after equipment selection — it depends on all three. The solver produces the grain mass and extract potential that the frontend-side strike-water computation depends on (Q3); the grain bill supplies grain temperature and total grain mass; the equipment profile supplies mash thickness defaults.
