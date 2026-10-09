@@ -1,0 +1,91 @@
+<!-- Configure Rests Modal (Step 6) -->
+<div
+        x-show="$store.mashModal.isOpen"
+        x-transition.opacity.duration.200ms
+        class="modal-backdrop"
+        style="display: none;"
+        @keydown.escape.window="$store.mashModal.close()"
+>
+    <div class="modal-dialog modal-dialog-workspace" @click.outside="$store.mashModal.close()">
+        <div class="modal-workspace-header">
+            <div class="modal-workspace-header-title">
+                <h2 class="modal-workspace-title">Configure Mash Rests</h2>
+            </div>
+            <div class="modal-workspace-header-actions">
+                <button type="button" class="btn-close" @click="$store.mashModal.close()">✕</button>
+            </div>
+        </div>
+
+        <div class="modal-workspace-body">
+            <div class="modal-workspace-main">
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Rest</th>
+                                <th>Low</th>
+                                <th>Use</th>
+                                <th>High</th>
+                                <th>Duration</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="rest in sortedMashRests" :key="rest.rest_id">
+                                <tr>
+                                    <td>
+                                        <span x-show="rest.rest_id === 'dough_in'">→ </span>
+                                        <span x-text="getRestDefinition(rest.rest_id) ? getRestDefinition(rest.rest_id).name : rest.rest_id"></span>
+                                    </td>
+                                    <td class="text-xs text-muted tabular-nums">
+                                        <template x-if="getRestDefinition(rest.rest_id) && getRestDefinition(rest.rest_id).temp_min_c != null">
+                                            <span x-text="getRestDefinition(rest.rest_id).temp_min_c"></span>
+                                        </template>
+                                        <template x-if="!getRestDefinition(rest.rest_id) || getRestDefinition(rest.rest_id).temp_min_c == null">
+                                            <span>—</span>
+                                        </template>
+                                    </td>
+                                    <td>
+                                        <input
+                                                type="number"
+                                                step="0.5"
+                                                class="form-input tabular-nums"
+                                                :value="restUseTempDisplay(rest)"
+                                                @input="setRestUseTempDisplay(rest, $event.target.value)"
+                                        />
+                                        <template x-if="isRestOutOfRange(rest.rest_id, rest.use_temp_c)">
+                                            <span class="form-hint text-danger">Outside recommended range</span>
+                                        </template>
+                                    </td>
+                                    <td class="text-xs text-muted tabular-nums">
+                                        <template x-if="getRestDefinition(rest.rest_id) && getRestDefinition(rest.rest_id).temp_max_c != null">
+                                            <span x-text="getRestDefinition(rest.rest_id).temp_max_c"></span>
+                                        </template>
+                                        <template x-if="!getRestDefinition(rest.rest_id) || getRestDefinition(rest.rest_id).temp_max_c == null">
+                                            <span>—</span>
+                                        </template>
+                                    </td>
+                                    <td>
+                                        <input
+                                                type="number"
+                                                step="1"
+                                                min="0"
+                                                class="form-input tabular-nums"
+                                                :value="rest.duration_min"
+                                                @input="setRestDuration(rest, $event.target.value)"
+                                        />
+                                    </td>
+                                    <td class="text-xs text-muted" x-text="getRestDefinition(rest.rest_id) ? getRestDefinition(rest.rest_id).purpose : ''"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" @click="$store.mashModal.close()">OK</button>
+        </div>
+    </div>
+</div>

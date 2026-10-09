@@ -1133,6 +1133,17 @@ Alpine.store('auth', {
   }
 });
 
+// Global Mash Modal Store (Step 6 Configure Rests modal visibility)
+Alpine.store('mashModal', {
+  isOpen: false,
+  open() {
+    this.isOpen = true;
+  },
+  close() {
+    this.isOpen = false;
+  }
+});
+
 // Global UI Store for notifications
 Alpine.store('ui', {
   toasts: [],
@@ -1830,6 +1841,25 @@ Alpine.data('wizard', () => {
     onMashRestEdit() {
       if (!this.manifest.mash) return;
       this.manifest.mash = markScheduleCustom(this.manifest.mash);
+    },
+
+    // Toggle a rest's `enabled` flag from the checkbox table. Bookends
+    // (dough-in, mash-out) are always enabled and their checkboxes are
+    // disabled in the partial, so this is only reachable for optional rests.
+    toggleMashRest(restId, enabled) {
+      if (!this.manifest.mash) return;
+      const rest = this.manifest.mash.rests.find((r) => r.rest_id === restId);
+      if (!rest) return;
+      rest.enabled = Boolean(enabled);
+      this.onMashRestEdit();
+    },
+
+    // Set a rest's duration from the Configure Rests modal. Durations are
+    // stored in minutes and are not unit-aware (design record Q8).
+    setRestDuration(rest, displayVal) {
+      const parsed = parseFloat(displayVal);
+      rest.duration_min = isNaN(parsed) ? null : parsed;
+      this.onMashRestEdit();
     },
 
     // The dough-in rest's "use" temperature is the mash target temperature.

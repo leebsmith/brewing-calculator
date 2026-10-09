@@ -1736,6 +1736,35 @@ samp {
   white-space: nowrap;
 }
 
+/* --- Mash Card (Step 6) --- */
+
+/* Checkbox + rest-name label in the rest toggle table. */
+.mash-rest-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--sys-text-primary);
+}
+
+.mash-rest-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.mash-rest-toggle input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Compact numeric inputs inside the Configure Rests modal table. */
+.modal-workspace-main .data-table .form-input {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  min-width: 5rem;
+}
+
 /* ==========================================================================
    15. Form Input with Unit Suffix Addon
    ========================================================================== */

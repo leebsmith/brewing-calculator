@@ -1,0 +1,196 @@
+<!-- Step 6: Mash Card Accordion (rest schedule + strike water temperature) -->
+<div class="step-card" :class="{ 'is-active': activeStep === 6, 'is-completed': completedSteps.includes(6) }">
+    <div class="accordion-header">
+        <button
+                type="button"
+                class="accordion-trigger"
+                :aria-expanded="activeStep === 6"
+                aria-controls="step-panel-6"
+                id="step-trigger-6"
+                @click="setActiveStep(6)"
+        >
+            <div class="accordion-title-wrap">
+                <span class="accordion-step-num">6</span>
+                <div>
+                    <span class="accordion-title">Mash Profile</span>
+                    <span class="accordion-subtitle">Rest schedule, strike water temperature &amp; fermentability</span>
+                </div>
+            </div>
+            <div class="accordion-controls">
+                <span class="accordion-status-pill" :class="getStepStatusClass(6)" x-text="getStepStatusLabel(6)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 6 ? '▲' : '▼'"></span>
+            </div>
+        </button>
+    </div>
+
+    <div
+            id="step-panel-6"
+            role="region"
+            aria-labelledby="step-trigger-6"
+            x-show="activeStep === 6"
+            x-collapse
+            class="step-card-body"
+    >
+        <!-- Preset Selector + Configure Rests Trigger -->
+        <div class="preset-toolbar">
+            <div class="preset-toolbar-select-group">
+                <label for="mash-preset-selector" class="form-label text-xs">Mash Style Preset</label>
+                <div class="preset-select-controls">
+                    <select
+                            id="mash-preset-selector"
+                            class="form-select text-sm"
+                            :value="manifest.mash ? manifest.mash.preset_id : 'custom'"
+                            @change="onMashPresetChange($event.target.value)"
+                    >
+                        <template x-for="(label, key) in mashPresetLabels" :key="key">
+                            <option :value="key" x-text="label"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <button
+                        type="button"
+                        @click="$store.mashModal.open()"
+                        class="btn btn-secondary text-xs"
+                >
+                    Configure Rests
+                </button>
+            </div>
+        </div>
+
+        <!-- Rest Checkbox Table (key characteristics) -->
+        <div class="data-table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Rest</th>
+                        <th>Range</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="rest in sortedMashRests" :key="rest.rest_id">
+                        <tr>
+                            <td>
+                                <label class="mash-rest-toggle">
+                                    <input
+                                            type="checkbox"
+                                            :checked="rest.enabled"
+                                            :disabled="rest.rest_id === 'dough_in' || rest.rest_id === 'mash_out'"
+                                            @change="toggleMashRest(rest.rest_id, $event.target.checked)"
+                                    />
+                                    <span x-text="getRestDefinition(rest.rest_id) ? getRestDefinition(rest.rest_id).name : rest.rest_id"></span>
+                                </label>
+                            </td>
+                            <td class="text-xs text-muted">
+                                <template x-if="getRestDefinition(rest.rest_id) && getRestDefinition(rest.rest_id).temp_min_c != null">
+                                    <span x-text="`${getRestDefinition(rest.rest_id).temp_min_c}–${getRestDefinition(rest.rest_id).temp_max_c} °C`"></span>
+                                </template>
+                                <template x-if="!getRestDefinition(rest.rest_id) || getRestDefinition(rest.rest_id).temp_min_c == null">
+                                    <span>—</span>
+                                </template>
+                            </td>
+                            <td class="text-xs text-muted" x-text="getRestDefinition(rest.rest_id) ? getRestDefinition(rest.rest_id).purpose : ''"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary Readout -->
+        <div class="synthesized-card">
+            <div class="synthesized-header">
+                <h3 class="synthesized-title">Mash Summary</h3>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Rest</th>
+                            <th>Use Temp</th>
+                            <th>Duration</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="rest in enabledMashRests" :key="rest.rest_id">
+                            <tr>
+                                <td>
+                                    <span x-show="rest.rest_id === 'dough_in'">→ </span>
+                                    <span x-text="getRestDefinition(rest.rest_id) ? getRestDefinition(rest.rest_id).name : rest.rest_id"></span>
+                                </td>
+                                <td class="tabular-nums">
+                                    <template x-if="rest.use_temp_c != null">
+                                        <span x-text="`${restUseTempDisplay(rest)} ${$store.units.getLabel('step6_rest_use_temp_c')}`"></span>
+                                    </template>
+                                    <template x-if="rest.use_temp_c == null">
+                                        <span class="text-muted">—</span>
+                                    </template>
+                                </td>
+                                <td class="tabular-nums">
+                                    <template x-if="rest.duration_min != null">
+                                        <span x-text="`${rest.duration_min} min`"></span>
+                                    </template>
+                                    <template x-if="rest.duration_min == null">
+                                        <span class="text-muted">—</span>
+                                    </template>
+                                </td>
+                                <td class="text-xs text-muted" x-text="getRestDefinition(rest.rest_id) ? getRestDefinition(rest.rest_id).purpose : ''"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="metric-strip">
+                <div class="metric-cell">
+                    <span class="metric-cell-label">Grain Temperature</span>
+                    <div class="metric-cell-value-wrap">
+                        <input
+                                type="number"
+                                step="0.5"
+                                :value="grainTempDisplay()"
+                                @input="setGrainTempDisplay($event.target.value)"
+                                class="form-input tabular-nums"
+                        />
+                        <span class="metric-cell-unit" x-text="$store.units.getLabel('step6_grain_temp_c')"></span>
+                    </div>
+                </div>
+                <div class="metric-cell">
+                    <span class="metric-cell-label">Strike Water Temp</span>
+                    <div class="metric-cell-value-wrap">
+                        <span class="metric-cell-val" x-text="strikeWaterTempDisplay() || '—'"></span>
+                        <span class="metric-cell-unit" x-text="$store.units.getLabel('step6_strike_water_temp_c')"></span>
+                    </div>
+                </div>
+                <div class="metric-cell">
+                    <span class="metric-cell-label">Total Mash Time</span>
+                    <div class="metric-cell-value-wrap">
+                        <span class="metric-cell-val" x-text="totalMashTimeMin"></span>
+                        <span class="metric-cell-unit">min</span>
+                    </div>
+                </div>
+                <div class="metric-cell">
+                    <span class="metric-cell-label">Limit of Attenuation</span>
+                    <div class="metric-cell-value-wrap">
+                        <span class="metric-cell-val" x-text="limitOfAttenuationDisplay() || '—'"></span>
+                        <span class="metric-cell-unit" x-text="$store.units.getLabel('step6_loa')"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step Action Button -->
+        <div class="step-actions">
+            <button
+                    type="button"
+                    @click="markStepComplete(6)"
+                    class="btn btn-primary"
+            >
+                Next: Water Chemistry →
+            </button>
+        </div>
+    </div>
+</div>

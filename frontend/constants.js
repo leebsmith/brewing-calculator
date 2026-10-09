@@ -55,6 +55,16 @@ export const BREW_CONSTANTS = {
   // from the equipment profile. Default on first entry is 20.0 °C.
   DEFAULT_GRAIN_TEMP_C: 20.0,
 
+  // Default mash thickness (L/kg), used by the Mash Card's strike-water-temp
+  // derivation until the solver writes manifest.mash_thickness_l_per_kg.
+  // 1.25 qt/lb = 2.6079 L/kg (design record Q3).
+  DEFAULT_MASH_THICKNESS_L_PER_KG: 2.6079,
+
+  // Default mash thickness (L/kg), used by the Mash Card's strike-water-temp
+  // derivation until the solver writes manifest.mash_thickness_l_per_kg.
+  // 1.25 qt/lb = 2.6079 L/kg (design record Q3).
+  DEFAULT_MASH_THICKNESS_L_PER_KG: 2.6079,
+
   // Extract Potential Reference Constants (Pure Sucrose / Grist Scaling)
   SUCROSE_POTENTIAL_PPG: 46.21,
   IMPERIAL_POTENTIAL_SCALING_FACTOR: 46.21,
