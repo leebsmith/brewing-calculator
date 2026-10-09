@@ -80,7 +80,7 @@
                     <label class="form-label">
                         <span>Constraint Topology</span>
                     </label>
-                    <select class="form-select text-sm" x-model="batchSolverTopology" @change="markBatchSolverStale()">
+                    <select class="form-select text-sm" x-model="batchSolverTopology" @change="onTopologyChange()">
                         <option value="r_l_to_g">{V_pre_boil, R_L:G} — fixed mash thickness</option>
                         <option value="runoff_ratio">{V_pre_boil, r} — equal-runnings optimized</option>
                     </select>
@@ -89,15 +89,29 @@
 
                 <div class="form-group">
                     <label class="form-label">
-                        <span x-text="batchSolverTopology === 'r_l_to_g' ? 'Liquor-to-Grist Ratio (L/kg)' : 'Runoff Ratio r (dimensionless)'"></span>
+                        <span x-text="batchSolverTopology === 'r_l_to_g' ? 'Liquor-to-Grist Ratio' : 'Runoff Ratio r'"></span>
+                        <button
+                            type="button"
+                            x-show="batchSolverTopology === 'r_l_to_g'"
+                            @click="$store.units.toggle('step5_intensive_value')"
+                            class="unit-badge"
+                            :class="{ 'unit-badge-customized': $store.units.isCustomized('step5_intensive_value') }"
+                            x-text="$store.units.getLabel('step5_intensive_value')"
+                            title="Click to toggle unit"
+                        ></button>
+                        <span
+                            x-show="batchSolverTopology !== 'r_l_to_g'"
+                            class="text-xs text-muted"
+                            x-text="'(dimensionless)'"
+                        ></span>
                     </label>
                     <input
                             type="number"
                             step="0.1"
                             min="0.1"
                             class="form-input tabular-nums"
-                            x-model.number="batchSolverIntensiveValue"
-                            @input="markBatchSolverStale()"
+                            :value="intensiveValueDisplay()"
+                            @input="setIntensiveValueDisplay($event.target.value)"
                     />
                     <span class="form-hint" x-text="batchSolverTopology === 'r_l_to_g' ? 'Strike water per kg of grist.' : 'V_run1 / V_run2; 1.0 is equal runnings.'"></span>
                 </div>

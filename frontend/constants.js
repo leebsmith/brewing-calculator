@@ -106,6 +106,7 @@ export const BREW_CONSTANTS = {
     'step2_yeast_attenuation_pct': 'percentage',
     // Step 5: Batch Sparge Solver
     'step5_v_ferm': 'volume',
+    'step5_intensive_value': 'compound',
     'step5_v_post_boil': 'volume',
     'step5_target_og': 'gravity',
     'step5_sg_post_boil': 'gravity',

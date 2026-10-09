@@ -1468,6 +1468,41 @@ Alpine.data('wizard', () => {
       }
     },
 
+    // The intensive-value field is polymorphic: under 'r_l_to_g' it is a
+    // compound ratio (L/kg <-> gal/lb) and must route through the units
+    // store; under 'runoff_ratio' it is a dimensionless number and must
+    // bypass conversion entirely. These two helpers dispatch on topology so
+    // the partial can bind to a single pair of methods.
+    intensiveValueDisplay() {
+      if (this.batchSolverTopology === 'r_l_to_g') {
+        return this.compoundDisplay(this.batchSolverIntensiveValue, 'step5_intensive_value');
+      }
+      return this.batchSolverIntensiveValue;
+    },
+    setIntensiveValueDisplay(displayVal) {
+      if (this.batchSolverTopology === 'r_l_to_g') {
+        this.setCompoundDisplay(this, 'batchSolverIntensiveValue', displayVal, 'step5_intensive_value');
+      } else {
+        const parsed = parseFloat(displayVal);
+        this.batchSolverIntensiveValue = isNaN(parsed) ? 0 : parsed;
+      }
+      this.markBatchSolverStale();
+    },
+    get intensiveValueUnitLabel() {
+      if (this.batchSolverTopology === 'r_l_to_g') {
+        return Alpine.store('units') ? Alpine.store('units').getLabel('step5_intensive_value') : 'L/kg';
+      }
+      return 'dimensionless';
+    },
+
+    // The two topologies interpret the intensive value in different units
+    // (L/kg vs. dimensionless), so carrying a value across a topology switch
+    // would silently reinterpret it. Reset to a sensible default per topology.
+    onTopologyChange() {
+      this.batchSolverIntensiveValue = this.batchSolverTopology === 'r_l_to_g' ? 3.0 : 1.0;
+      this.markBatchSolverStale();
+    },
+
     async solveBatch() {
       this.batchSolverError = null;
       this.batchSolverResult = null;
@@ -1496,6 +1531,10 @@ Alpine.data('wizard', () => {
         apparent_attenuation: parseFloat(this.manifest.yeast_attenuation_pct) || 0.75,
         v_ferm: parseFloat(this.manifest.v_ferm) || BREW_CONSTANTS.DEFAULT_V_FERM_L,
         topology: this.batchSolverTopology,
+        // Under 'r_l_to_g' the stored value is already in base units (L/kg)
+        // because setIntensiveValueDisplay() routes through the units store.
+        // Under 'runoff_ratio' it is dimensionless and stored as-is. Either
+        // way, batchSolverIntensiveValue is the base value the backend wants.
         intensive_value: parseFloat(this.batchSolverIntensiveValue) || 3.0,
         grain_bill,
         s_late_add: 0.0,
