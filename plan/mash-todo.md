@@ -73,14 +73,23 @@ Dough-in is the first rest. Almost everything about it is pre-determined by the 
 
 **Strike water temperature formula** (frontend, in the Mash Card):
 
+The canonical storage unit is metric. The codebase stores temperatures in Celsius and the solver uses metric internally, so the formula the editor engineer implements is the metric one:
+
 ```
-T_strike = T_target + (mash_thickness) * (T_target − T_grain)
+T_strike_c = T_target_c + (0.41 / mash_thickness_L_per_kg) * (T_target_c - T_grain_c)
 ```
 
 where:
-- `T_target` = dough-in "use" temperature (user-editable)
-- `T_grain` = grain temperature. Sourced from the equipment profile's grain-temperature field if present; otherwise defaults to 20 °C. (If the equipment profile schema does not yet expose a grain-temperature field, use the 20 °C default and defer adding the field.)
-- `mash_thickness` = mash thickness in L/kg — the same value shown in the summary table. (Use the name `mash_thickness` consistently; do not introduce a separate `mash_thickness_ratio` variable.)
+- `T_target_c` = dough-in "use" temperature, in °C (user-editable)
+- `T_grain_c` = grain temperature, in °C (see below)
+- `mash_thickness_L_per_kg` = mash thickness in L/kg — the same value shown in the summary table. (Use the name `mash_thickness` consistently; do not introduce a separate `mash_thickness_ratio` variable.)
+- `0.41` = specific heat of dry malted barley in kcal/(kg·°C), which is the metric constant because water's specific heat is 1.0 kcal/(kg·°C) and its density is 1 kg/L
+
+**Display conversion is handled by the units store.** The formula runs in metric; the units store converts `T_strike_c` to °F for display when the user's temperature preference is imperial. The editor engineer should **not** implement the imperial formula separately — that would duplicate logic and risk drift. One formula, metric, converted at the display boundary.
+
+**`T_grain_c` source (v1):** the equipment profile schema (`backend/app/schemas/templates.py` → `EquipmentProfile`) does **not** have a grain-temperature field. For v1, hardcode `T_grain_c = 20.0` as a named constant (e.g., `DEFAULT_GRAIN_TEMP_C = 20.0`) in the same frontend module that computes `T_strike_c`. **Deferred:** adding a `grain_temp_c` field to `EquipmentProfile` and reading it here. Do not go looking for a field that does not exist.
+
+**Equipment thermal mass offset is deferred.** The advanced `T_tun` correction (heat absorbed by the mash tun walls) is out of scope for v1. If it is added later, it is an additive offset applied after the base formula. Do not implement it now.
 
 The dough-in rest is visually marked with a "→" in the rest table.
 
@@ -142,7 +151,7 @@ Three-part card, modeled on the grain bill editor:
 
 - **Q1 (Alpha-Amylase Rest range):** 68–72 °C (154–162 °F). Target: alpha-amylase. Objective: dextrinization — body and reduced fermentability.
 - **Q2 (Preset list):** Seven canonical rests (added Beta/Alpha-Amylase Rest, 62–72 °C, as the "single infusion" rest). Six named presets + Custom. Dough-in is the first rest (always present). Mash-out is a separate always-present step at 168–170 °F. Preset matrix recorded above. Selecting Custom clears all checkboxes; manually editing checks after a named preset auto-flips the dropdown to Custom.
-- **Q3 (Dough-in fields):** Dough-in is the first rest, marked with "→". Almost everything about it is pre-determined by the solver (strike water volume, mash thickness, target dough-in temp). The only user-editable field is strike water temperature, which is derived from the dough-in "use" temperature via `T_strike = T_target + (mash_thickness) * (T_target − T_grain)`.
+- **Q3 (Dough-in fields):** Dough-in is the first rest, marked with "→". Almost everything about it is pre-determined by the solver (strike water volume, mash thickness, target dough-in temp). The only user-editable field is strike water temperature, which is derived from the dough-in "use" temperature via the metric formula `T_strike_c = T_target_c + (0.41 / mash_thickness_L_per_kg) * (T_target_c - T_grain_c)`. `T_grain_c` is hardcoded to `DEFAULT_GRAIN_TEMP_C = 20.0` in v1 (the `EquipmentProfile` schema has no grain-temperature field; adding one is deferred). The `T_tun` equipment thermal-mass offset is deferred. Display conversion to °F is handled by the units store at the display boundary; no separate imperial formula is implemented.
 - **Q4 (Mash-out fields):** Target temp (constrained to 168–170 °F), duration, and a true-mash-out vs. hold flag.
 - **Q5 (Ordering & constraints):** Rests always displayed in ascending temperature order. Enforced, not arbitrary. No manual reordering — sort is derived from each rest's "use" temperature. Equal "use" temperatures are ordered by canonical rest order (Q2's numbered list); the sort is stable and deterministic.
 - **Q6 (Summary readout):** Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
