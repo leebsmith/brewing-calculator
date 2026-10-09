@@ -65,3 +65,4 @@ class BatchSolverResponse(BaseModel):
     s_post_boil_target: float
     m_grist: float
     cascade: StageCascadeModel
+    max_achievable_abv: float

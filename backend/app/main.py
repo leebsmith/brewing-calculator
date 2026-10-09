@@ -196,6 +196,7 @@ def solve_batch_endpoint(
             sg_pre_boil=result.cascade.sg_pre_boil,
             v_post_boil=result.cascade.v_post_boil,
         ),
+        max_achievable_abv=result.max_achievable_abv,
     )
 
 

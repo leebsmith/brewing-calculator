@@ -223,6 +223,32 @@ def cutaia_abv(oe_plato: float, apparent_attenuation: float) -> float:
     return abw * (fg_sg / 0.791)
 
 
+def max_achievable_abv(apparent_attenuation: float) -> float:
+    """Compute the maximum ABV reachable within the Phase 1 bracket.
+
+    The Phase 1 root-finder brackets over ``[0, 40] °P``. The ceiling is
+    therefore the Cutaia ABV at 40 °P for the given attenuation. Exposing
+    this lets the frontend bound the target-ABV input so the user cannot
+    submit a value that Phase 1 would reject with ``ABV_UNREACHABLE``.
+
+    Args:
+        apparent_attenuation: Expected apparent attenuation as a fraction
+            in (0, 1].
+
+    Returns:
+        The maximum achievable ABV, as a percentage.
+
+    Raises:
+        SolverValidationError: If ``apparent_attenuation`` is outside (0, 1].
+    """
+    if not (0.0 < apparent_attenuation <= 1.0):
+        raise SolverValidationError(
+            "INVALID_ATTENUATION",
+            f"Apparent attenuation must be in (0, 1]; got {apparent_attenuation}.",
+        )
+    return cutaia_abv(40.0, apparent_attenuation)
+
+
 def solve_sg_post_boil_from_abv(
     target_abv: float, apparent_attenuation: float
 ) -> float:
@@ -894,6 +920,9 @@ class BatchSolverResult:
         s_post_boil_target: Required post-boil extract mass, in kg.
         m_grist: Converged dry grist mass, in kg.
         cascade: The Phase 4 stage volume and gravity cascade.
+        max_achievable_abv: The Phase 1 bracket ceiling for the given
+            attenuation, as a percentage. Echoed back so the frontend can
+            bound the target-ABV input without duplicating the Cutaia model.
     """
 
     sg_post_boil: float
@@ -901,6 +930,7 @@ class BatchSolverResult:
     s_post_boil_target: float
     m_grist: float
     cascade: StageCascade
+    max_achievable_abv: float
 
 
 def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
@@ -975,4 +1005,5 @@ def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
         s_post_boil_target=reversal.s_post_boil_target,
         m_grist=m_grist,
         cascade=cascade,
+        max_achievable_abv=max_achievable_abv(inputs.apparent_attenuation),
     )
