@@ -8,19 +8,26 @@ Repo: brewing-calculator, branch v2-dag-engine.
 `docs/batch-math/implementation-plan.md`. The Stage Status table correctly
 shows all stages DONE.
 
-**Frontend solver refactor: NOT STARTED.** The frontend is in a half-migrated
-state. `frontend/script.js` still contains the legacy `ThermodynamicSolver`
-integration, `frontend/constants.js` still has the `SOLVER_*` block and lacks
-`DEFAULT_V_FERM_L` / `DEFAULT_TARGET_ABV`, and
-`frontend/src/partials/step-batch-solver.html` lacks the `v_ferm` /
-`target_abv` inputs. As a result, `solveBatch()` currently sends `NaN` for
-`v_ferm` and `target_abv` and Step 5 is non-functional.
+**Frontend solver refactor: DONE and green.** All ten work items in
+`plans/finish-frontend-solver-refactor.md` are implemented. The legacy
+`ThermodynamicSolver` integration has been removed from `frontend/script.js`,
+the `SOLVER_*` block has been removed from `frontend/constants.js`, and
+`DEFAULT_V_FERM_L` / `DEFAULT_TARGET_ABV` plus the `step5_*` FIELD_REGISTRY
+entries are in place. `frontend/src/partials/step-batch-solver.html` has the
+`v_ferm` / `target_abv` inputs, and `solveBatch()` reads both from the manifest
+and writes `v_post_boil` from `result.cascade.v_post_boil`. Step 5 is
+functional end-to-end.
+
+Test suites confirmed green:
+
+- `cd frontend && node --test tests/unitsStore.test.js` — 8 passed.
+- `cd frontend && node --test tests/maltGridStore.test.js` — 10 passed.
+- `cd backend && uv run pytest -v` — 114 passed.
 
 ## Next action
 
-Open `plans/finish-frontend-solver-refactor.md` and work item 1. That file
-contains the full 10-item work plan, acceptance criteria, and an explanation
-of the current `NaN` bug.
+None. The frontend solver refactor is complete. See the Deferred / future work
+section below for non-blocking follow-ups.
 
 ## Key conventions
 
@@ -45,7 +52,12 @@ of the current `NaN` bug.
 
 ## Files to add to the new chat
 
+The frontend refactor is complete, so the frontend files are no longer needed
+for that work. The list below is retained for the remaining deferred items
+(ASBC reconciliation, integration test, HLT water accounting).
+
 - `backend/app/core/batch_solver.py`
+- `backend/app/core/utils.py`
 - `backend/app/main.py`
 - `backend/app/schemas/models.py`
 - `backend/tests/test_batch_solver_phase4.py`
@@ -84,7 +96,10 @@ are required to make Step 5 functional.
   auth dependency.
 - **HLT water accounting** — `plans/vessel-loss-model.md` §4.4/§4.5 describes
   HLT top-up and sparge salt dosing, not yet implemented in the UI.
-- **Row Inspector field-name mismatch** — `modal-grain-bill-editor.html` binds
-  `x-model.number="row.color_lovibond"`, but rows created by `addMajorMalt()`
-  use `color_srm`. Editing a row's color in the inspector writes to a field
-  nothing reads. Pre-existing, independent of the solver refactor.
+- **Row Inspector field-name mismatch** — RESOLVED / no longer present. The
+  inspector in `modal-grain-bill-editor.html` binds
+  `x-model.number="row.color_lovibond"`, and every row-producing path in
+  `frontend/script.js` (`addMajorMalt()`, the default row literal,
+  `maltColorDisplay()`, `weightedSrm`) uses `color_lovibond`. There are zero
+  occurrences of `color_srm` in the codebase, so the field names agree. This
+  entry is retained only as a historical note; no action is required.
