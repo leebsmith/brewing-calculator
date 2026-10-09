@@ -50,6 +50,11 @@ carries it. This is redundant and misleading.
 - [ ] Remove `step1_hlt_starting_volume_l` from `FIELD_REGISTRY`.
 - [ ] Remove `DEFAULT_HLT_STARTING_VOLUME_L` from `BREW_CONSTANTS` (or keep it
       as the Step 5 default; decide).
+      - Note: `DEFAULT_HLT_STARTING_VOLUME_L` is now only used as the
+        manifest's initial value before a profile loads. Since `selectProfile`
+        overwrites it from `max_hlt_volume_l`, the constant could be dropped
+        entirely — it was left in place to avoid touching the manifest
+        initializer. Decide whether to remove it.
 
 ### 2.2 Add a Step 5 input for `hlt_starting_volume_l`
 
