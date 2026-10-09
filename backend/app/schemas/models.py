@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from app.schemas.primitives import MaltPrimitive, SugarPrimitive, YeastPrimitive
 
 class AuthenticatedUser(BaseModel):
@@ -75,6 +75,15 @@ class BatchSolverRequest(BaseModel):
         gt=0,
         description="Maximum HLT capacity (L).",
     )
+
+    @model_validator(mode="after")
+    def _check_hlt_not_overfilled(self) -> "BatchSolverRequest":
+        if self.hlt_starting_volume_l > self.max_hlt_volume_l:
+            raise ValueError(
+                f"hlt_starting_volume_l ({self.hlt_starting_volume_l:.2f} L) "
+                f"exceeds max_hlt_volume_l ({self.max_hlt_volume_l:.2f} L)."
+            )
+        return self
 
 
 class StageCascadeModel(BaseModel):

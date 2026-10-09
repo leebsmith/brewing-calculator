@@ -156,6 +156,23 @@ def solve_batch_endpoint(
     Protected entry route for the batch-sparging solver.
     Composes Phases 1-4 and returns the derived anchors and stage cascade.
     """
+    # Batch-level HLT starting volume must not exceed the equipment profile's
+    # HLT capacity. This is an API-layer invariant because hlt_starting_volume_l
+    # is batch-level while max_hlt_volume_l is equipment-level, so the
+    # equipment-agnostic solver cannot enforce it.
+    if request.hlt_starting_volume_l > request.max_hlt_volume_l:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail={
+                "code": "HLT_OVERFILLED",
+                "message": (
+                    f"HLT starting volume ({request.hlt_starting_volume_l:.2f} L) "
+                    f"exceeds the equipment profile's maximum HLT capacity "
+                    f"({request.max_hlt_volume_l:.2f} L)."
+                ),
+            },
+        )
+
     inputs = BatchSolverInput(
         target_abv=request.target_abv,
         apparent_attenuation=request.apparent_attenuation,
