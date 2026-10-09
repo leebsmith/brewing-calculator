@@ -77,10 +77,19 @@ Mash-out is a separate always-present step at 168–170 °F (75.5–76.7 °C). I
 - **Duration** — user-editable hold time.
 - **Mash-out type flag** — whether it's a true mash-out (infusion/decoction to raise temp) or just a hold.
 
-### 5. Ordering & constraints
-- Are rests always displayed in ascending temperature order, or in the order the user enabled them?
-- Can the user reorder?
-- Do we enforce monotonically increasing temperature across enabled rests, or allow arbitrary order?
+### 5. Ordering & constraints — RESOLVED
+
+**Display order: always ascending by "use" temperature.** This matches how brewers think about a mash schedule (stepping up through the temperature range) and makes the summary table read like a real mash program. Dough-in naturally sits at the top (lowest temp), mash-out at the bottom (highest temp).
+
+**No user reordering.** Since the display is temperature-sorted, a manual reorder control would be meaningless — the sort would immediately override it. No drag handles.
+
+**No hard monotonic enforcement.** A user might legitimately want two rests at the same temperature (e.g., a combined beta/alpha rest alongside a separate beta rest for a step-mash experiment), or a "use" temp slightly outside the canonical range. Blocking would be hostile.
+
+- **Ties** (two enabled rests at the same "use" temp): allowed. Sort is stable; ties broken by **canonical rest order** (Phytase → Ferulic → Beta-Glucan → Protein → Beta-Amylase → Alpha-Amylase → Beta/Alpha). Deterministic and matches the reference table.
+- **Out-of-range "use" temp**: soft warning only (see Q9), never a block.
+- **Non-monotonic intended sequence**: not a concept from the user's perspective — since we sort by temp anyway, we silently sort and do not warn. Skipped.
+
+**Dough-in and mash-out are pinned bookends.** Dough-in is always first (lowest temp by construction), mash-out is always last (highest temp by construction). They are not part of the sortable set.
 
 ### 6. Summary readout — RESOLVED
 
@@ -150,3 +159,4 @@ _(Record answers here as we resolve each question. Do not begin implementation u
 - **Q1 (Alpha-Amylase Rest range):** 68–72 °C (154–162 °F). Target: alpha-amylase. Objective: dextrinization — body and reduced fermentability.
 - **Q3 (Dough-in fields):** Only strike water temp is user-editable; everything else is solver-derived. Dough-in is the first rest, marked with "→".
 - **Q11 (UI shape):** Three-part card — style dropdown + rest checkbox table, "Configure Rests" modal (via `<load>` include) for editing use-temp/duration, and a summary table on the base card that recapitulates the modal and computes strike water temp.
+- **Q5 (Ordering & constraints):** Ascending-temperature display, no manual reorder, no hard monotonic enforcement. Ties allowed, broken by canonical rest order. Out-of-range temps are soft warnings (Q9). Non-monotonic-sequence warning skipped. Dough-in and mash-out are pinned bookends outside the sortable set.
