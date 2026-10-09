@@ -286,6 +286,14 @@ fields rather than collapsed into a single "HLT loss" scalar: the top-up
 calculation needs the coil floor, the sparge salt calculation needs the
 post-top-up volume, and neither can be recovered from a single summed value.
 
+> **Surplus case:** the formula above assumes the HLT is filled to *just* meet
+> the sparge demand. When the HLT is over-filled (the default, since
+> `hlt_starting_volume_l` is pre-filled from `max_hlt_volume_l`), dosing
+> against the full post-top-up volume would mineralize surplus liquor that
+> never reaches the grain. The dosing volume must be capped at the sparge
+> demand. See `plans/water-chemistry-implementation.md` §2.2 for the
+> corrected formula and a worked example.
+
 ---
 
 ## 5. Storage vs. Application
