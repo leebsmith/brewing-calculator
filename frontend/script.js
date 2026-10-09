@@ -1453,7 +1453,10 @@ Alpine.data('wizard', () => {
     // 'r_l_to_g'      -> {V_pre_boil, R_L:G}  (intensive_value is L/kg)
     // 'runoff_ratio'  -> {V_pre_boil, r}      (intensive_value is dimensionless)
     batchSolverTopology: 'r_l_to_g',
-    batchSolverIntensiveValue: 3.0,
+    // Default mash thickness: 1.25 qt/lb (imperial) = 2.6079 L/kg (base).
+    // Stored in base units; the display layer converts to qt/lb in imperial
+    // mode via the 'step5_intensive_value' compound domain.
+    batchSolverIntensiveValue: 2.6079,
     batchSolverResult: null,
     batchSolverError: null,
     batchSolverLoading: false,
@@ -1510,7 +1513,9 @@ Alpine.data('wizard', () => {
     // (L/kg vs. dimensionless), so carrying a value across a topology switch
     // would silently reinterpret it. Reset to a sensible default per topology.
     onTopologyChange() {
-      this.batchSolverIntensiveValue = this.batchSolverTopology === 'r_l_to_g' ? 3.0 : 1.0;
+      // r_l_to_g default: 1.25 qt/lb = 2.6079 L/kg (base units).
+      // runoff_ratio default: 1.0 (dimensionless, equal runnings).
+      this.batchSolverIntensiveValue = this.batchSolverTopology === 'r_l_to_g' ? 2.6079 : 1.0;
       this.markBatchSolverStale();
     },
 
