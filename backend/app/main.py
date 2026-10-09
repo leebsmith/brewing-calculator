@@ -170,6 +170,7 @@ def solve_batch_endpoint(
         delta_v_evap=request.delta_v_evap,
         v_dead=request.v_dead,
         eta_conv=request.eta_conv,
+        hlt_starting_volume_l=request.hlt_starting_volume_l,
         f_shrink=request.f_shrink,
     )
 
