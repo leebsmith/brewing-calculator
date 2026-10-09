@@ -177,7 +177,7 @@ def solve_batch_endpoint(
         result = solve_batch(inputs)
     except SolverValidationError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={"code": exc.code, "message": exc.message},
         )
 
