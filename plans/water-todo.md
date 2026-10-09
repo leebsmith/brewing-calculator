@@ -82,7 +82,14 @@ The solver response now carries `v_hlt_debt`, `v_hlt_after_strike`,
 - [x] Add `MSG_SOLVER_ERRORS.HLT_TOO_SMALL` (done).
 - [x] Verify the 422 handler in `solveBatch()` picks it up (it keys off
       `detail.code`, so it should).
-- [ ] Consider suggesting a fix in the message (e.g. "reduce batch size").
+- [x] Consider suggesting a fix in the message. **Resolved:** the message
+      already names both levers ("Use a larger HLT or reduce the batch size").
+      The exact shortfall is visible in the Water Plan table (`HLT Top-Up`,
+      `Sparge Deliverable`) and the equipment drawer (`max_hlt_volume_l`), so
+      no additional context is surfaced in the error string. Surfacing the
+      numeric shortfall would require either backend changes (to include the
+      values in `detail`) or a `MSG_SOLVER_ERRORS` shape change; deferred as
+      not worth the churn for a rare error path.
 
 ### 2.5 Water-plan summary step (resolved — inline panel)
 
