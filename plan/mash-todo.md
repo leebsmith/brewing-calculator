@@ -26,13 +26,14 @@ The Mash Card is **primarily an input card**, with an optional summary readout.
 | Beta-Glucan Rest | 45–50 °C (113–122 °F) | Beta-glucanase | Breaks down gums in sticky, high-viscosity grains like oats, rye, and unmalted wheat. |
 | Protein Rest | 50–54 °C (122–129 °F) | Protease & Peptidase | Breaks down complex proteins to improve yeast health and reduce chill haze in under-modified malts. |
 | Beta-Amylase Rest (Saccharification Part 1) | 62–65 °C (144–149 °F) | Beta-amylase enzyme | Creates highly fermentable sugars (maltose) for a dry, clean-finishing beer with high alcohol conversion. |
-| Alpha-Amylase Rest (Saccharification Part 2) | TBD | TBD | TBD |
+| Alpha-Amylase Rest (Saccharification Part 2) | 68–72 °C (154–162 °F) | Alpha-amylase enzyme | Breaks down remaining starches into unfermentable dextrins, adding body and reducing fermentability. |
 | Beta/Alpha-Amylase Rest (Combined Saccharification) | 62–72 °C (144–162 °F) | Beta- and alpha-amylase enzymes | Simultaneous beta- and alpha-amylase activity for balanced everyday brewing. Used as the "single infusion" rest. |
 
 ## Open Questions
 
-### 1. Alpha-Amylase Rest range
-The original message was truncated. What is the temperature range and primary target for the Alpha-Amylase Rest? (Assumed 68–72 °C / 154–162 °F unless corrected.)
+### 1. Alpha-Amylase Rest range — RESOLVED
+
+68–72 °C (154–162 °F). Primary target: alpha-amylase enzyme. Objective: breaks down remaining starches into unfermentable dextrins, adding body and reducing fermentability.
 
 ### 2. Preset list — RESOLVED
 
@@ -62,8 +63,11 @@ The original message was truncated. What is the temperature range and primary ta
 **Dough-in:** always present as the first rest; not part of the preset toggle set.
 **Mash-out:** always present as a separate step; not part of the preset toggle set. Range 168–170 °F (75.5–76.7 °C).
 
-### 3. Dough-in step fields
-Proposed: strike water volume, strike water temperature, target dough-in temp, mash thickness (L/kg). Confirm or amend.
+### 3. Dough-in step fields — RESOLVED
+
+Dough-in is the first rest. Almost everything about it is pre-determined by the solver (strike water volume, mash thickness, target dough-in temp). The **only user-editable field is strike water temperature**, which is derived from the dough-in "use" temperature once the user sets it.
+
+The dough-in rest is visually marked with a "→" in the rest table.
 
 ### 4. Mash-out step fields — RESOLVED
 
@@ -93,8 +97,13 @@ Should we warn (soft) or block (hard) when a rest temp is outside its recommende
 ### 10. Persistence
 Does the mash schedule live inside the `manifest` (part of the recipe, saved with the batch), or is it equipment-profile-scoped?
 
-### 11. UI shape
-Single card with all six rests listed as toggleable rows (like the malt grid), or a card with a "configure mash" drawer/modal? Given the malt grid already uses a drawer pattern, do we want consistency?
+### 11. UI shape — RESOLVED
+
+Three-part card, modeled on the grain bill editor:
+
+1. **Style dropdown** — selecting a preset checks the corresponding rests in a table showing each rest's key characteristics.
+2. **"Configure Rests" button** — opens a modal (to be placed in a `<load>` include). The modal shows a fuller table: low temp range, "use" temperature, high temp range, duration, purpose. The user populates the "use" temperature and duration for each rest and clicks OK. The dough-in rest (first one) is marked with "→".
+3. **Summary table on the base card** — after OK, the modal's edits are recapitulated in a complete read-only table on the main card. Once the dough-in "use" temperature is set, the summary table computes and displays the strike water temperature.
 
 ### 12. Step sequencing in the wizard
 Where does the Mash Card sit relative to the existing steps? Before or after the grain bill? Before or after equipment selection?
@@ -105,3 +114,6 @@ _(Record answers here as we resolve each question. Do not begin implementation u
 
 - **Q2 (Preset list):** Seven canonical rests (added Beta/Alpha-Amylase Rest, 62–72 °C, as the "single infusion" rest). Six named presets + Custom. Dough-in is the first rest (always present). Mash-out is a separate always-present step at 168–170 °F. Preset matrix recorded above.
 - **Q4 (Mash-out fields):** Target temp (constrained to 168–170 °F), duration, and a true-mash-out vs. hold flag.
+- **Q1 (Alpha-Amylase Rest range):** 68–72 °C (154–162 °F). Target: alpha-amylase. Objective: dextrinization — body and reduced fermentability.
+- **Q3 (Dough-in fields):** Only strike water temp is user-editable; everything else is solver-derived. Dough-in is the first rest, marked with "→".
+- **Q11 (UI shape):** Three-part card — style dropdown + rest checkbox table, "Configure Rests" modal (via `<load>` include) for editing use-temp/duration, and a summary table on the base card that recapitulates the modal and computes strike water temp.
