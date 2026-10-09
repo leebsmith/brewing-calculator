@@ -333,13 +333,20 @@ scalar, because HLT liquor is water and does not carry extract.
    post-lauter wort in the kettle. Subtracting mash dead space again would
    double-count it.
 
-4. **HLT losses are informational only.** They never enter the wort mass
-   balance. They may be surfaced in a water-planning UI, but the solver
-   ignores them.
+4. **HLT losses are water-accounting terms, not extract losses.** They never
+   enter the wort mass balance (`Loss_preboil` / `Loss_postboil`), because HLT
+   liquor is water and carries no extract. They *do* enter the water budget:
+   `hlt_dead_space_l` and `hlt_transfer_loss_l` are subtracted in §4.4 to
+   compute deliverable sparge volume, and the post-top-up volume drives sparge
+   salt dosing (§4.5). The solver ignores them; the water-planning and
+   water-chemistry modules consume them.
 
 5. **HLT top-up is a derived value, not a solver variable.** It is computed
    from `hlt_starting_volume_l`, `V_strike_drawn`, and `hlt_coil_floor_l`, and
    is displayed read-only. It does not participate in the 2-DOF boil solver.
+   It *is* consumed downstream, however: it feeds the deliverable sparge
+   volume (§4.4) and the sparge salt dosing volume (§4.5), so it must be
+   computed before either of those.
 
 6. **Sparge salt dosing must use the post-top-up volume.** Any water-chemistry
    module must compute sparge salt quantities against
