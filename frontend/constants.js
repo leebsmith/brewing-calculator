@@ -150,4 +150,22 @@ export const BREW_CONSTANTS = {
   // Batch Sparge Solver (POST /api/solve-batch)
   MSG_BATCH_SOLVER_FAILED: 'Batch solver request failed.',
   MSG_BATCH_SOLVER_NO_GRIST: 'Add at least one major malt before solving the batch.',
+
+  // User-facing messages for solver validation failures. Keyed by the
+  // SolverValidationError.code returned in the 422 detail payload. The raw
+  // backend message is logged to the console for debugging; these strings are
+  // what the user sees inline.
+  MSG_SOLVER_ERRORS: {
+    INVALID_TARGET_ABV: 'Target ABV must be greater than zero.',
+    INVALID_ATTENUATION: 'Yeast attenuation must be between 0% and 100%.',
+    ABV_UNREACHABLE: 'That ABV is too high for the selected yeast. Lower the target or pick a more attenuative strain.',
+    INVALID_FERM_VOLUME: 'Target fermenter volume must be greater than zero.',
+    INVALID_SHRINKAGE: 'Cooling shrinkage must be between 0% and 100%.',
+    EXTRACT_TARGET_NON_POSITIVE: 'The grain bill is too small for this batch. Add more malt or lower the target ABV.',
+    INVALID_EXTRACT_POTENTIAL: 'One or more malts have an invalid extract potential. Check the grain bill.',
+    DEGENERATE_BRACKET: 'The solver could not find a valid grain bill for these inputs. Check the equipment profile and grain bill.',
+    BRACKET_NO_SIGN_CHANGE: 'No grain bill can satisfy these targets. Try lowering the ABV, increasing the batch volume, or adding more malt.',
+    UNKNOWN_TOPOLOGY: 'Internal error: unknown constraint topology.',
+    INVALID_INTENSIVE_VALUE: 'The mash thickness or runoff ratio must be greater than zero.',
+  },
 };

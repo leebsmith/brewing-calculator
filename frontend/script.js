@@ -1505,10 +1505,15 @@ Alpine.data('wizard', () => {
           const errData = await res.json().catch(() => ({}));
           const detail = errData.detail || {};
           // Log-only per spec: no toast for solver validation failures.
+          // The raw backend message (which may contain internal diagnostics
+          // like bracket bounds and residual values) goes to the console;
+          // the user sees a brewer-friendly string keyed by the error code.
           console.error(
             `[batchSolver] validation failed (${detail.code || 'UNKNOWN'}): ${detail.message || 'no message'}`
           );
-          this.batchSolverError = detail.message || BREW_CONSTANTS.MSG_BATCH_SOLVER_FAILED;
+          this.batchSolverError =
+            BREW_CONSTANTS.MSG_SOLVER_ERRORS[detail.code] ||
+            BREW_CONSTANTS.MSG_BATCH_SOLVER_FAILED;
           return;
         }
 
