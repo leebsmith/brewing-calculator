@@ -1667,6 +1667,30 @@ Alpine.data('wizard', () => {
       }
     },
 
+    // Solver-resolved mash thickness, in the tracked `step5_mash_thickness`
+    // unit (L/kg <-> qt/lb). The solver writes the base value (L/kg) to
+    // batchSolverResult.mash_thickness_l_per_kg; the units store converts at
+    // the display boundary. Returns '' when no solve has run.
+    mashThicknessDisplay() {
+      if (!this.batchSolverResult) return '';
+      const base = parseFloat(this.batchSolverResult.mash_thickness_l_per_kg);
+      if (isNaN(base)) return '';
+      return Alpine.store('units')
+        ? Alpine.store('units').toDisplay('mash_thickness', base, 'step5_mash_thickness')
+        : base;
+    },
+
+    // Runnings ratio r = V_run1 / V_run2, dimensionless. Derived from the
+    // cascade volumes; 1.0 is equal runnings. Returns '' when the cascade is
+    // unavailable or V_run2 is zero.
+    runningsRatioDisplay() {
+      if (!this.batchSolverResult || !this.batchSolverResult.cascade) return '';
+      const vRun1 = parseFloat(this.batchSolverResult.cascade.v_run1);
+      const vRun2 = parseFloat(this.batchSolverResult.cascade.v_run2);
+      if (isNaN(vRun1) || isNaN(vRun2) || vRun2 === 0) return '';
+      return (vRun1 / vRun2).toFixed(2);
+    },
+
     // --- Step 5: Water Plan summary (derived from batchSolverResult) ---
     // Total water used is the sum of the two volumes the brewer actually
     // draws from the HLT into the process: the strike infusion and the

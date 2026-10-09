@@ -193,6 +193,14 @@
                                 <td>Post-Boil Volume</td>
                                 <td class="text-right tabular-nums font-bold" x-text="volDisplay(batchSolverResult.cascade.v_post_boil, 'step4_v_post_boil') + ' ' + $store.units.getLabel('step4_v_post_boil')"></td>
                             </tr>
+                            <tr>
+                                <td>Mash Thickness</td>
+                                <td class="text-right tabular-nums font-bold" x-text="mashThicknessDisplay() + ' ' + $store.units.getLabel('step5_mash_thickness')"></td>
+                            </tr>
+                            <tr>
+                                <td>Runnings Ratio (r)</td>
+                                <td class="text-right tabular-nums font-bold" x-text="runningsRatioDisplay()"></td>
+                            </tr>
                             </tbody>
                         </table>
                     </div>
