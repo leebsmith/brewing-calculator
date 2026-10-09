@@ -69,7 +69,7 @@ The Mash Card is **primarily an input card**, with an optional summary readout.
 
 ### 3. Dough-in step fields — RESOLVED
 
-Dough-in is the first rest. Almost everything about it is pre-determined by the solver (strike water volume, mash thickness, target dough-in temp). The only user-editable field is strike water temperature, which is derived from the dough-in "use" temperature once the user sets it.
+Dough-in is the first rest. The solver pre-determines the dough-in step's **strike water volume** and **mash thickness**. The dough-in **target temperature** is a user input, and the **strike water temperature** is derived frontend-side from it via the metric formula below.
 
 **Strike water temperature formula** (frontend, in the Mash Card):
 
