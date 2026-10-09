@@ -65,8 +65,13 @@ The original message was truncated. What is the temperature range and primary ta
 ### 3. Dough-in step fields
 Proposed: strike water volume, strike water temperature, target dough-in temp, mash thickness (L/kg). Confirm or amend.
 
-### 4. Mash-out step fields
-Proposed: target temp (typically 75–78 °C), duration, and whether it's a true mash-out (infusion/decoction to raise temp) or just a hold. Confirm or amend.
+### 4. Mash-out step fields — RESOLVED
+
+Mash-out is a separate always-present step at 168–170 °F (75.5–76.7 °C). It exposes:
+
+- **Target temp** — constrained to the 168–170 °F range.
+- **Duration** — user-editable hold time.
+- **Mash-out type flag** — whether it's a true mash-out (infusion/decoction to raise temp) or just a hold.
 
 ### 5. Ordering & constraints
 - Are rests always displayed in ascending temperature order, or in the order the user enabled them?
