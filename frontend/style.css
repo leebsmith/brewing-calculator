@@ -845,12 +845,14 @@ samp {
   max-width: var(--container-modal-workspace, 72rem);
 }
 
-@container modal-bounds (max-width: 800px) { /* stylelint-disable-line at-rule-no-unknown -- @container with named container is valid CSS */
+/* stylelint-disable at-rule-no-unknown -- @container with named container is valid CSS */
+@container modal-bounds (max-width: 800px) {
   .modal-dialog-workspace {
     border-radius: var(--radius-sm);
     padding: var(--space-2);
   }
 }
+/* stylelint-enable at-rule-no-unknown */
 
 .modal-workspace-header {
   padding: var(--space-4) var(--space-6);
@@ -1950,11 +1952,13 @@ samp {
   gap: var(--space-4);
 }
 
+/* stylelint-disable at-rule-no-unknown -- @container is valid CSS */
 @container (min-width: 600px) {
   .step-grid-2col {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+/* stylelint-enable at-rule-no-unknown */
 
 /* Mobile-First Viewport Breakpoint: Small (min-width: 640px) */
 @media (min-width: 640px) {
