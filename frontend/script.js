@@ -273,7 +273,6 @@ export function createEquipmentManager() {
       conversion_efficiency: BREW_CONSTANTS.DEFAULT_CONVERSION_EFFICIENCY,
       shrinkage_pct: BREW_CONSTANTS.DEFAULT_SHRINKAGE_PCT,
       hlt_coil_floor_l: BREW_CONSTANTS.DEFAULT_HLT_COIL_FLOOR_L,
-      hlt_starting_volume_l: BREW_CONSTANTS.DEFAULT_HLT_STARTING_VOLUME_L,
     },
     drawerError: null,
 
@@ -311,7 +310,6 @@ export function createEquipmentManager() {
         conversion_efficiency: current.conversion_efficiency || 0.90,
         shrinkage_pct: current.shrinkage_pct || 0.04,
         hlt_coil_floor_l: current.hlt_coil_floor_l || 0.0,
-        hlt_starting_volume_l: current.hlt_starting_volume_l || 35.0,
       };
     },
 
@@ -337,7 +335,6 @@ export function createEquipmentManager() {
         conversion_efficiency: profile.conversion_efficiency,
         shrinkage_pct: profile.shrinkage_pct,
         hlt_coil_floor_l: profile.hlt_coil_floor_l !== undefined ? profile.hlt_coil_floor_l : 0.0,
-        hlt_starting_volume_l: profile.hlt_starting_volume_l !== undefined ? profile.hlt_starting_volume_l : 35.0,
       };
     },
 
@@ -371,7 +368,6 @@ export function createEquipmentManager() {
           conversion_efficiency: Number(this.drawerForm.conversion_efficiency),
           shrinkage_pct: Number(this.drawerForm.shrinkage_pct),
           hlt_coil_floor_l: Number(this.drawerForm.hlt_coil_floor_l || 0),
-          hlt_starting_volume_l: Number(this.drawerForm.hlt_starting_volume_l || 0),
         };
 
         const saved = await Alpine.store('equipment').saveProfile(payload);
@@ -418,8 +414,11 @@ export function createEquipmentManager() {
           conversion_efficiency: preset.conversion_efficiency,
           shrinkage_pct: preset.shrinkage_pct,
           hlt_coil_floor_l: preset.hlt_coil_floor_l !== undefined ? preset.hlt_coil_floor_l : 0.0,
-          hlt_starting_volume_l: preset.hlt_starting_volume_l !== undefined ? preset.hlt_starting_volume_l : 35.0,
         };
+        // hlt_starting_volume_l is batch-level, not equipment-level. Pre-fill
+        // it from the profile's max_hlt_volume_l (fill-to-capacity default)
+        // so the Step 5 input tracks the selected equipment.
+        this.manifest.hlt_starting_volume_l = preset.max_hlt_volume_l;
         this.onEquipmentChange();
       }
     },
@@ -457,8 +456,7 @@ export function createEquipmentManager() {
         Number(eq.grain_absorption_factor_l_per_kg) !== Number(preset.grain_absorption_factor_l_per_kg) ||
         Number(eq.conversion_efficiency) !== Number(preset.conversion_efficiency) ||
         Number(eq.shrinkage_pct) !== Number(preset.shrinkage_pct) ||
-        Number(eq.hlt_coil_floor_l) !== Number(preset.hlt_coil_floor_l) ||
-        Number(eq.hlt_starting_volume_l) !== Number(preset.hlt_starting_volume_l)
+        Number(eq.hlt_coil_floor_l) !== Number(preset.hlt_coil_floor_l)
       );
     }
   };

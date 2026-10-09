@@ -94,7 +94,6 @@ export const BREW_CONSTANTS = {
     'step1_max_mash_tun_volume_l': 'volume',
     'step1_max_hlt_volume_l': 'volume',
     'step1_hlt_coil_floor_l': 'volume',
-    'step1_hlt_starting_volume_l': 'volume',
     'step1_mash_dead_space_l': 'volume',
     'step1_mash_transfer_loss_l': 'volume',
     'step1_kettle_dead_space_l': 'volume',
