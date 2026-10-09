@@ -145,8 +145,43 @@ Unit toggling applies to the following fields:
 
 Rationale: brewers legitimately push outside canonical ranges (experimentation, thermometer miscalibration); canonical ranges are guidelines, not physics (enzyme activity falls off on a curve, not a cliff); consistent with Q5's soft-warning decision for out-of-range "use" temps.
 
-### 10. Persistence
-Does the mash schedule live inside the `manifest` (part of the recipe, saved with the batch), or is it equipment-profile-scoped?
+### 10. Persistence — RESOLVED
+
+The mash schedule lives inside the `manifest`, **recipe-scoped** (saved with the batch), not equipment-profile-scoped.
+
+Rationale:
+
+- The mash schedule is a recipe decision, not an equipment decision. Two brewers with identical rigs will run different mash programs for a Hefeweizen vs. an IPA; the same brewer will run different programs on the same rig for different styles.
+- Consistent with the grain bill, which is already in the `manifest`. Equipment profiles hold *capabilities* (max kettle volume, max HLT volume, dead space), not *choices*.
+- Equipment profiles are shared across batches. If the schedule lived on the profile, editing it for one batch would silently change every other batch using that profile.
+- Q7 already assumes manifest-scoped storage; Q10 confirms it.
+
+**Concrete shape:**
+
+```
+manifest.mash = {
+  preset_id: 'custom' | 'belgian_saison' | 'german_pils' | ... ,
+  rests: [
+    {
+      rest_id: 'dough_in' | 'phytase' | 'ferulic' | 'beta_glucan' | 'protein' | 'beta_amylase' | 'alpha_amylase' | 'beta_alpha_amylase' | 'mash_out',
+      enabled: true | false,
+      use_temp_c: <number | null>,   // canonical storage unit: Celsius
+      duration_min: <number | null>,
+      // mash_out only:
+      is_true_mash_out: true | false
+    },
+    ...
+  ]
+}
+```
+
+Notes on the shape:
+
+- **Canonical storage unit is Celsius** for temperatures, consistent with the rest of the codebase (the solver uses metric internally; the units store handles display conversion). Durations are stored in minutes.
+- **`rest_id` is the stable key.** The canonical rest order (Q5) is derived from a fixed list, not from array position, so the array can be stored in any order and the display sort is applied at render time.
+- **`enabled` is explicit** rather than "present in array = enabled." This makes preset switching idempotent: applying a preset just flips `enabled` flags and sets `use_temp_c` / `duration_min` to the preset's defaults, without adding/removing array entries. It also preserves the user's custom temps when they toggle a rest off and back on.
+- **`preset_id` is stored** so the dropdown can show the current selection. When the user edits any rest after applying a preset, `preset_id` flips to `'custom'` (same pattern as the grain bill's `is_custom` flag).
+- **Dough-in and mash-out are always present** in the array with `enabled: true` (they're bookends, not toggles). Dough-in's `use_temp_c` is solver-derived and may be `null` until the solver runs; mash-out is constrained to 75.5–76.7 °C per Q4.
 
 ### 11. UI shape — RESOLVED
 
@@ -170,3 +205,4 @@ _(Record answers here as we resolve each question. Do not begin implementation u
 - **Q11 (UI shape):** Three-part card — style dropdown + rest checkbox table, "Configure Rests" modal (via `<load>` include) for editing use-temp/duration, and a summary table on the base card that recapitulates the modal and computes strike water temp.
 - **Q5 (Ordering & constraints):** Ascending-temperature display, no manual reorder, no hard monotonic enforcement. Ties allowed, broken by canonical rest order. Out-of-range temps are soft warnings (Q9). Non-monotonic-sequence warning skipped. Dough-in and mash-out are pinned bookends outside the sortable set.
 - **Q9 (Validation):** Soft warning only, never a block. Amber styling (red reserved for hard failures). Inline warning in the Configure Rests modal naming the canonical range (e.g., "Outside recommended range 62–65 °C"); aggregated amber banner on the base card when any enabled rest is out of range. Both surfaces warn. No warning for dough-in or mash-out beyond their own range constraints.
+- **Q10 (Persistence):** Manifest-scoped, recipe-scoped (not equipment-profile-scoped). Shape: `manifest.mash = { preset_id, rests: [{ rest_id, enabled, use_temp_c, duration_min, is_true_mash_out? }] }`. Celsius canonical for temps, minutes for durations. `rest_id` is the stable key; `enabled` is explicit (preset switching is idempotent and preserves custom temps across toggles). `preset_id` flips to `'custom'` on any edit, matching the grain bill's `is_custom` pattern. Dough-in and mash-out are always present with `enabled: true`; dough-in's `use_temp_c` may be `null` until the solver runs.
