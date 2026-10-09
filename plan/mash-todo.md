@@ -104,6 +104,10 @@ This means the dough-in rest (first, marked "→") and the mash-out step (last) 
 
 Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
 
+### 6b. Limit of Attenuation (LOA) — RESOLVED
+
+Informational only — it does not feed the solver (consistent with Q7). Computed **frontend-side** from the mash schedule using the Braukaiser model. The Braukaiser implementation lives in the frontend alongside the rest of the mash-schedule logic (same module that derives strike water temp); it is not part of the solver. Displayed as a read-only readout on the summary table.
+
 ### 7. Relationship to the solver — RESOLVED
 
 Purely frontend-side schedule for now. Does not feed `BatchSolverRequest`; the solver ignores rests. Rests affect fermentability and mash pH, not extract mass balance, and neither model exists yet. Schedule lives in the `manifest` and is used only for display and strike-water-temp derivation. Promotion into the solver request deferred until a fermentability/pH model is built.
@@ -144,6 +148,7 @@ _All twelve questions resolved. Implementation may proceed._
 - **Q4 (Mash-out fields):** Target temp (constrained to 168–170 °F), duration, and a true-mash-out vs. hold flag.
 - **Q5 (Ordering & constraints):** Rests always displayed in ascending temperature order. Enforced, not arbitrary. No manual reordering — sort is derived from each rest's "use" temperature. Equal "use" temperatures are ordered by canonical rest order (Q2's numbered list); the sort is stable and deterministic.
 - **Q6 (Summary readout):** Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
+- **Q6b (Limit of Attenuation):** Informational only; does not feed the solver (consistent with Q7). Computed frontend-side from the mash schedule using the Braukaiser model, in the same frontend module that derives strike water temp. Displayed as a read-only readout on the summary table.
 - **Q7 (Relationship to the solver):** Purely frontend-side schedule for now. Does not feed `BatchSolverRequest`; the solver ignores rests. Rests affect fermentability and mash pH, not extract mass balance, and neither model exists yet. Schedule lives in the `manifest` and is used only for display and strike-water-temp derivation. Promotion into the solver request deferred until a fermentability/pH model is built.
 - **Q8 (Units):** Temperatures (°C ↔ °F), strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not. **New `UNIT_REGISTRY` domain required: `mash_thickness`** (volume-per-mass ratio; the existing single-domain `toDisplay` signature cannot express it). Temperatures and strike volume map onto existing `temperature` and `volume` domains.
 - **Q9 (Validation):** Soft warn — inline amber note when a rest's "use" temperature is outside its recommended range. Non-blocking; clears when back in range.
