@@ -161,6 +161,20 @@ def test_solve_batch_rejects_missing_hlt_starting_volume(client, valid_payload):
     assert response.status_code == 422
 
 
+def test_solve_batch_rejects_hlt_overfilled(client, valid_payload):
+    # hlt_starting_volume_l is batch-level and max_hlt_volume_l is
+    # equipment-level, so the invariant is enforced at the API layer. The
+    # route raises a structured 422 with code HLT_OVERFILLED.
+    payload = {**valid_payload, "hlt_starting_volume_l": 40.0, "max_hlt_volume_l": 38.0}
+    response = client.post("/api/solve-batch", json=payload)
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["code"] == "HLT_OVERFILLED"
+    assert isinstance(detail["message"], str)
+    assert detail["message"]
+
+
 def test_solve_batch_rejects_empty_grain_bill(client, valid_payload):
     # An empty grain bill is schema-valid but solver-infeasible; the solver
     # raises INVALID_EXTRACT_POTENTIAL (composite E == 0), which the route
