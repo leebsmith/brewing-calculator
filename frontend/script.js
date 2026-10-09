@@ -1640,6 +1640,37 @@ Alpine.data('wizard', () => {
       }
     },
 
+    // --- Step 5: Water Plan summary (derived from batchSolverResult) ---
+    // Total water used is the sum of the two volumes the brewer actually
+    // draws from the HLT into the process: the strike infusion and the
+    // sparge. It is a derived convenience value, not a solver output.
+    get totalWaterUsedDisplay() {
+      if (!this.batchSolverResult) return 0;
+      const total =
+        (this.batchSolverResult.cascade.v_strike || 0) +
+        (this.batchSolverResult.cascade.v_sparge || 0);
+      return this.volDisplay(total, 'step5_v_sparge');
+    },
+
+    // Surplus sparge is the volume the HLT can deliver beyond what the
+    // cascade demands. Positive only when the HLT is over-filled relative to
+    // the sparge requirement; the UI shows the footnote only in that case.
+    get spargeSurplusDisplay() {
+      if (!this.batchSolverResult) return 0;
+      const surplus =
+        (this.batchSolverResult.hlt.v_sparge_deliverable || 0) -
+        (this.batchSolverResult.cascade.v_sparge || 0);
+      return this.volDisplay(surplus, 'step5_v_sparge');
+    },
+
+    get hasSpargeSurplus() {
+      if (!this.batchSolverResult) return false;
+      return (
+        (this.batchSolverResult.hlt.v_sparge_deliverable || 0) >
+        (this.batchSolverResult.cascade.v_sparge || 0)
+      );
+    },
+
     // --- Step 2: Yeast Selection ---
     yeastSearchQuery: '',
     yeastManufacturerFilter: '',
