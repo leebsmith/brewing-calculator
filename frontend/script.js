@@ -166,9 +166,15 @@ const UNIT_REGISTRY = {
     }
   },
   color: {
-    base_unit: 'SRM',
+    // Base unit is Lovibond, matching the stored data (malts.json
+    // color_lovibond, MaltPrimitive.color_lovibond). The EBC factor is the
+    // legacy SRM->EBC factor (1.97) reinterpreted as Lovibond->EBC; it is an
+    // approximation, not a definition. A true Lovibond->EBC conversion would
+    // be ~1.379 (via SRM = Lovibond * 0.7), but that would shift every
+    // displayed EBC value by ~30%, so the legacy factor is retained.
+    base_unit: 'Lovibond',
     units: {
-      SRM: { label: 'SRM', to_base: (v) => v, from_base: (v) => v, precision: 1 },
+      Lovibond: { label: 'Lovibond', to_base: (v) => v, from_base: (v) => v, precision: 1 },
       ECB: { label: 'ECB', to_base: (v) => v / 1.97, from_base: (v) => v * 1.97, precision: 1 }
     }
   },
@@ -756,7 +762,7 @@ Alpine.store('maltGrid', {
 
   get weightedColorUnit() {
     const unitsStore = Alpine.store('units');
-    return unitsStore ? unitsStore.getFieldUnit('color') : 'SRM';
+    return unitsStore ? unitsStore.getFieldUnit('color') : 'Lovibond';
   },
 
   get weightedPotential() {

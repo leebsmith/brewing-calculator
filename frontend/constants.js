@@ -80,7 +80,11 @@ export const BREW_CONSTANTS = {
     compound: ['L/kg', 'qt/lb'],
     extract_potential: ['L·°/kg', 'gal·°/lb'],
     total_extract: ['L·°', 'gal·pts'],
-    color: ['EBC', 'SRM'],
+    // Color is stored as Lovibond (the unit used by malts.json and
+    // MaltPrimitive.color_lovibond). The EBC factor below is the legacy
+    // SRM->EBC factor (1.97) reinterpreted as Lovibond->EBC; it is an
+    // approximation, not a definition. See UNIT_REGISTRY.color in script.js.
+    color: ['EBC', 'Lovibond'],
     percentage: ['%', 'fraction']
   },
 

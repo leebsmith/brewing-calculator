@@ -45,6 +45,12 @@ This refactor will involve modifications to:
 *   **Update:** Replace `color_srm` with `color_lovibond` and adjust UI text from "SRM" to "Lovibond" where appropriate.
 *   **Verification:** Test frontend features that display or use malt/sugar color information.
 
+### 4a. Make the `color` unit domain Lovibond-native
+
+*   **Action:** Rename the `color` domain's base unit from `SRM` to `Lovibond` so the unit system matches the stored data.
+*   **Detail:** In `frontend/constants.js`, change `DOMAIN_BINARY_PAIRS.color` from `['EBC', 'SRM']` to `['EBC', 'Lovibond']`. In `frontend/script.js`, rename the `UNIT_REGISTRY.color` unit key `SRM` to `Lovibond` and update its label. The `ECB` unit's `to_base`/`from_base` factors are left at `1.97` (the legacy SRM->EBC factor reinterpreted as Lovibond->EBC) so no displayed EBC value changes; a true Lovibond->EBC conversion would be ~`1.379` and is deferred.
+*   **Verification:** Confirm `$store.units.getFieldUnit('color')` returns `'Lovibond'` in metric mode and `'EBC'` in imperial mode, and that the grain bill editor's color column header reads "Lovibond".
+
 ### 5. Update Tests
 
 *   **Action:** Modify test files to reflect the change.

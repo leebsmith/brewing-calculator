@@ -154,6 +154,17 @@ const UNIT_REGISTRY = {
       fraction: { label: 'fraction', to_base: (v) => v, from_base: (v) => v, precision: 3 },
       '%':      { label: '%',        to_base: (v) => v / 100, from_base: (v) => v * 100, precision: 1 }
     }
+  },
+  color: {
+    // Base unit is Lovibond, matching the stored data (malts.json
+    // color_lovibond, MaltPrimitive.color_lovibond). The EBC factor is the
+    // legacy SRM->EBC factor (1.97) reinterpreted as Lovibond->EBC; it is an
+    // approximation, not a definition.
+    base_unit: 'Lovibond',
+    units: {
+      Lovibond: { label: 'Lovibond', to_base: (v) => v, from_base: (v) => v, precision: 1 },
+      ECB:      { label: 'ECB',      to_base: (v) => v / 1.97, from_base: (v) => v * 1.97, precision: 1 }
+    }
   }
 };
 ```
