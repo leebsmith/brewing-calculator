@@ -32,7 +32,6 @@ def test_seed_equipment_profiles_valid():
         assert profile.hlt_transfer_loss_l >= 0
         assert profile.trub_loss_l >= 0
         assert profile.hlt_coil_floor_l >= 0
-        assert profile.hlt_starting_volume_l >= 0
         assert 0.80 <= profile.conversion_efficiency <= 1.0
         assert profile.is_custom is False
 
@@ -116,7 +115,6 @@ def test_custom_profile_crud_lifecycle(client, monkeypatch):
             "conversion_efficiency": 0.94,
             "shrinkage_pct": 0.04,
             "hlt_coil_floor_l": 20.0,
-            "hlt_starting_volume_l": 80.0,
             "is_custom": False  # Should be forced to True by backend
         }
         res_post = client.post("/api/equipment-profiles", json=custom_payload)
@@ -126,7 +124,6 @@ def test_custom_profile_crud_lifecycle(client, monkeypatch):
         assert created["is_custom"] is True
         assert created["max_kettle_volume_l"] == 80.0
         assert created["hlt_coil_floor_l"] == 20.0
-        assert created["hlt_starting_volume_l"] == 80.0
         assert created["mash_transfer_loss_l"] == 0.946
         assert created["kettle_transfer_loss_l"] == 0.946
 
