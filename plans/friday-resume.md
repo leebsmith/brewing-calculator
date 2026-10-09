@@ -24,6 +24,9 @@ Test suites confirmed green:
 - `cd frontend && node --test tests/maltGridStore.test.js` — 10 passed.
 - `cd backend && uv run pytest -v` — 114 passed.
 
+The completed plan `plans/finish-frontend-solver-refactor.md` was deleted after
+this refactor landed; its content is preserved in git history.
+
 ## Next action
 
 None. The frontend solver refactor is complete. See the Deferred / future work
@@ -64,7 +67,6 @@ for that work. The list below is retained for the remaining deferred items
 - `docs/batch-math/implementation-plan.md`
 - `docs/batch-math/unified-treatment.md`
 - `plans/vessel-loss-model.md`
-- `plans/finish-frontend-solver-refactor.md`
 - `frontend/script.js`
 - `frontend/constants.js`
 - `frontend/index.html`
