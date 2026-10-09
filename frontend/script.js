@@ -1277,14 +1277,6 @@ Alpine.data('wizard', () => {
     ...nav,
     ...eqMgr,
 
-    // Generalized 2-DOF solver: which two variables are solved outputs.
-    // Default (V2, G2) preserves legacy Option B behavior.
-    solverOutputs: [...BREW_CONSTANTS.SOLVER_DEFAULT_OUTPUTS],
-    solverError: null,
-
-    // Metadata for the 6 solver pills (labels + unit domains), sourced from constants.
-    solverVariables: BREW_CONSTANTS.SOLVER_VARIABLES,
-
     // Working Recipe Manifest
     manifest: {
       name: BREW_CONSTANTS.DEFAULT_BATCH_NAME,
@@ -1359,10 +1351,7 @@ Alpine.data('wizard', () => {
         }
       }
 
-      // Event bus listener for recipe recalculation & step invalidation
-      window.addEventListener('recipe:recalculate', () => {
-        this.runBoilSolver();
-      });
+      // Event bus listener for step invalidation
       window.addEventListener('wizard:invalidate', (e) => {
         if (e.detail && e.detail.step) {
           this.invalidateDownstream(e.detail.step);
@@ -1377,50 +1366,8 @@ Alpine.data('wizard', () => {
         if (profiles && profiles.length > 0) {
           const targetId = this.manifest.equipment_profile_id || profiles[0].id;
           this.selectProfile(targetId);
-          this.runBoilSolver();
         }
       });
-      this.runBoilSolver();
-    },
-
-    // --- Generalized 2-DOF Solver Actions ---
-
-    isSolverOutput(varKey) {
-      return this.solverOutputs.includes(varKey);
-    },
-
-    // Proactive gating: a pill is disabled if selecting it would form a singular pair.
-    isSolverPillDisabled(varKey) {
-      if (this.solverOutputs.includes(varKey)) return false;
-      if (this.solverOutputs.length < 1) return false;
-      const candidate = this.solverOutputs[0];
-      return !ThermodynamicSolver.validateOutputPair(candidate, varKey).valid;
-    },
-
-    solverPillDisabledReason(varKey) {
-      if (this.solverOutputs.length < 1) return '';
-      const candidate = this.solverOutputs[0];
-      const res = ThermodynamicSolver.validateOutputPair(candidate, varKey);
-      return res.valid ? '' : res.reason;
-    },
-
-    toggleSolverPill(varKey) {
-      const idx = this.solverOutputs.indexOf(varKey);
-      if (idx >= 0) {
-        // Deselect (n -> n-1)
-        this.solverOutputs.splice(idx, 1);
-      } else {
-        if (this.solverOutputs.length >= 2) return; // frozen at 2
-        if (this.isSolverPillDisabled(varKey)) return;
-        this.solverOutputs.push(varKey);
-      }
-      this.runBoilSolver();
-    },
-
-    setBoilSolverMode(mode) {
-      // Legacy compatibility shim: map old Option A/B to the new pill pairs.
-      this.solverOutputs = mode === 'option_a' ? ['R_boil', 'G2'] : ['V2', 'G2'];
-      this.runBoilSolver();
     },
 
     // Unit-aware field binding helpers (automatically convert between metric base storage and selected display unit)
@@ -1430,11 +1377,6 @@ Alpine.data('wizard', () => {
     setVolDisplay(obj, prop, displayVal, fieldKey) {
       const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('volume', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
       obj[prop] = isNaN(baseVal) ? 0 : baseVal;
-      if (this.$dispatch) {
-        this.$dispatch('recipe:recalculate');
-      } else {
-        this.runBoilSolver();
-      }
     },
     massDisplay(baseVal, fieldKey) {
       return Alpine.store('units') ? Alpine.store('units').toDisplay('mass', baseVal, fieldKey) : baseVal;
@@ -1463,98 +1405,6 @@ Alpine.data('wizard', () => {
     setGravityDisplay(obj, prop, displayVal, fieldKey) {
       const baseVal = Alpine.store('units') ? Alpine.store('units').toBase('gravity', parseFloat(displayVal), fieldKey) : parseFloat(displayVal);
       obj[prop] = isNaN(baseVal) ? 1.0 : baseVal;
-      if (this.$dispatch) {
-        this.$dispatch('recipe:recalculate');
-      } else {
-        this.runBoilSolver();
-      }
-    },
-
-    onBatchMetaChange() {
-      this.runBoilSolver();
-      this.invalidateDownstream(2);
-    },
-
-    runBoilSolver() {
-      if (this.solverOutputs.length !== 2) {
-        // Not enough outputs selected yet; fall back to legacy default solve.
-        ThermodynamicSolver.solveBoil(this.manifest);
-        this.solverError = null;
-        return;
-      }
-
-      // The solver core operates on base storage units (volume -> L,
-      // gravity -> SG, time -> hours) and internally converts SG to gravity
-      // points for the linear solute-conservation equation. The manifest
-      // already stores gravity in SG, so we pass it through unchanged.
-      const [a, b] = this.solverOutputs;
-      const result = ThermodynamicSolver.solve2DOF(this.manifest, a, b);
-      this.solverError = result.ok ? null : result.error;
-
-      if (result.ok) {
-        const s = result.solved;
-        // Solved gravity values are in gravity points; convert back to SG
-        // (the manifest's base storage unit) before writing.
-        if (s.V1 !== undefined) this.manifest.preboil_volume_l = Number(s.V1.toFixed(2));
-        if (s.G1 !== undefined) this.manifest.preboil_gravity = Number(ThermodynamicSolver.pointsToSg(s.G1).toFixed(4));
-        if (s.V2 !== undefined) this.manifest.postboil_volume_l = Number(s.V2.toFixed(2));
-        if (s.G2 !== undefined) this.manifest.postboil_gravity = Number(ThermodynamicSolver.pointsToSg(s.G2).toFixed(4));
-        if (s.R_boil !== undefined) this.manifest.equipment.boil_off_rate_l_per_hr = Number(s.R_boil.toFixed(2));
-        if (s.t !== undefined) this.manifest.boil_time_min = Number((s.t * 60).toFixed(1));
-      }
-
-      // Downstream chilling bridge (packaged volume + target OG).
-      // Loss_postboil collapses trub + kettle dead space + kettle transfer
-      // loss into a single additive scalar (see vessel-loss-model.md 5.2).
-      const eq = this.manifest.equipment || {};
-      const postBoilLoss = ThermodynamicSolver.calculatePostBoilLoss(
-        eq.trub_loss_l,
-        eq.kettle_dead_space_l,
-        eq.kettle_transfer_loss_l
-      );
-      const shrinkage = parseFloat(eq.shrinkage_pct) || 0.04;
-      const vPost = parseFloat(this.manifest.postboil_volume_l) || 0;
-      const vTarget = ThermodynamicSolver.calculatePackagedVolume(vPost, postBoilLoss, shrinkage);
-      this.manifest.target_volume_l = vTarget;
-
-      // Total extract in gravity-point-liters: V1 * sgToPoints(SG1).
-      // calculateTargetOg expects gravity POINTS (not point-liters), so we
-      // divide the total extract by the target volume first.
-      const extractPointsTotal = (parseFloat(this.manifest.preboil_volume_l) || 0) *
-        ThermodynamicSolver.sgToPoints(this.manifest.preboil_gravity);
-      const targetOgPoints = vTarget > 0 ? (extractPointsTotal / vTarget) : 0;
-      this.manifest.target_og = ThermodynamicSolver.calculateTargetOg(
-        targetOgPoints, 1.0, parseFloat(this.manifest.postboil_gravity) || 1.050
-      );
-    },
-
-    // Step 2 Synthesized Outputs (delegated to ThermodynamicSolver)
-    get targetOgPoints() {
-      return ThermodynamicSolver.calculateOgPoints(this.manifest.target_og);
-    },
-
-    get targetKettleExtract() {
-      // S_kettle = V2 * G2 (post-boil kettle extract), per the solver spec.
-      // This is the value that feeds Step 3's grist mass calculation.
-      // Stored/returned in the base metric unit (L·°).
-      return ThermodynamicSolver.calculateKettleExtract(
-        this.manifest.postboil_volume_l,
-        this.manifest.postboil_gravity
-      );
-    },
-
-    get targetKettleExtractDisplay() {
-      // Convert the base L·° value into the active total-extract display unit
-      // (L·° in metric, gal·pts in imperial) so the summary card tracks the
-      // global unit mode.
-      const baseVal = parseFloat(this.targetKettleExtract) || 0;
-      const unitsStore = Alpine.store('units');
-      return unitsStore ? unitsStore.toDisplay('total_extract', baseVal) : baseVal;
-    },
-
-    get targetKettleExtractUnit() {
-      const unitsStore = Alpine.store('units');
-      return unitsStore ? unitsStore.getFieldUnit('total_extract') : 'L·°';
     },
 
     // Step Validation Override for Wizard Workflow
@@ -1678,6 +1528,11 @@ Alpine.data('wizard', () => {
         this.manifest.preboil_gravity = result.cascade.sg_pre_boil;
         this.manifest.postboil_volume_l = result.cascade.v_post_boil;
         this.manifest.postboil_gravity = result.sg_post_boil;
+        // v_post_boil is the hot-side kettle balance output (V_pre_boil -
+        // delta_v_evap). Cached separately from postboil_volume_l so the
+        // Step 5 results table can display it via the step5_v_post_boil
+        // FIELD_REGISTRY entry.
+        this.manifest.v_post_boil = result.cascade.v_post_boil;
         // target_og is the post-boil gravity (the packaged OG at 20 C).
         this.manifest.target_og = result.sg_post_boil;
       } catch (err) {

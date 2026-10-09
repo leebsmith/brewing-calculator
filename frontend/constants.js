@@ -45,7 +45,8 @@ export const BREW_CONSTANTS = {
   // Default Batch Manifest Settings
   DEFAULT_BATCH_NAME: 'Untitled Batch',
   DEFAULT_EQUIPMENT_PROFILE_ID: 'herms-30l',
-  DEFAULT_TARGET_VOLUME_L: 20.0,
+  DEFAULT_V_FERM_L: 20.0,
+  DEFAULT_TARGET_ABV: 5.5,
   DEFAULT_TARGET_OG: 1.055,
   DEFAULT_BOIL_TIME_MIN: 60,
 
@@ -101,16 +102,13 @@ export const BREW_CONSTANTS = {
     'step1_grain_absorption': 'compound',
     'step1_conversion_efficiency': 'percentage',
     'step1_shrinkage_pct': 'percentage',
-    // Step 2: Batch Metadata
-    'step2_preboil_volume_l': 'volume',
-    'step2_postboil_volume_l': 'volume',
-    'step2_target_volume_l': 'volume',
-    'step2_preboil_gravity': 'gravity',
-    'step2_postboil_gravity': 'gravity',
     // Step 2: Yeast Selection
     'step2_yeast_attenuation_pct': 'percentage',
     // Step 5: Batch Sparge Solver
     'step5_intensive_value': 'compound',
+    'step5_v_ferm': 'volume',
+    'step5_v_post_boil': 'volume',
+    'step5_target_og': 'gravity',
     'step5_sg_post_boil': 'gravity',
     'step5_v_pre_boil': 'volume',
     'step5_s_post_boil_target': 'mass',
@@ -137,9 +135,6 @@ export const BREW_CONSTANTS = {
   // UI Messages & Labels
   MSG_KETTLE_VOLUME_REQUIRED: 'Maximum kettle volume must be greater than zero.',
   MSG_BOIL_OFF_REQUIRED: 'Boil-off rate must be greater than zero.',
-  MSG_BATCH_NAME_REQUIRED: 'Batch name is required.',
-  MSG_TARGET_VOLUME_REQUIRED: 'Target packaged volume must be greater than zero.',
-  MSG_TARGET_OG_REQUIRED: 'Target original gravity must be between 1.010 and 1.200.',
   MSG_PROFILE_NAME_REQUIRED: 'Profile name is required.',
   MSG_YEAST_REQUIRED: 'Please select a yeast strain.',
   MSG_YEAST_ATTENUATION_RANGE: (low, high) => `Attenuation must be between ${(low * 100).toFixed(1)}% and ${(high * 100).toFixed(1)}%.`,
@@ -152,23 +147,6 @@ export const BREW_CONSTANTS = {
   // New constants for Anomaly 7
   MSG_UNIT_PREFERENCES_LOAD_FAILED: 'Failed to load unit preferences',
   MSG_PING_PROCESSED_SUCCESSFULLY: 'Ping processed successfully!',
-
-  // Generalized 2-DOF Boil Solver
-  SOLVER_VARIABLES: [
-    { key: 'V1',     label: 'Pre-Boil Vol',   domain: 'volume',  fieldKey: 'step2_preboil_volume_l' },
-    { key: 'G1',     label: 'Pre-Boil Grav',  domain: 'gravity', fieldKey: 'step2_preboil_gravity' },
-    { key: 'V2',     label: 'Post-Boil Vol',  domain: 'volume',  fieldKey: 'step2_postboil_volume_l' },
-    { key: 'G2',     label: 'Post-Boil Grav', domain: 'gravity', fieldKey: 'step2_postboil_gravity' },
-    { key: 'R_boil', label: 'Boil-Off Rate',  domain: 'volume',  fieldKey: 'step1_boil_off_rate_l_per_hr' },
-    { key: 't',      label: 'Duration',       domain: 'time',    fieldKey: 'step2_boil_time_min' }
-  ],
-  SOLVER_VALID_VARIABLES: ['V1', 'G1', 'V2', 'G2', 'R_boil', 't'],
-  // Pairs that produce a structurally singular (underdetermined/degenerate) system.
-  SOLVER_INVALID_PAIRS: ['R_boil:t', 'G1:G2'],
-  SOLVER_DEFAULT_OUTPUTS: ['V2', 'G2'],
-  MSG_SOLVER_SINGULAR_PAIR: 'Invalid system: results in a singular matrix (underdetermined or degenerate).',
-  MSG_SOLVER_SAME_VARIABLE: 'Cannot select the same variable twice.',
-  MSG_SOLVER_UNKNOWN_VARIABLE: 'Unknown variable identifier.',
 
   // Batch Sparge Solver (POST /api/solve-batch)
   MSG_BATCH_SOLVER_FAILED: 'Batch solver request failed.',
