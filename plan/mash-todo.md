@@ -83,8 +83,9 @@ Rests are **always displayed in ascending temperature order**. The order is **en
 
 This means the dough-in rest (first, marked "→") and the mash-out step (last) are naturally bookends, and any enabled rests fall between them in temperature order.
 
-### 6. Summary readout
-What should it show? Candidates: total mash time, total water used (strike + infusions), strike water temp, predicted first-runnings gravity, mash pH estimate. Which matter?
+### 6. Summary readout — RESOLVED
+
+Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
 
 ### 7. Relationship to the solver
 Does the Mash Card's data feed into `BatchSolverRequest` (i.e., does the backend solver need to know about rests), or is it purely a frontend-side schedule the solver ignores for now? **Biggest architectural fork.**
@@ -122,4 +123,3 @@ _(Record answers here as we resolve each question. Do not begin implementation u
 - **Q6 (Summary readout):** Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
 - **Q7 (Relationship to the solver):** Purely frontend-side schedule for now. Does not feed `BatchSolverRequest`; the solver ignores rests. Rests affect fermentability and mash pH, not extract mass balance, and neither model exists yet. Schedule lives in the `manifest` and is used only for display and strike-water-temp derivation. Promotion into the solver request deferred until a fermentability/pH model is built.
 - **Q8 (Units):** Temperatures (°C ↔ °F), strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not. No new `UNIT_REGISTRY` domains needed — all fields map onto existing `temperature`, `volume`, and `mass` domains; mash thickness is a compound volume-per-mass field.
-- **Q6 (Summary readout):** Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
