@@ -18,6 +18,7 @@ dev = [
     "pytest>=8.3.0",
     "tach>=0.13.0",
 ]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 filterwarnings = [
