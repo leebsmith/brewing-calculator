@@ -732,6 +732,14 @@ class StageCascade:
         s_run1: First-runnings extract mass, in kg.
         s_run2: Second-runnings extract mass, in kg.
         sg_pre_boil: Consolidated pre-boil specific gravity.
+        v_post_boil: Hot-side post-boil kettle volume, in liters.
+        mash_thickness_l_per_kg: Resolved liquor-to-grist ratio, in L/kg.
+            Under the ``r_l_to_g`` topology this is the input ``R_L:G``
+            verbatim. Under the ``runoff_ratio`` topology it is derived as
+            ``V_strike / M_grist``, since the runoff-ratio topology reverses
+            ``V_strike`` from the tun mass balance rather than taking it as an
+            input. This is the value the Mash Card reads to derive strike
+            water temperature (design record Q3/Q12).
     """
 
     v_strike: float
@@ -742,6 +750,7 @@ class StageCascade:
     s_run2: float
     sg_pre_boil: float
     v_post_boil: float
+    mash_thickness_l_per_kg: float
 
 
 def resolve_stage_cascade(
@@ -859,6 +868,18 @@ def resolve_stage_cascade(
     # is, add ``+ v_bar * s_late_add`` here and thread ``s_late_add`` through.)
     v_post_boil = v_pre_boil - delta_v_evap
 
+    # Resolved liquor-to-grist ratio. Under ``r_l_to_g`` the input *is* the
+    # ratio. Under ``runoff_ratio`` the ratio is an output: the topology
+    # reverses V_strike from the tun mass balance, so the effective thickness
+    # is V_strike / M_grist. Guard against a zero grist mass (which the Phase 3
+    # bracket already excludes, but the cascade is also callable standalone).
+    if topology == "r_l_to_g":
+        mash_thickness_l_per_kg = intensive_value
+    elif m_grist > 0.0:
+        mash_thickness_l_per_kg = v_strike / m_grist
+    else:
+        mash_thickness_l_per_kg = 0.0
+
     return StageCascade(
         v_strike=v_strike,
         v_run1=v_run1,
@@ -868,6 +889,7 @@ def resolve_stage_cascade(
         s_run2=s_run2,
         sg_pre_boil=sg_pre_boil,
         v_post_boil=v_post_boil,
+        mash_thickness_l_per_kg=mash_thickness_l_per_kg,
     )
 
 
@@ -1040,6 +1062,11 @@ class BatchSolverResult:
             attenuation, as a percentage. Echoed back so the frontend can
             bound the target-ABV input without duplicating the Cutaia model.
         hlt: The HLT water budget (top-up and deliverable sparge volume).
+        mash_thickness_l_per_kg: Resolved liquor-to-grist ratio, in L/kg.
+            Surfaced at the top level (in addition to ``cascade``) because the
+            Mash Card reads it directly to derive strike water temperature
+            (design record Q3/Q12). Under ``r_l_to_g`` it equals the input
+            ``R_L:G``; under ``runoff_ratio`` it is derived from the cascade.
     """
 
     sg_post_boil: float
@@ -1049,6 +1076,7 @@ class BatchSolverResult:
     cascade: StageCascade
     max_achievable_abv: float
     hlt: HltWaterBudget
+    mash_thickness_l_per_kg: float
 
 
 def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
@@ -1136,4 +1164,5 @@ def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
         cascade=cascade,
         max_achievable_abv=max_achievable_abv(inputs.apparent_attenuation),
         hlt=hlt,
+        mash_thickness_l_per_kg=cascade.mash_thickness_l_per_kg,
     )

@@ -86,6 +86,16 @@ class StageCascadeModel(BaseModel):
     s_run2: float
     sg_pre_boil: float
     v_post_boil: float
+    mash_thickness_l_per_kg: float = Field(
+        ...,
+        gt=0,
+        description=(
+            "Resolved liquor-to-grist ratio (L/kg). Under the 'r_l_to_g' "
+            "topology this is the input R_L:G verbatim; under 'runoff_ratio' "
+            "it is derived as V_strike / M_grist. The Mash Card reads this to "
+            "derive strike water temperature."
+        ),
+    )
 
 
 class HltWaterBudgetModel(BaseModel):
@@ -103,3 +113,11 @@ class BatchSolverResponse(BaseModel):
     cascade: StageCascadeModel
     max_achievable_abv: float
     hlt: HltWaterBudgetModel
+    mash_thickness_l_per_kg: float = Field(
+        ...,
+        gt=0,
+        description=(
+            "Resolved liquor-to-grist ratio (L/kg), surfaced at the top level "
+            "for the Mash Card's strike water temperature derivation."
+        ),
+    )

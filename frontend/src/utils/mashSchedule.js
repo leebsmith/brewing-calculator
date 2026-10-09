@@ -262,6 +262,11 @@ export const BRAUKAISER_LOA_MAX_PCT = 88.0;
  * Direct port of the Braukaiser empirical model. Returns a percentage in
  * [60, 88], clamped. Valid for standard malt blends within 63–70 °C.
  *
+ * Note: the clamp bounds are fixed constants (BRAUKAISER_LOA_MIN_PCT /
+ * BRAUKAISER_LOA_MAX_PCT), matching the reference implementation. A custom
+ * `baseAttenuationPct` outside [60, 88] is therefore silently clamped; the
+ * clamp is not parameterized.
+ *
  * @param {number} targetTempC - Saccharification rest temperature, in °C.
  * @param {number} [baseAttenuationPct] - Malt-specific baseline attenuation.
  * @param {number} [baseTempC] - Temperature at which the baseline applies.
@@ -410,6 +415,64 @@ export function applyMashPreset(schedule, presetId) {
   });
 
   return { ...schedule, preset_id: presetId, rests };
+}
+
+/**
+ * Validate and normalize a hydrated `manifest.mash` object (design record Q10).
+ *
+ * Guards against a saved batch carrying a malformed or stale schedule: a
+ * missing `rests` array, unknown `rest_id`s, non-numeric temperatures, or a
+ * missing `grain_temp_c`. Returns a well-formed schedule. Unknown rest ids are
+ * dropped; missing canonical rests are re-added disabled; bookends are forced
+ * enabled. The input is not mutated.
+ *
+ * @param {object|null} raw - The hydrated `manifest.mash`, or null.
+ * @returns {object} A well-formed `manifest.mash` object.
+ */
+export function sanitizeMashSchedule(raw) {
+  const fallback = createDefaultMashSchedule();
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.rests)) {
+    return fallback;
+  }
+
+  const byId = new Map();
+  for (const entry of raw.rests) {
+    if (!entry || typeof entry !== 'object') continue;
+    if (!getCanonicalRest(entry.rest_id)) continue;
+    byId.set(entry.rest_id, entry);
+  }
+
+  const rests = fallback.rests.map((defaultRest) => {
+    const saved = byId.get(defaultRest.rest_id);
+    if (!saved) return defaultRest;
+
+    const isBookend =
+      defaultRest.rest_id === DOUGH_IN_REST.rest_id ||
+      defaultRest.rest_id === MASH_OUT_REST.rest_id;
+
+    const useTemp = Number(saved.use_temp_c);
+    const duration = Number(saved.duration_min);
+
+    const normalized = {
+      ...defaultRest,
+      enabled: isBookend ? true : Boolean(saved.enabled),
+      use_temp_c: isNaN(useTemp) ? null : useTemp,
+      duration_min: isNaN(duration) ? null : duration,
+    };
+    if (defaultRest.rest_id === MASH_OUT_REST.rest_id) {
+      normalized.is_true_mash_out = Boolean(saved.is_true_mash_out);
+    }
+    return normalized;
+  });
+
+  const grainTemp = Number(raw.grain_temp_c);
+  const presetId = MASH_PRESETS[raw.preset_id] ? raw.preset_id : 'custom';
+
+  return {
+    preset_id: presetId,
+    grain_temp_c: isNaN(grainTemp) ? BREW_CONSTANTS.DEFAULT_GRAIN_TEMP_C : grainTemp,
+    rests,
+  };
 }
 
 /**

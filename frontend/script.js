@@ -1359,6 +1359,9 @@ Alpine.data('wizard', () => {
       preboil_volume_l: 0.0,
       preboil_gravity: 1.0,
       postboil_gravity: 1.0,
+      // Solver-resolved mash thickness (L/kg), written by solveBatch(). Null
+      // until a solve has run; the Mash Card falls back to the default.
+      mash_thickness_l_per_kg: null,
       grain_bill: [],
       late_additions: [],
       // Mash Card schedule (design record Q10). Manifest-scoped, saved with
@@ -1641,6 +1644,10 @@ Alpine.data('wizard', () => {
         this.manifest.v_post_boil = result.cascade.v_post_boil;
         // target_og is the post-boil gravity (the packaged OG at 20 C).
         this.manifest.target_og = result.sg_post_boil;
+        // Solver-resolved mash thickness (L/kg). The Mash Card reads this to
+        // derive strike water temperature (design record Q3/Q12). It is an
+        // OUTPUT of the solver, not the Step 5 intensive-value input.
+        this.manifest.mash_thickness_l_per_kg = result.mash_thickness_l_per_kg;
       } catch (err) {
         console.error('[batchSolver] request failed:', err);
         this.batchSolverError = BREW_CONSTANTS.MSG_BATCH_SOLVER_FAILED;
@@ -1832,14 +1839,13 @@ Alpine.data('wizard', () => {
       return doughIn ? doughIn.use_temp_c : null;
     },
 
-    // Mash thickness in L/kg (base units). Sourced from the Step 5 solver
-    // intensive value when the topology is 'r_l_to_g'; otherwise falls back
-    // to the default 1.25 qt/lb = 2.6079 L/kg.
+    // Mash thickness in L/kg (base units). Read from the solver-resolved
+    // value written by solveBatch() (design record Q3/Q12: the solver
+    // pre-determines mash thickness). Falls back to the default
+    // 1.25 qt/lb = 2.6079 L/kg until a solve has run.
     get mashThicknessLPerKg() {
-      if (this.batchSolverTopology === 'r_l_to_g') {
-        return parseFloat(this.batchSolverIntensiveValue) || 2.6079;
-      }
-      return 2.6079;
+      const resolved = parseFloat(this.manifest.mash_thickness_l_per_kg);
+      return isNaN(resolved) || resolved <= 0 ? 2.6079 : resolved;
     },
 
     // Derived strike water temperature, in °C (design record Q3a). Returns
@@ -1912,7 +1918,7 @@ Alpine.data('wizard', () => {
       const loa = this.limitOfAttenuation;
       if (loa == null) return '';
       return Alpine.store('units')
-        ? Alpine.store('units').toDisplay('percentage', loa, 'step2_yeast_attenuation_pct')
+        ? Alpine.store('units').toDisplay('percentage', loa, 'step6_loa')
         : loa;
     }
   };

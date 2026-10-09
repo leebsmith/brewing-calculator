@@ -36,7 +36,8 @@ import {
   estimateLimitOfAttenuation,
   createDefaultMashSchedule,
   applyMashPreset,
-  markScheduleCustom
+  markScheduleCustom,
+  sanitizeMashSchedule
 } from '../src/utils/mashSchedule.js';
 
 // Mirror of the constants used by the module under test.
@@ -489,6 +490,77 @@ describe('Pure Functions Tests', () => {
       test('should return the same object when already custom', () => {
         const schedule = { preset_id: 'custom', rests: [] };
         assert.strictEqual(markScheduleCustom(schedule), schedule);
+      });
+    });
+
+    describe('sanitizeMashSchedule', () => {
+      test('should return a default schedule for null or malformed input', () => {
+        assert.deepStrictEqual(sanitizeMashSchedule(null), createDefaultMashSchedule());
+        assert.deepStrictEqual(sanitizeMashSchedule({}), createDefaultMashSchedule());
+        assert.deepStrictEqual(sanitizeMashSchedule({ rests: 'nope' }), createDefaultMashSchedule());
+      });
+
+      test('should drop unknown rest ids and re-add missing canonical rests', () => {
+        const raw = {
+          preset_id: 'custom',
+          grain_temp_c: 20,
+          rests: [
+            { rest_id: 'dough_in', enabled: true, use_temp_c: 66, duration_min: null },
+            { rest_id: 'bogus_rest', enabled: true, use_temp_c: 50, duration_min: 10 },
+          ],
+        };
+        const sanitized = sanitizeMashSchedule(raw);
+        assert.strictEqual(sanitized.rests.find((r) => r.rest_id === 'bogus_rest'), undefined);
+        assert.ok(sanitized.rests.find((r) => r.rest_id === 'protein'));
+      });
+
+      test('should force bookends enabled regardless of saved state', () => {
+        const raw = {
+          preset_id: 'custom',
+          grain_temp_c: 20,
+          rests: [
+            { rest_id: 'dough_in', enabled: false, use_temp_c: 66, duration_min: null },
+            { rest_id: 'mash_out', enabled: false, use_temp_c: 76, duration_min: 10 },
+          ],
+        };
+        const sanitized = sanitizeMashSchedule(raw);
+        assert.strictEqual(sanitized.rests.find((r) => r.rest_id === 'dough_in').enabled, true);
+        assert.strictEqual(sanitized.rests.find((r) => r.rest_id === 'mash_out').enabled, true);
+      });
+
+      test('should coerce non-numeric temps and durations to null', () => {
+        const raw = {
+          preset_id: 'custom',
+          grain_temp_c: 20,
+          rests: [
+            { rest_id: 'protein', enabled: true, use_temp_c: 'abc', duration_min: 'xyz' },
+          ],
+        };
+        const sanitized = sanitizeMashSchedule(raw);
+        const protein = sanitized.rests.find((r) => r.rest_id === 'protein');
+        assert.strictEqual(protein.use_temp_c, null);
+        assert.strictEqual(protein.duration_min, null);
+      });
+
+      test('should fall back to custom for an unknown preset id', () => {
+        const raw = { preset_id: 'nope', grain_temp_c: 20, rests: [] };
+        assert.strictEqual(sanitizeMashSchedule(raw).preset_id, 'custom');
+      });
+
+      test('should default grain_temp_c when missing or non-numeric', () => {
+        const raw = { preset_id: 'custom', rests: [] };
+        assert.strictEqual(sanitizeMashSchedule(raw).grain_temp_c, 20.0);
+      });
+
+      test('should not mutate the input', () => {
+        const raw = {
+          preset_id: 'german_pils',
+          grain_temp_c: 18,
+          rests: [{ rest_id: 'protein', enabled: true, use_temp_c: 52, duration_min: 20 }],
+        };
+        const snapshot = JSON.parse(JSON.stringify(raw));
+        sanitizeMashSchedule(raw);
+        assert.deepStrictEqual(raw, snapshot);
       });
     });
   });

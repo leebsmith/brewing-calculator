@@ -28,13 +28,13 @@ export const BREW_CONSTANTS = {
   // downstream set accordingly. Steps are 1-indexed and MUST be contiguous:
   // markStepComplete(N) advances to N+1, so a gap would strand the wizard on
   // a step with no matching #step-panel-N.
-  WIZARD_STEPS: [1, 2, 3, 4, 5],
+  WIZARD_STEPS: [1, 2, 3, 4, 5, 6],
 
   // Steps that become dirty when an upstream step changes. These are the
   // solved/derived steps (Master Solver, Water Chemistry, Hops, Fermentation,
   // Dry Hops, Ledger). Kept separate from WIZARD_STEPS because a step can be
   // implemented but not yet downstream-invalidatable (e.g. a pure input step).
-  WIZARD_DOWNSTREAM_STEPS: [6, 7, 8, 9, 10, 11, 12],
+  WIZARD_DOWNSTREAM_STEPS: [7, 8, 9, 10, 11, 12],
 
   // Grist Bill Limits
   MAX_MAJOR_MALTS: 8,
@@ -141,7 +141,11 @@ export const BREW_CONSTANTS = {
     'step6_strike_water_temp_c': 'temperature',
     'step6_mash_thickness': 'mash_thickness',
     'step6_rest_use_temp_c': 'temperature',
-    'step6_mash_out_temp_c': 'temperature'
+    'step6_mash_out_temp_c': 'temperature',
+    // Limit of Attenuation readout. A dedicated key (rather than reusing
+    // step2_yeast_attenuation_pct) so the LOA display unit is independent of
+    // the yeast attenuation unit preference.
+    'step6_loa': 'percentage'
   },
 
   UNIT_DOMAIN_MASS: 'mass',
