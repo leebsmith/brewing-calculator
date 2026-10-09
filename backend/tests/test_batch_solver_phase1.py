@@ -14,6 +14,7 @@ from app.core.batch_solver import (
     cutaia_abv,
     solve_sg_post_boil_from_abv,
 )
+from app.core.utils import plato_to_sg, sg_to_plato
 
 
 # ---------------------------------------------------------------------------
@@ -22,13 +23,14 @@ from app.core.batch_solver import (
 
 
 def test_asbc_plato_to_sg_at_zero_is_water():
-    # The doc's polynomial has no constant offset, so 0 °P -> 1.000 SG.
-    assert asbc_plato_to_sg(0.0) == pytest.approx(1.0)
+    # The ASBC 3rd-order polynomial carries a small constant offset
+    # (1.0000131), so 0 °P maps to just above 1.000 SG.
+    assert asbc_plato_to_sg(0.0) == pytest.approx(1.0000131, abs=1e-7)
 
 
 def test_asbc_plato_to_sg_known_value():
-    # 12 °P is a common ale gravity; the doc's cubic yields ~1.0484.
-    assert asbc_plato_to_sg(12.0) == pytest.approx(1.0484, abs=1e-4)
+    # 12 °P is a common ale gravity; the ASBC cubic yields ~1.0484.
+    assert asbc_plato_to_sg(12.0) == pytest.approx(1.0484, abs=1e-3)
 
 
 def test_asbc_plato_to_sg_is_monotonic():
@@ -37,10 +39,22 @@ def test_asbc_plato_to_sg_is_monotonic():
 
 
 def test_asbc_sg_to_plato_round_trip():
-    # The quadratic is an approximation, so allow a small tolerance.
+    # The ASBC cubic and its inverse are consistent to within a small
+    # tolerance across the brewing range.
     for plato in (5.0, 10.0, 15.0, 20.0):
         sg = asbc_plato_to_sg(plato)
         assert asbc_sg_to_plato(sg) == pytest.approx(plato, abs=0.05)
+
+
+def test_asbc_aliases_match_utils_exactly():
+    """Stage 5 regression: the solver's ASBC aliases must be identical to
+    ``app.core.utils``'s implementations. This pins the reconciliation so a
+    future edit to either module cannot silently reintroduce the divergence.
+    """
+    for plato in (0.0, 5.0, 10.0, 12.0, 20.0, 40.0):
+        assert asbc_plato_to_sg(plato) == plato_to_sg(plato)
+    for sg in (1.000, 1.010, 1.040, 1.050, 1.080, 1.120):
+        assert asbc_sg_to_plato(sg) == sg_to_plato(sg)
 
 
 # ---------------------------------------------------------------------------

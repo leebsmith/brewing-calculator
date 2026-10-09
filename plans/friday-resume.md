@@ -57,7 +57,7 @@ section below for non-blocking follow-ups.
 
 The frontend refactor is complete, so the frontend files are no longer needed
 for that work. The list below is retained for the remaining deferred items
-(ASBC reconciliation, integration test, HLT water accounting).
+(integration test, HLT water accounting).
 
 - `backend/app/core/batch_solver.py`
 - `backend/app/core/utils.py`
@@ -84,16 +84,12 @@ for that work. The list below is retained for the remaining deferred items
 Not blocking. Tracked here rather than in the work plan because none of these
 are required to make Step 5 functional.
 
-- **Stage 5: reconcile ASBC coefficients.** `batch_solver.py` and `utils.py`
-  implement the same conversions with slightly different coefficients:
-  - `batch_solver.py`: `plato_to_sg` uses
-    `1.0 + 0.0038661*p + 1.34e-5*p² + 4.3e-8*p³`; `sg_to_plato` uses
-    `-463.37 + 668.72*sg - 205.35*sg²`.
-  - `utils.py`: `plato_to_sg` uses
-    `1.0000131 + 0.00386777*p + 1.27447e-5*p² + 6.34964e-8*p³`; `sg_to_plato`
-    uses `((135.997*sg - 630.272)*sg + 1111.14)*sg - 616.868`.
-  - `docs/batch-math/unified-treatment.md` §6 is the authoritative spec for
-    the new solver; `batch_solver.py`'s header flags the divergence.
+- **Stage 5: reconcile ASBC coefficients.** DONE. `batch_solver.py`'s
+  `asbc_plato_to_sg` / `asbc_sg_to_plato` now delegate to
+  `app.core.utils.plato_to_sg` / `sg_to_plato`, which implement the official
+  ASBC polynomials. The local coefficient copies were removed. A regression
+  test (`test_asbc_aliases_match_utils_exactly`) pins the two modules together
+  so the divergence cannot silently return.
 - **Integration test** hitting the real `/api/solve-batch` route with a mocked
   auth dependency.
 - **HLT water accounting** — `plans/vessel-loss-model.md` §4.4/§4.5 describes

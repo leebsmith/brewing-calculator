@@ -24,6 +24,8 @@ from typing import Sequence
 
 from scipy.optimize import brentq
 
+from app.core.utils import plato_to_sg, sg_to_plato
+
 
 # ---------------------------------------------------------------------------
 # Physical constants (metric standards; see inputs-and-outputs.md)
@@ -176,31 +178,29 @@ def converted_extract(
 # Phase 1: Cold-Side Inverse Resolution
 # ---------------------------------------------------------------------------
 #
-# The ASBC conversion polynomials below are implemented locally rather than
-# imported from ``app.core.utils`` because ``unified-treatment.md`` §6 is the
-# authoritative spec for the new solver, and its coefficients differ slightly
-# from the legacy ``utils.py`` versions. Stage 5 reconciles the two.
+# Stage 5 reconciliation: the ASBC conversion polynomials are now sourced from
+# ``app.core.utils``, which implements the official ASBC 3rd-order (Plato -> SG)
+# and cubic (SG -> Plato) polynomials. ``unified-treatment.md`` §6's snippet
+# used simplified coefficients; ``utils.py`` is authoritative. The local
+# aliases below preserve the solver's public API without duplicating the math.
 
 
 def asbc_plato_to_sg(plato: float) -> float:
-    """Convert degrees Plato to specific gravity (ASBC cubic polynomial).
+    """Convert degrees Plato to specific gravity (ASBC 3rd-order polynomial).
 
-    See ``unified-treatment.md`` §6.
+    Delegates to ``app.core.utils.plato_to_sg``. See ``unified-treatment.md``
+    §6 and ``utils.py`` for the authoritative coefficients.
     """
-    return (
-        1.0
-        + (0.0038661 * plato)
-        + (1.34e-5 * (plato**2))
-        + (4.3e-8 * (plato**3))
-    )
+    return plato_to_sg(plato)
 
 
 def asbc_sg_to_plato(sg: float) -> float:
-    """Convert specific gravity to degrees Plato (ASBC quadratic polynomial).
+    """Convert specific gravity to degrees Plato (ASBC cubic polynomial).
 
-    See ``unified-treatment.md`` §6.
+    Delegates to ``app.core.utils.sg_to_plato``. See ``unified-treatment.md``
+    §6 and ``utils.py`` for the authoritative coefficients.
     """
-    return -463.37 + (668.72 * sg) - (205.35 * (sg**2))
+    return sg_to_plato(sg)
 
 
 def cutaia_abv(oe_plato: float, apparent_attenuation: float) -> float:
