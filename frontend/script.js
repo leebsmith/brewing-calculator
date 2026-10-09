@@ -1672,6 +1672,20 @@ Alpine.data('wizard', () => {
       );
     },
 
+    // V_sparge_salted is the volume of liquor that will actually be delivered
+    // as sparge water, including any HLT top-up. Per
+    // plans/vessel-loss-model.md §4.5, sparge salt dosing must be computed
+    // against this volume, not the pre-strike HLT volume, or the sparge
+    // water's ion concentrations will be diluted by the top-up factor.
+    // Derived client-side from the HLT budget; no backend change required.
+    get spargeSaltedVolumeDisplay() {
+      if (!this.batchSolverResult) return 0;
+      const salted =
+        (this.batchSolverResult.hlt.v_hlt_after_strike || 0) +
+        (this.batchSolverResult.hlt.v_hlt_top_up || 0);
+      return this.volDisplay(salted, 'step5_v_sparge_deliverable');
+    },
+
     // --- Step 2: Yeast Selection ---
     yeastSearchQuery: '',
     yeastManufacturerFilter: '',

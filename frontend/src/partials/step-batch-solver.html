@@ -269,6 +269,13 @@
                                 <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.hlt.v_sparge_deliverable, 'step5_v_sparge_deliverable') + ' ' + $store.units.getLabel('step5_v_sparge_deliverable')"></td>
                             </tr>
                             <tr>
+                                <td>
+                                    <span>Sparge Salt Dosing Volume</span>
+                                    <span class="text-xs text-muted"> (V_sparge_salted = V_hlt_after_strike + V_hlt_top_up)</span>
+                                </td>
+                                <td class="text-right tabular-nums" x-text="spargeSaltedVolumeDisplay + ' ' + $store.units.getLabel('step5_v_sparge_deliverable')"></td>
+                            </tr>
+                            <tr>
                                 <td class="font-bold">Total Water Used</td>
                                 <td class="text-right tabular-nums font-bold" x-text="totalWaterUsedDisplay + ' ' + $store.units.getLabel('step5_v_sparge')"></td>
                             </tr>
