@@ -1317,6 +1317,12 @@ Alpine.data('wizard', () => {
       // expressed as a percentage (no unit toggle).
       target_abv: BREW_CONSTANTS.DEFAULT_TARGET_ABV,
       boil_time_min: BREW_CONSTANTS.DEFAULT_BOIL_TIME_MIN,
+      // hlt_starting_volume_l is a BATCH-level parameter (see
+      // plans/vessel-loss-model.md §5.1): the brewer may under-fill the HLT on
+      // a given brew day. It defaults to the equipment profile's
+      // max_hlt_volume_l (fill-to-capacity) and is pre-filled by the Step 5
+      // input. It is NOT an equipment-profile field.
+      hlt_starting_volume_l: BREW_CONSTANTS.DEFAULT_HLT_STARTING_VOLUME_L,
 
       // --- Solver-written derived anchors (denormalized cache) ---
       // These are OUTPUTS of solveBatch(), not user inputs. They are written
@@ -1565,6 +1571,18 @@ Alpine.data('wizard', () => {
         v_dead: parseFloat(eq.mash_dead_space_l) || 0.0,
         eta_conv: parseFloat(eq.conversion_efficiency) || 0.90,
         f_shrink: parseFloat(eq.shrinkage_pct) || 0.04,
+        // HLT water budget. hlt_starting_volume_l is batch-level (the brewer
+        // may under-fill the HLT on a given brew day); it defaults to the
+        // equipment profile's max_hlt_volume_l. The remaining four are
+        // equipment-level and come straight from the profile.
+        hlt_starting_volume_l:
+          parseFloat(this.manifest.hlt_starting_volume_l) ||
+          parseFloat(eq.max_hlt_volume_l) ||
+          0.0,
+        hlt_dead_space_l: parseFloat(eq.hlt_dead_space_l) || 0.0,
+        hlt_transfer_loss_l: parseFloat(eq.hlt_transfer_loss_l) || 0.0,
+        hlt_coil_floor_l: parseFloat(eq.hlt_coil_floor_l) || 0.0,
+        max_hlt_volume_l: parseFloat(eq.max_hlt_volume_l) || 0.0,
       };
 
       this.batchSolverLoading = true;

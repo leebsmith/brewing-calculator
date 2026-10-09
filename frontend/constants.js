@@ -122,7 +122,11 @@ export const BREW_CONSTANTS = {
     'step5_v_sparge': 'volume',
     'step5_s_run1': 'mass',
     'step5_s_run2': 'mass',
-    'step5_sg_pre_boil': 'gravity'
+    'step5_sg_pre_boil': 'gravity',
+    // HLT water budget (batch-level input + derived outputs)
+    'step5_hlt_starting_volume_l': 'volume',
+    'step5_v_hlt_top_up': 'volume',
+    'step5_v_sparge_deliverable': 'volume'
   },
 
   UNIT_DOMAIN_MASS: 'mass',
@@ -172,5 +176,6 @@ export const BREW_CONSTANTS = {
     UNKNOWN_TOPOLOGY: 'Internal error: unknown constraint topology.',
     INVALID_INTENSIVE_VALUE: 'The mash thickness or runoff ratio must be greater than zero.',
     MASH_TOO_THIN: 'The mash is too thin for this grain bill. Increase the mash thickness (L/kg) or reduce the batch size.',
+    HLT_TOO_SMALL: 'The HLT is too small to cover the coil and deliver the sparge. Use a larger HLT or reduce the batch size.',
   },
 };
