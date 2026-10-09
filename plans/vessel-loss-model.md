@@ -440,6 +440,19 @@ scalar, because HLT liquor is water and does not carry extract.
   computed silently and shown as a read-only derived value? (Deferred —
   computed and shown read-only, consistent with the solver's other derived
   outputs.)
+- ~~Should the water budget be shown in a dedicated wizard step or inline?~~
+  **Resolved:** inline "Water Plan" section within the Step 5 results panel.
+  A dedicated step would have required renumbering the contiguous step roster
+  and would only re-render values Step 5 already holds.
+- ~~Should the surplus sparge volume be shown, warned about, or ignored?~~
+  **Resolved:** shown as a footnote on the "Sparge Deliverable" row, labeled
+  "surplus sparge capacity" to distinguish it from the liquor remaining in the
+  HLT after the sparge.
+- ~~Should the brewer be able to override `v_strike` or `v_sparge`?~~
+  **Resolved:** no. Both are derived extensive outputs; overriding them would
+  break the extract balance. The intended levers are the intensive constraints
+  (`R_L:G` / `r`) and the batch size, with the HLT budget as the surface for
+  water constraints.
 - ~~Is `hlt_transfer_loss_l` a recurring per-draw loss or a permanent debt?~~
   **Resolved:** permanent debt. The transfer hose is disconnected *while full*
   and reconnected with closed valves holding the liquid in place, so it never

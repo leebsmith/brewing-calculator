@@ -43,11 +43,11 @@ from the current scope; listed so it is not forgotten.
 `hlt_starting_volume_l` is now batch-level, but the equipment drawer still
 carries it. This is redundant and misleading.
 
-- [ ] Remove `hlt_starting_volume_l` from `drawerForm` in
+- [x] Remove `hlt_starting_volume_l` from `drawerForm` in
       `createEquipmentManager`.
-- [ ] Remove it from `startCreateProfile`, `editProfile`, and `selectProfile`.
-- [ ] Remove it from the `isCustomModified` comparison.
-- [ ] Remove `step1_hlt_starting_volume_l` from `FIELD_REGISTRY`.
+- [x] Remove it from `startCreateProfile`, `editProfile`, and `selectProfile`.
+- [x] Remove it from the `isCustomModified` comparison.
+- [x] Remove `step1_hlt_starting_volume_l` from `FIELD_REGISTRY`.
 - [ ] Remove `DEFAULT_HLT_STARTING_VOLUME_L` from `BREW_CONSTANTS` (or keep it
       as the Step 5 default; decide).
       - Note: `DEFAULT_HLT_STARTING_VOLUME_L` is now only used as the
@@ -61,52 +61,75 @@ carries it. This is redundant and misleading.
 The batch-level HLT starting volume needs a user-facing input, pre-filled from
 `manifest.equipment.max_hlt_volume_l`.
 
-- [ ] Add the input to the Step 5 partial, bound to
+- [x] Add the input to the Step 5 partial, bound to
       `manifest.hlt_starting_volume_l`.
-- [ ] Pre-fill from `max_hlt_volume_l` when the equipment profile changes.
-- [ ] Decide: plain number input, or slider bounded by `max_hlt_volume_l`?
-- [ ] Wire the `step5_hlt_starting_volume_l` unit domain (already registered).
+- [x] Pre-fill from `max_hlt_volume_l` when the equipment profile changes.
+- [x] Decide: plain number input (chosen; a slider is deferred).
+- [x] Wire the `step5_hlt_starting_volume_l` unit domain (already registered).
 
 ### 2.3 Display the derived HLT outputs
 
 The solver response now carries `v_hlt_debt`, `v_hlt_after_strike`,
 `v_hlt_top_up`, and `v_sparge_deliverable`. None are shown yet.
 
-- [ ] Decide which to surface. Recommendation: `v_hlt_top_up` and
-      `v_sparge_deliverable` (the brewer-actionable values); treat
-      `v_hlt_debt` and `v_hlt_after_strike` as internal.
-- [ ] Add rows to the Step 5 results table.
-- [ ] `step5_v_hlt_top_up` and `step5_v_sparge_deliverable` are already
+- [x] Decide which to surface: `v_hlt_top_up` and `v_sparge_deliverable` (the
+      brewer-actionable values); `v_hlt_debt` and `v_hlt_after_strike` are
+      treated as internal.
+- [x] Add rows to the Step 5 results table (Water Plan section).
+- [x] `step5_v_hlt_top_up` and `step5_v_sparge_deliverable` are already
       registered in `FIELD_REGISTRY`.
 
 ### 2.4 Surface `HLT_TOO_SMALL`
 
 - [x] Add `MSG_SOLVER_ERRORS.HLT_TOO_SMALL` (done).
-- [ ] Verify the 422 handler in `solveBatch()` picks it up (it keys off
+- [x] Verify the 422 handler in `solveBatch()` picks it up (it keys off
       `detail.code`, so it should).
 - [ ] Consider suggesting a fix in the message (e.g. "reduce batch size").
 
-### 2.5 Water-plan summary step (open question)
+### 2.5 Water-plan summary step (resolved — inline panel)
 
-The solver now produces a complete water budget. Decide whether to add a
-dedicated summary showing strike volume, sparge volume, HLT top-up, and total
-water used — or leave the values scattered across existing steps.
+The solver now produces a complete water budget. Resolved as an inline "Water
+Plan" section within the Step 5 results panel, rather than a dedicated wizard
+step. A new step would have required renumbering the contiguous step roster
+(`WIZARD_STEPS`) and would only re-render values Step 5 already holds.
 
-- [ ] Decide: dedicated step, inline panel, or no summary.
+- [x] Decide: inline panel in Step 5 (not a dedicated step).
 
-### 2.6 Surplus sparge display (open question)
+### 2.6 Surplus sparge display (resolved — shown as footnote)
 
-When the HLT is over-filled, `v_sparge_deliverable > v_sparge_demand`. Decide
-whether to show the surplus, warn about it, or ignore it.
+When the HLT is over-filled, `v_sparge_deliverable > v_sparge_demand`. Resolved
+as a footnote on the "Sparge Deliverable" row, labeled "surplus sparge
+capacity" to make clear it is excess *deliverable capacity*, not the liquor
+left in the HLT after the sparge.
 
-- [ ] Decide.
+- [x] Decide: show as a footnote on the deliverable row.
 
-### 2.7 Sparge volume override (open question)
+### 2.7 Sparge volume override (resolved — no override)
 
 The solver computes `v_sparge` from the cascade. There is currently no way for
-the brewer to override it. Decide whether that is intended.
+the brewer to override it, and there should not be.
 
-- [ ] Decide.
+`v_strike` and `v_sparge` are *derived* extensive outputs, not independent
+knobs: they fall out of the mass balance once the grist mass, the intensive
+constraint, and the pre-boil volume are fixed. Overriding them would break the
+extract balance (they feed `s_run2` and `sg_pre_boil`), so the solver would
+have to either ignore the override or produce a pre-boil gravity inconsistent
+with the grain bill.
+
+The intended levers are the *intensive* constraints the solver is built
+around:
+
+- **Mash thickness (`R_L:G`)** — sets `v_strike = R_L:G * M_grist`.
+- **Runoff ratio (`r`)** — sets the `v_run1` / `v_run2` split, hence
+  `v_sparge`.
+- **Batch size** (via `v_ferm` + losses + boil-off) — sets the total.
+
+The HLT budget is the intended surface for expressing a *water* constraint:
+if the HLT cannot deliver the computed sparge, the brewer lowers
+`hlt_starting_volume_l` (or the batch size) and receives `HLT_TOO_SMALL`.
+
+- [x] Decide: **no override.** `v_strike` and `v_sparge` remain derived
+      outputs; the intensive constraints and batch size are the levers.
 
 ---
 
@@ -115,7 +138,9 @@ the brewer to override it. Decide whether that is intended.
 - [x] Reframe HLT undeliverable volume as "debt" in
       `plans/vessel-loss-model.md` §3.5 and §4.4.
 - [x] Record the `hlt_transfer_loss_l` permanent-debt resolution in §8.
-- [ ] Update §8 if any of the open UI questions above are resolved.
+- [x] Update §8 to record the §2.5 (inline Water Plan panel), §2.6 (surplus
+      sparge capacity footnote), and §2.7 (no sparge-volume override)
+      resolutions.
 
 ---
 
