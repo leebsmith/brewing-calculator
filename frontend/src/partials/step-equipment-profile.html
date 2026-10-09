@@ -125,10 +125,10 @@
                 <span class="form-hint">Liquor retained in HLT hose and pump (water accounting)</span>
             </div>
 
-            <!-- Mash Dead Space -->
+            <!-- Mash Tun Dead Space -->
             <div class="form-group">
                 <label class="form-label">
-                    <span>Mash Dead Space</span>
+                    <span>Mash Tun Dead Space</span>
                     <button type="button" @click="$store.units.toggle('step1_mash_dead_space_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_mash_dead_space_l') }" x-text="$store.units.getLabel('step1_mash_dead_space_l')" title="Click to toggle unit"></button>
                 </label>
                 <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.mash_dead_space_l, 'step1_mash_dead_space_l')" @input="setVolDisplay(manifest.equipment, 'mash_dead_space_l', $event.target.value, 'step1_mash_dead_space_l'); onEquipmentChange()" class="form-input tabular-nums" />
