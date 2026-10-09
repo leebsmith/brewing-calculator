@@ -99,8 +99,17 @@ The Mash Card therefore stores its schedule in the `manifest` (see Q10) and the 
 
 **Deferred:** promoting the rest schedule into `BatchSolverRequest` once a fermentability/pH model exists.
 
-### 8. Units
-Which fields need unit toggling? Proposed: temperatures (°C ↔ °F), durations (min — probably no toggle), strike volume (L ↔ gal), mash thickness (L/kg ↔ qt/lb). Confirm and flag any new `UNIT_REGISTRY` domains needed.
+### 8. Units — RESOLVED
+
+Unit toggling applies to the following fields:
+
+- **Temperatures** (°C ↔ °F) — every rest's "use" temperature, the mash-out target temp, and the derived strike water temperature. Uses the existing `temperature` domain in `UNIT_REGISTRY`.
+- **Strike volume** (L ↔ gal) — the derived strike water volume shown in the summary. Uses the existing `volume` domain.
+- **Mash thickness** (L/kg ↔ qt/lb) — the mash thickness input. Uses the existing `mass` and `volume` domains composed as a ratio; no new domain needed.
+
+**No toggle** for durations (minutes only).
+
+**No new `UNIT_REGISTRY` domains are required.** All fields map onto existing domains (`temperature`, `volume`, `mass`). The mash thickness ratio is presented as a compound field (volume-per-mass) built from the existing `volume` and `mass` domains, consistent with the existing `compoundDisplay` / `setCompoundDisplay` pattern.
 
 ### 9. Validation
 Should we warn (soft) or block (hard) when a rest temp is outside its recommended range? E.g., user sets Beta-Amylase to 70 °C — warn, block, or allow silently?
