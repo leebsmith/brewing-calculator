@@ -1834,14 +1834,24 @@ Alpine.data('wizard', () => {
       return MASH_PRESET_LABELS;
     },
 
-    // Rests in enforced ascending-temperature order (design record Q5). The
-    // sort is derived at render time; the stored array order is irrelevant.
+    // Rests in static canonical order (design record Q2). Used by the
+    // selectable-rests checkbox table and the Configure Rests modal, where
+    // the order must not shift as the user sets "use" temperatures.
+    get canonicalMashRests() {
+      if (!this.manifest.mash) return [];
+      return this.manifest.mash.rests;
+    },
+
+    // Rests in enforced ascending-temperature order (design record Q5). Used
+    // by the summary table, which reads as the brew-day timeline. The sort is
+    // derived at render time; the stored array order is irrelevant.
     get sortedMashRests() {
       if (!this.manifest.mash) return [];
       return sortRestsByTemperature(this.manifest.mash.rests);
     },
 
-    // Only the enabled rests, in display order. Used by the summary table.
+    // Only the enabled rests, in ascending-temperature order. Used by the
+    // summary table.
     get enabledMashRests() {
       return this.sortedMashRests.filter((r) => r.enabled);
     },
