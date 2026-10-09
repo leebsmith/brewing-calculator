@@ -133,8 +133,17 @@ Unit toggling applies to the following fields:
 
 **No new `UNIT_REGISTRY` domains are required.** All fields map onto existing domains (`temperature`, `volume`, `mass`). The mash thickness ratio is presented as a compound field (volume-per-mass) built from the existing `volume` and `mass` domains, consistent with the existing `compoundDisplay` / `setCompoundDisplay` pattern.
 
-### 9. Validation
-Should we warn (soft) or block (hard) when a rest temp is outside its recommended range? E.g., user sets Beta-Amylase to 70 °C — warn, block, or allow silently?
+### 9. Validation — RESOLVED
+
+**Soft warning only, never a block.** Amber styling, no red/error styling (red is reserved for hard validation failures like missing required fields or non-numeric input).
+
+- **In the Configure Rests modal:** when the user types a "use" temp outside the rest's recommended range, show an inline amber warning next to the field (e.g., "Outside recommended range 62–65 °C"). The field remains editable and the OK button remains enabled.
+- **In the summary table on the base card:** if any enabled rest is out of range, show a single amber banner above the table (e.g., "1 rest is outside its recommended temperature range") with the offending rest(s) highlighted. Does not block saving or wizard advancement.
+- **Warning text names the canonical range explicitly** (e.g., "Outside recommended range 62–65 °C") — more useful, costs nothing.
+- **Both surfaces warn:** inline in the modal (editing moment) and aggregated banner on the base card (at-a-glance state).
+- **No warning for dough-in or mash-out** beyond their own range constraints (mash-out is already constrained to 168–170 °F per Q4; dough-in has no canonical range since it is solver-derived).
+
+Rationale: brewers legitimately push outside canonical ranges (experimentation, thermometer miscalibration); canonical ranges are guidelines, not physics (enzyme activity falls off on a curve, not a cliff); consistent with Q5's soft-warning decision for out-of-range "use" temps.
 
 ### 10. Persistence
 Does the mash schedule live inside the `manifest` (part of the recipe, saved with the batch), or is it equipment-profile-scoped?
@@ -160,3 +169,4 @@ _(Record answers here as we resolve each question. Do not begin implementation u
 - **Q3 (Dough-in fields):** Only strike water temp is user-editable; everything else is solver-derived. Dough-in is the first rest, marked with "→".
 - **Q11 (UI shape):** Three-part card — style dropdown + rest checkbox table, "Configure Rests" modal (via `<load>` include) for editing use-temp/duration, and a summary table on the base card that recapitulates the modal and computes strike water temp.
 - **Q5 (Ordering & constraints):** Ascending-temperature display, no manual reorder, no hard monotonic enforcement. Ties allowed, broken by canonical rest order. Out-of-range temps are soft warnings (Q9). Non-monotonic-sequence warning skipped. Dough-in and mash-out are pinned bookends outside the sortable set.
+- **Q9 (Validation):** Soft warning only, never a block. Amber styling (red reserved for hard failures). Inline warning in the Configure Rests modal naming the canonical range (e.g., "Outside recommended range 62–65 °C"); aggregated amber banner on the base card when any enabled rest is out of range. Both surfaces warn. No warning for dough-in or mash-out beyond their own range constraints.
