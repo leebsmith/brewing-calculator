@@ -567,6 +567,21 @@ def solve_grist_mass(
                 f"exceed late-addition extract ({s_late_add:.4f} kg)."
             ),
         )
+    # Physical realizability pre-check: under the {V_pre_boil, R_L:G}
+    # topology, a mash thickness below the husk absorption floor guarantees
+    # negative first runnings for any grist mass, which makes the residual
+    # P(M_grist) monotonic and the bracket sign-change test fail. Catch it
+    # here (Phase 3) rather than in Phase 4, so the user sees MASH_TOO_THIN
+    # instead of the opaque BRACKET_NO_SIGN_CHANGE.
+    if topology == "r_l_to_g" and r_l_to_g < K_ABS_TRUE_METRIC:
+        raise SolverValidationError(
+            "MASH_TOO_THIN",
+            (
+                f"Liquor-to-grist ratio ({r_l_to_g:.2f} L/kg) is below the "
+                f"husk absorption floor ({K_ABS_TRUE_METRIC} L/kg). The grain "
+                f"bed would retain more liquid than the strike provides."
+            ),
+        )
 
     a, b = grist_mass_bracket(s_post_boil_target, s_late_add, extract_potential)
     if b <= a:
