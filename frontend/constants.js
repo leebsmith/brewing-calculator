@@ -28,13 +28,13 @@ export const BREW_CONSTANTS = {
   // downstream set accordingly. Steps are 1-indexed and MUST be contiguous:
   // markStepComplete(N) advances to N+1, so a gap would strand the wizard on
   // a step with no matching #step-panel-N.
-  WIZARD_STEPS: [1, 2, 3, 4, 5, 6],
+  WIZARD_STEPS: [1, 2, 3, 4, 5],
 
   // Steps that become dirty when an upstream step changes. These are the
   // solved/derived steps (Master Solver, Water Chemistry, Hops, Fermentation,
   // Dry Hops, Ledger). Kept separate from WIZARD_STEPS because a step can be
   // implemented but not yet downstream-invalidatable (e.g. a pure input step).
-  WIZARD_DOWNSTREAM_STEPS: [7, 8, 9, 10, 11, 12],
+  WIZARD_DOWNSTREAM_STEPS: [6, 7, 8, 9, 10, 11],
 
   // Grist Bill Limits
   MAX_MAJOR_MALTS: 8,
@@ -127,35 +127,35 @@ export const BREW_CONSTANTS = {
     'step1_shrinkage_pct': 'percentage',
     // Step 2: Yeast Selection
     'step2_yeast_attenuation_pct': 'percentage',
-    // Step 5: Batch Sparge Solver
-    'step5_v_ferm': 'volume',
-    'step5_intensive_value': 'compound',
-    'step5_v_post_boil': 'volume',
-    'step5_sg_post_boil': 'gravity',
-    'step5_v_pre_boil': 'volume',
-    'step5_s_post_boil_target': 'mass',
-    'step5_m_grist': 'mass',
-    'step5_v_strike': 'volume',
-    'step5_v_run1': 'volume',
-    'step5_v_run2': 'volume',
-    'step5_v_sparge': 'volume',
-    'step5_s_run1': 'mass',
-    'step5_s_run2': 'mass',
-    'step5_sg_pre_boil': 'gravity',
+    // Step 4: Batch Sparge Solver
+    'step4_v_ferm': 'volume',
+    'step4_intensive_value': 'compound',
+    'step4_v_post_boil': 'volume',
+    'step4_sg_post_boil': 'gravity',
+    'step4_v_pre_boil': 'volume',
+    'step4_s_post_boil_target': 'mass',
+    'step4_m_grist': 'mass',
+    'step4_v_strike': 'volume',
+    'step4_v_run1': 'volume',
+    'step4_v_run2': 'volume',
+    'step4_v_sparge': 'volume',
+    'step4_s_run1': 'mass',
+    'step4_s_run2': 'mass',
+    'step4_sg_pre_boil': 'gravity',
     // HLT water budget (batch-level input + derived outputs)
-    'step5_hlt_starting_volume_l': 'volume',
-    'step5_v_hlt_top_up': 'volume',
-    'step5_v_sparge_deliverable': 'volume',
-    // Step 6: Mash Card
-    'step6_grain_temp_c': 'temperature',
-    'step6_strike_water_temp_c': 'temperature',
-    'step6_mash_thickness': 'mash_thickness',
-    'step6_rest_use_temp_c': 'temperature',
-    'step6_mash_out_temp_c': 'temperature',
+    'step4_hlt_starting_volume_l': 'volume',
+    'step4_v_hlt_top_up': 'volume',
+    'step4_v_sparge_deliverable': 'volume',
+    // Step 5: Mash Card
+    'step5_grain_temp_c': 'temperature',
+    'step5_strike_water_temp_c': 'temperature',
+    'step5_mash_thickness': 'mash_thickness',
+    'step5_rest_use_temp_c': 'temperature',
+    'step5_mash_out_temp_c': 'temperature',
     // Limit of Attenuation readout. A dedicated key (rather than reusing
     // step2_yeast_attenuation_pct) so the LOA display unit is independent of
     // the yeast attenuation unit preference.
-    'step6_loa': 'percentage'
+    'step5_loa': 'percentage'
   },
 
   UNIT_DOMAIN_MASS: 'mass',

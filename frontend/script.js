@@ -1515,13 +1515,13 @@ Alpine.data('wizard', () => {
     // the partial can bind to a single pair of methods.
     intensiveValueDisplay() {
       if (this.batchSolverTopology === 'r_l_to_g') {
-        return this.compoundDisplay(this.batchSolverIntensiveValue, 'step5_intensive_value');
+        return this.compoundDisplay(this.batchSolverIntensiveValue, 'step4_intensive_value');
       }
       return this.batchSolverIntensiveValue;
     },
     setIntensiveValueDisplay(displayVal) {
       if (this.batchSolverTopology === 'r_l_to_g') {
-        this.setCompoundDisplay(this, 'batchSolverIntensiveValue', displayVal, 'step5_intensive_value');
+        this.setCompoundDisplay(this, 'batchSolverIntensiveValue', displayVal, 'step4_intensive_value');
       } else {
         const parsed = parseFloat(displayVal);
         this.batchSolverIntensiveValue = isNaN(parsed) ? 0 : parsed;
@@ -1530,7 +1530,7 @@ Alpine.data('wizard', () => {
     },
     get intensiveValueUnitLabel() {
       if (this.batchSolverTopology === 'r_l_to_g') {
-        return Alpine.store('units') ? Alpine.store('units').getLabel('step5_intensive_value') : 'L/kg';
+        return Alpine.store('units') ? Alpine.store('units').getLabel('step4_intensive_value') : 'L/kg';
       }
       return 'dimensionless';
     },
@@ -1539,7 +1539,7 @@ Alpine.data('wizard', () => {
     // 'qt/lb' -> 'lb'. Used by the intensive-value hint so its phrasing
     // tracks the badge.
     get intensiveValueMassUnit() {
-      const label = Alpine.store('units') ? Alpine.store('units').getLabel('step5_intensive_value') : 'L/kg';
+      const label = Alpine.store('units') ? Alpine.store('units').getLabel('step4_intensive_value') : 'L/kg';
       return label === 'qt/lb' ? 'lb' : 'kg';
     },
 
@@ -1676,7 +1676,7 @@ Alpine.data('wizard', () => {
       const total =
         (this.batchSolverResult.cascade.v_strike || 0) +
         (this.batchSolverResult.cascade.v_sparge || 0);
-      return this.volDisplay(total, 'step5_v_sparge');
+      return this.volDisplay(total, 'step4_v_sparge');
     },
 
     // Surplus sparge capacity is the volume the HLT can deliver beyond what
@@ -1690,7 +1690,7 @@ Alpine.data('wizard', () => {
       const surplus =
         (this.batchSolverResult.hlt.v_sparge_deliverable || 0) -
         (this.batchSolverResult.cascade.v_sparge || 0);
-      return this.volDisplay(surplus, 'step5_v_sparge');
+      return this.volDisplay(surplus, 'step4_v_sparge');
     },
 
     get hasSurplusSpargeCapacity() {
@@ -1712,7 +1712,7 @@ Alpine.data('wizard', () => {
       const salted =
         (this.batchSolverResult.hlt.v_hlt_after_strike || 0) +
         (this.batchSolverResult.hlt.v_hlt_top_up || 0);
-      return this.volDisplay(salted, 'step5_v_sparge_deliverable');
+      return this.volDisplay(salted, 'step4_v_sparge_deliverable');
     },
 
     // --- Step 2: Yeast Selection ---
@@ -1894,21 +1894,21 @@ Alpine.data('wizard', () => {
     strikeWaterTempDisplay() {
       if (this.strikeWaterTempC == null) return '';
       return Alpine.store('units')
-        ? Alpine.store('units').toDisplay('temperature', this.strikeWaterTempC, 'step6_strike_water_temp_c')
+        ? Alpine.store('units').toDisplay('temperature', this.strikeWaterTempC, 'step5_strike_water_temp_c')
         : this.strikeWaterTempC;
     },
 
     grainTempDisplay() {
       if (!this.manifest.mash) return '';
       return Alpine.store('units')
-        ? Alpine.store('units').toDisplay('temperature', this.manifest.mash.grain_temp_c, 'step6_grain_temp_c')
+        ? Alpine.store('units').toDisplay('temperature', this.manifest.mash.grain_temp_c, 'step5_grain_temp_c')
         : this.manifest.mash.grain_temp_c;
     },
 
     setGrainTempDisplay(displayVal) {
       if (!this.manifest.mash) return;
       const baseVal = Alpine.store('units')
-        ? Alpine.store('units').toBase('temperature', parseFloat(displayVal), 'step6_grain_temp_c')
+        ? Alpine.store('units').toBase('temperature', parseFloat(displayVal), 'step5_grain_temp_c')
         : parseFloat(displayVal);
       this.manifest.mash.grain_temp_c = isNaN(baseVal) ? BREW_CONSTANTS.DEFAULT_GRAIN_TEMP_C : baseVal;
     },
@@ -1916,13 +1916,13 @@ Alpine.data('wizard', () => {
     restUseTempDisplay(rest) {
       if (rest.use_temp_c == null) return '';
       return Alpine.store('units')
-        ? Alpine.store('units').toDisplay('temperature', rest.use_temp_c, 'step6_rest_use_temp_c')
+        ? Alpine.store('units').toDisplay('temperature', rest.use_temp_c, 'step5_rest_use_temp_c')
         : rest.use_temp_c;
     },
 
     setRestUseTempDisplay(rest, displayVal) {
       const baseVal = Alpine.store('units')
-        ? Alpine.store('units').toBase('temperature', parseFloat(displayVal), 'step6_rest_use_temp_c')
+        ? Alpine.store('units').toBase('temperature', parseFloat(displayVal), 'step5_rest_use_temp_c')
         : parseFloat(displayVal);
       rest.use_temp_c = isNaN(baseVal) ? null : baseVal;
       this.onMashRestEdit();
@@ -1948,7 +1948,7 @@ Alpine.data('wizard', () => {
       const loa = this.limitOfAttenuation;
       if (loa == null) return '';
       return Alpine.store('units')
-        ? Alpine.store('units').toDisplay('percentage', loa, 'step6_loa')
+        ? Alpine.store('units').toDisplay('percentage', loa, 'step5_loa')
         : loa;
     }
   };

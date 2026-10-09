@@ -1,34 +1,34 @@
-<!-- Step 5: Batch Sparge Solver (POST /api/solve-batch) -->
-<div class="step-card" :class="{ 'is-active': activeStep === 5, 'is-completed': completedSteps.includes(5) }">
+<!-- Step 4: Batch Sparge Solver (POST /api/solve-batch) -->
+<div class="step-card" :class="{ 'is-active': activeStep === 4, 'is-completed': completedSteps.includes(4) }">
     <div class="accordion-header">
         <button
                 type="button"
                 class="accordion-trigger"
-                :aria-expanded="(activeStep === 5).toString()"
-                aria-controls="step-panel-5"
-                id="step-trigger-5"
-                @click="setActiveStep(5)"
+                :aria-expanded="(activeStep === 4).toString()"
+                aria-controls="step-panel-4"
+                id="step-trigger-4"
+                @click="setActiveStep(4)"
         >
             <div class="accordion-title-wrap">
-                <span class="accordion-step-num">5</span>
+                <span class="accordion-step-num">4</span>
                 <div>
                     <span class="accordion-title">Batch Sparge Solver</span>
                     <span class="accordion-subtitle">Grist mass, pre-boil volume &amp; stage cascade</span>
                 </div>
             </div>
             <div class="accordion-controls">
-                <span class="accordion-status-pill" :class="getStepStatusClass(5)" x-text="getStepStatusLabel(5)"></span>
-                <span class="accordion-chevron" x-text="activeStep === 5 ? '▲' : '▼'"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(4)" x-text="getStepStatusLabel(4)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 4 ? '▲' : '▼'"></span>
             </div>
         </button>
     </div>
 
     <div
-            id="step-panel-5"
+            id="step-panel-4"
             role="region"
-            aria-labelledby="step-trigger-5"
+            aria-labelledby="step-trigger-4"
             x-cloak
-            x-show="activeStep === 5"
+            x-show="activeStep === 4"
             x-collapse
             class="step-card-body"
     >
@@ -40,10 +40,10 @@
                         <span>Target Fermenter Volume (V_ferm)</span>
                         <button
                             type="button"
-                            @click="$store.units.toggle('step5_v_ferm')"
+                            @click="$store.units.toggle('step4_v_ferm')"
                             class="unit-badge"
-                            :class="{ 'unit-badge-customized': $store.units.isCustomized('step5_v_ferm') }"
-                            x-text="$store.units.getLabel('step5_v_ferm')"
+                            :class="{ 'unit-badge-customized': $store.units.isCustomized('step4_v_ferm') }"
+                            x-text="$store.units.getLabel('step4_v_ferm')"
                             title="Click to toggle unit"
                         ></button>
                     </label>
@@ -52,8 +52,8 @@
                             step="0.5"
                             min="0.1"
                             class="form-input tabular-nums"
-                            :value="volDisplay(manifest.v_ferm, 'step5_v_ferm')"
-                            @input="setVolDisplay(manifest, 'v_ferm', $event.target.value, 'step5_v_ferm'); markBatchSolverStale()"
+                            :value="volDisplay(manifest.v_ferm, 'step4_v_ferm')"
+                            @input="setVolDisplay(manifest, 'v_ferm', $event.target.value, 'step4_v_ferm'); markBatchSolverStale()"
                     />
                     <span class="form-hint">Cold packaged volume into the fermenter. The solver reverses kettle losses and boil-off to derive V_pre_boil.</span>
                 </div>
@@ -99,10 +99,10 @@
                         <button
                             type="button"
                             x-show="batchSolverTopology === 'r_l_to_g'"
-                            @click="$store.units.toggle('step5_intensive_value')"
+                            @click="$store.units.toggle('step4_intensive_value')"
                             class="unit-badge"
-                            :class="{ 'unit-badge-customized': $store.units.isCustomized('step5_intensive_value') }"
-                            x-text="$store.units.getLabel('step5_intensive_value')"
+                            :class="{ 'unit-badge-customized': $store.units.isCustomized('step4_intensive_value') }"
+                            x-text="$store.units.getLabel('step4_intensive_value')"
                             title="Click to toggle unit"
                         ></button>
                         <span
@@ -130,10 +130,10 @@
                         <span>HLT Starting Volume</span>
                         <button
                             type="button"
-                            @click="$store.units.toggle('step5_hlt_starting_volume_l')"
+                            @click="$store.units.toggle('step4_hlt_starting_volume_l')"
                             class="unit-badge"
-                            :class="{ 'unit-badge-customized': $store.units.isCustomized('step5_hlt_starting_volume_l') }"
-                            x-text="$store.units.getLabel('step5_hlt_starting_volume_l')"
+                            :class="{ 'unit-badge-customized': $store.units.isCustomized('step4_hlt_starting_volume_l') }"
+                            x-text="$store.units.getLabel('step4_hlt_starting_volume_l')"
                             title="Click to toggle unit"
                         ></button>
                     </label>
@@ -143,8 +143,8 @@
                             min="0"
                             :max="manifest.equipment ? manifest.equipment.max_hlt_volume_l : null"
                             class="form-input tabular-nums"
-                            :value="volDisplay(manifest.hlt_starting_volume_l, 'step5_hlt_starting_volume_l')"
-                            @input="setVolDisplay(manifest, 'hlt_starting_volume_l', $event.target.value, 'step5_hlt_starting_volume_l'); markBatchSolverStale()"
+                            :value="volDisplay(manifest.hlt_starting_volume_l, 'step4_hlt_starting_volume_l')"
+                            @input="setVolDisplay(manifest, 'hlt_starting_volume_l', $event.target.value, 'step4_hlt_starting_volume_l'); markBatchSolverStale()"
                     />
                 </div>
             </div>
@@ -175,23 +175,23 @@
                             <tbody>
                             <tr>
                                 <td>Post-Boil Gravity</td>
-                                <td class="text-right tabular-nums font-bold" x-text="gravityDisplay(batchSolverResult.sg_post_boil, 'step5_sg_post_boil') + ' ' + $store.units.getLabel('step5_sg_post_boil')"></td>
+                                <td class="text-right tabular-nums font-bold" x-text="gravityDisplay(batchSolverResult.sg_post_boil, 'step4_sg_post_boil') + ' ' + $store.units.getLabel('step4_sg_post_boil')"></td>
                             </tr>
                             <tr>
                                 <td>Pre-Boil Volume</td>
-                                <td class="text-right tabular-nums font-bold" x-text="volDisplay(batchSolverResult.v_pre_boil, 'step5_v_pre_boil') + ' ' + $store.units.getLabel('step5_v_pre_boil')"></td>
+                                <td class="text-right tabular-nums font-bold" x-text="volDisplay(batchSolverResult.v_pre_boil, 'step4_v_pre_boil') + ' ' + $store.units.getLabel('step4_v_pre_boil')"></td>
                             </tr>
                             <tr>
                                 <td>Post-Boil Extract Target</td>
-                                <td class="text-right tabular-nums font-bold" x-text="massDisplay(batchSolverResult.s_post_boil_target, 'step5_s_post_boil_target') + ' ' + $store.units.getLabel('step5_s_post_boil_target')"></td>
+                                <td class="text-right tabular-nums font-bold" x-text="massDisplay(batchSolverResult.s_post_boil_target, 'step4_s_post_boil_target') + ' ' + $store.units.getLabel('step4_s_post_boil_target')"></td>
                             </tr>
                             <tr>
                                 <td>Grist Mass</td>
-                                <td class="text-right tabular-nums font-bold" x-text="massDisplay(batchSolverResult.m_grist, 'step5_m_grist') + ' ' + $store.units.getLabel('step5_m_grist')"></td>
+                                <td class="text-right tabular-nums font-bold" x-text="massDisplay(batchSolverResult.m_grist, 'step4_m_grist') + ' ' + $store.units.getLabel('step4_m_grist')"></td>
                             </tr>
                             <tr>
                                 <td>Post-Boil Volume</td>
-                                <td class="text-right tabular-nums font-bold" x-text="volDisplay(batchSolverResult.cascade.v_post_boil, 'step5_v_post_boil') + ' ' + $store.units.getLabel('step5_v_post_boil')"></td>
+                                <td class="text-right tabular-nums font-bold" x-text="volDisplay(batchSolverResult.cascade.v_post_boil, 'step4_v_post_boil') + ' ' + $store.units.getLabel('step4_v_post_boil')"></td>
                             </tr>
                             </tbody>
                         </table>
@@ -211,25 +211,25 @@
                             <tbody>
                             <tr>
                                 <td>Strike</td>
-                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_strike, 'step5_v_strike') + ' ' + $store.units.getLabel('step5_v_strike')"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_strike, 'step4_v_strike') + ' ' + $store.units.getLabel('step4_v_strike')"></td>
                                 <td class="text-right tabular-nums">—</td>
                                 <td class="text-right tabular-nums">—</td>
                             </tr>
                             <tr>
                                 <td>First Runnings</td>
-                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_run1, 'step5_v_run1') + ' ' + $store.units.getLabel('step5_v_run1')"></td>
-                                <td class="text-right tabular-nums" x-text="massDisplay(batchSolverResult.cascade.s_run1, 'step5_s_run1') + ' ' + $store.units.getLabel('step5_s_run1')"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_run1, 'step4_v_run1') + ' ' + $store.units.getLabel('step4_v_run1')"></td>
+                                <td class="text-right tabular-nums" x-text="massDisplay(batchSolverResult.cascade.s_run1, 'step4_s_run1') + ' ' + $store.units.getLabel('step4_s_run1')"></td>
                                 <td class="text-right tabular-nums">—</td>
                             </tr>
                             <tr>
                                 <td>Second Runnings</td>
-                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_run2, 'step5_v_run2') + ' ' + $store.units.getLabel('step5_v_run2')"></td>
-                                <td class="text-right tabular-nums" x-text="massDisplay(batchSolverResult.cascade.s_run2, 'step5_s_run2') + ' ' + $store.units.getLabel('step5_s_run2')"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_run2, 'step4_v_run2') + ' ' + $store.units.getLabel('step4_v_run2')"></td>
+                                <td class="text-right tabular-nums" x-text="massDisplay(batchSolverResult.cascade.s_run2, 'step4_s_run2') + ' ' + $store.units.getLabel('step4_s_run2')"></td>
                                 <td class="text-right tabular-nums">—</td>
                             </tr>
                             <tr>
                                 <td>Sparge</td>
-                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_sparge, 'step5_v_sparge') + ' ' + $store.units.getLabel('step5_v_sparge')"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_sparge, 'step4_v_sparge') + ' ' + $store.units.getLabel('step4_v_sparge')"></td>
                                 <td class="text-right tabular-nums">—</td>
                                 <td class="text-right tabular-nums">—</td>
                             </tr>
@@ -237,7 +237,7 @@
                                 <td>Pre-Boil (consolidated)</td>
                                 <td class="text-right tabular-nums">—</td>
                                 <td class="text-right tabular-nums">—</td>
-                                <td class="text-right tabular-nums font-bold" x-text="gravityDisplay(batchSolverResult.cascade.sg_pre_boil, 'step5_sg_pre_boil') + ' ' + $store.units.getLabel('step5_sg_pre_boil')"></td>
+                                <td class="text-right tabular-nums font-bold" x-text="gravityDisplay(batchSolverResult.cascade.sg_pre_boil, 'step4_sg_pre_boil') + ' ' + $store.units.getLabel('step4_sg_pre_boil')"></td>
                             </tr>
                             </tbody>
                         </table>
@@ -249,35 +249,35 @@
                             <tbody>
                             <tr>
                                 <td>Strike Volume</td>
-                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_strike, 'step5_v_strike') + ' ' + $store.units.getLabel('step5_v_strike')"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_strike, 'step4_v_strike') + ' ' + $store.units.getLabel('step4_v_strike')"></td>
                             </tr>
                             <tr>
                                 <td>Sparge Demand</td>
-                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_sparge, 'step5_v_sparge') + ' ' + $store.units.getLabel('step5_v_sparge')"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_sparge, 'step4_v_sparge') + ' ' + $store.units.getLabel('step4_v_sparge')"></td>
                             </tr>
                             <tr>
                                 <td>HLT Top-Up</td>
-                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.hlt.v_hlt_top_up, 'step5_v_hlt_top_up') + ' ' + $store.units.getLabel('step5_v_hlt_top_up')"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.hlt.v_hlt_top_up, 'step4_v_hlt_top_up') + ' ' + $store.units.getLabel('step4_v_hlt_top_up')"></td>
                             </tr>
                             <tr>
                                 <td>
                                     <span>Sparge Deliverable</span>
                                     <template x-if="hasSurplusSpargeCapacity">
-                                        <span class="text-xs text-muted" x-text="' (surplus sparge capacity: ' + surplusSpargeCapacityDisplay + ' ' + $store.units.getLabel('step5_v_sparge') + ')'"></span>
+                                        <span class="text-xs text-muted" x-text="' (surplus sparge capacity: ' + surplusSpargeCapacityDisplay + ' ' + $store.units.getLabel('step4_v_sparge') + ')'"></span>
                                     </template>
                                 </td>
-                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.hlt.v_sparge_deliverable, 'step5_v_sparge_deliverable') + ' ' + $store.units.getLabel('step5_v_sparge_deliverable')"></td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.hlt.v_sparge_deliverable, 'step4_v_sparge_deliverable') + ' ' + $store.units.getLabel('step4_v_sparge_deliverable')"></td>
                             </tr>
                             <tr>
                                 <td>
                                     <span>Sparge Salt Dosing Volume</span>
                                     <span class="text-xs text-muted"> (V_sparge_salted = V_hlt_after_strike + V_hlt_top_up)</span>
                                 </td>
-                                <td class="text-right tabular-nums" x-text="spargeSaltedVolumeDisplay + ' ' + $store.units.getLabel('step5_v_sparge_deliverable')"></td>
+                                <td class="text-right tabular-nums" x-text="spargeSaltedVolumeDisplay + ' ' + $store.units.getLabel('step4_v_sparge_deliverable')"></td>
                             </tr>
                             <tr>
                                 <td class="font-bold">Total Water Used</td>
-                                <td class="text-right tabular-nums font-bold" x-text="totalWaterUsedDisplay + ' ' + $store.units.getLabel('step5_v_sparge')"></td>
+                                <td class="text-right tabular-nums font-bold" x-text="totalWaterUsedDisplay + ' ' + $store.units.getLabel('step4_v_sparge')"></td>
                             </tr>
                             </tbody>
                         </table>
@@ -290,12 +290,12 @@
         <div class="step-actions">
             <button
                     type="button"
-                    @click="markStepComplete(5)"
+                    @click="markStepComplete(4)"
                     class="btn btn-primary"
                     :disabled="!batchSolverResult || batchSolverStale"
                     :title="!batchSolverResult ? 'Solve the batch before finishing.' : (batchSolverStale ? 'Inputs changed since the last solve. Solve again to finish.' : '')"
             >
-                Finish
+                Next: Mash Profile →
             </button>
         </div>
     </div>

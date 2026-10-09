@@ -1,33 +1,33 @@
-<!-- Step 6: Mash Card Accordion (rest schedule + strike water temperature) -->
-<div class="step-card" :class="{ 'is-active': activeStep === 6, 'is-completed': completedSteps.includes(6) }">
+<!-- Step 5: Mash Card Accordion (rest schedule + strike water temperature) -->
+<div class="step-card" :class="{ 'is-active': activeStep === 5, 'is-completed': completedSteps.includes(5) }">
     <div class="accordion-header">
         <button
                 type="button"
                 class="accordion-trigger"
-                :aria-expanded="activeStep === 6"
-                aria-controls="step-panel-6"
-                id="step-trigger-6"
-                @click="setActiveStep(6)"
+                :aria-expanded="activeStep === 5"
+                aria-controls="step-panel-5"
+                id="step-trigger-5"
+                @click="setActiveStep(5)"
         >
             <div class="accordion-title-wrap">
-                <span class="accordion-step-num">6</span>
+                <span class="accordion-step-num">5</span>
                 <div>
                     <span class="accordion-title">Mash Profile</span>
                     <span class="accordion-subtitle">Rest schedule, strike water temperature &amp; fermentability</span>
                 </div>
             </div>
             <div class="accordion-controls">
-                <span class="accordion-status-pill" :class="getStepStatusClass(6)" x-text="getStepStatusLabel(6)"></span>
-                <span class="accordion-chevron" x-text="activeStep === 6 ? '▲' : '▼'"></span>
+                <span class="accordion-status-pill" :class="getStepStatusClass(5)" x-text="getStepStatusLabel(5)"></span>
+                <span class="accordion-chevron" x-text="activeStep === 5 ? '▲' : '▼'"></span>
             </div>
         </button>
     </div>
 
     <div
-            id="step-panel-6"
+            id="step-panel-5"
             role="region"
-            aria-labelledby="step-trigger-6"
-            x-show="activeStep === 6"
+            aria-labelledby="step-trigger-5"
+            x-show="activeStep === 5"
             x-collapse
             class="step-card-body"
     >
@@ -123,7 +123,7 @@
                                 </td>
                                 <td class="tabular-nums">
                                     <template x-if="rest.use_temp_c != null">
-                                        <span x-text="`${restUseTempDisplay(rest)} ${$store.units.getLabel('step6_rest_use_temp_c')}`"></span>
+                                        <span x-text="`${restUseTempDisplay(rest)} ${$store.units.getLabel('step5_rest_use_temp_c')}`"></span>
                                     </template>
                                     <template x-if="rest.use_temp_c == null">
                                         <span class="text-muted">—</span>
@@ -155,14 +155,14 @@
                                 @input="setGrainTempDisplay($event.target.value)"
                                 class="form-input tabular-nums"
                         />
-                        <span class="metric-cell-unit" x-text="$store.units.getLabel('step6_grain_temp_c')"></span>
+                        <span class="metric-cell-unit" x-text="$store.units.getLabel('step5_grain_temp_c')"></span>
                     </div>
                 </div>
                 <div class="metric-cell">
                     <span class="metric-cell-label">Strike Water Temp</span>
                     <div class="metric-cell-value-wrap">
                         <span class="metric-cell-val" x-text="strikeWaterTempDisplay() || '—'"></span>
-                        <span class="metric-cell-unit" x-text="$store.units.getLabel('step6_strike_water_temp_c')"></span>
+                        <span class="metric-cell-unit" x-text="$store.units.getLabel('step5_strike_water_temp_c')"></span>
                     </div>
                 </div>
                 <div class="metric-cell">
@@ -176,7 +176,7 @@
                     <span class="metric-cell-label">Limit of Attenuation</span>
                     <div class="metric-cell-value-wrap">
                         <span class="metric-cell-val" x-text="limitOfAttenuationDisplay() || '—'"></span>
-                        <span class="metric-cell-unit" x-text="$store.units.getLabel('step6_loa')"></span>
+                        <span class="metric-cell-unit" x-text="$store.units.getLabel('step5_loa')"></span>
                     </div>
                 </div>
             </div>
@@ -186,7 +186,7 @@
         <div class="step-actions">
             <button
                     type="button"
-                    @click="markStepComplete(6)"
+                    @click="markStepComplete(5)"
                     class="btn btn-primary"
             >
                 Next: Water Chemistry →
