@@ -1502,6 +1502,10 @@ samp {
   color: var(--sys-text-muted);
 }
 
+.text-danger {
+  color: var(--sys-color-danger-text);
+}
+
 /* --- Preset Toolbar & Segmented Control --- */
 
 .preset-toolbar {
