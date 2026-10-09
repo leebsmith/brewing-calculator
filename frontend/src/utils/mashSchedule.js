@@ -13,7 +13,7 @@
  * implemented here (design record Q3).
  */
 
-import { BREW_CONSTANTS } from '../constants.js';
+import { BREW_CONSTANTS } from '../../constants.js';
 
 /**
  * Specific heat capacity of dry malted barley, in kcal/(kg·°C).

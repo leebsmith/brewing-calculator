@@ -1363,20 +1363,6 @@ Alpine.data('wizard', () => {
     },
 
     init() {
-      // Dev-time guardrail: every declared wizard step must have a matching
-      // panel in the DOM. Catches partial-numbering drift at load time rather
-      // than at click time.
-      if (typeof document !== 'undefined') {
-        const missing = BREW_CONSTANTS.WIZARD_STEPS.filter(
-          (n) => !document.getElementById(`step-panel-${n}`)
-        );
-        if (missing.length > 0) {
-          console.warn(
-            `[wizard] Declared steps have no matching #step-panel-N in the DOM: ${missing.join(', ')}`
-          );
-        }
-      }
-
       // Event bus listener for step invalidation
       window.addEventListener('wizard:invalidate', (e) => {
         if (e.detail && e.detail.step) {
