@@ -77,7 +77,7 @@ export const BREW_CONSTANTS = {
     hopMass: ['g', 'oz'],
     temperature: ['C', 'F'],
     gravity: ['Plato', 'SG'],
-    compound: ['L/kg', 'gal/lb'],
+    compound: ['L/kg', 'qt/lb'],
     extract_potential: ['L·°/kg', 'gal·°/lb'],
     total_extract: ['L·°', 'gal·pts'],
     color: ['EBC', 'SRM'],

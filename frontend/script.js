@@ -141,7 +141,10 @@ const UNIT_REGISTRY = {
     base_unit: 'L/kg',
     units: {
       'L/kg':   { label: 'L/kg',   to_base: (v) => v, from_base: (v) => v, precision: 2 },
-      'gal/lb': { label: 'gal/lb', to_base: (v) => v * 8.3454, from_base: (v) => v / 8.3454, precision: 3 }
+      // Mash thickness is conventionally expressed in quarts per pound in
+      // imperial brewing practice, not gallons per pound. 1 qt/lb =
+      // 0.946353 L / 0.45359237 kg = 2.08635 L/kg.
+      'qt/lb':  { label: 'qt/lb',  to_base: (v) => v * 2.08635, from_base: (v) => v / 2.08635, precision: 2 }
     }
   },
   extract_potential: {
