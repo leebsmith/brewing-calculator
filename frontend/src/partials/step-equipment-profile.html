@@ -65,24 +65,9 @@
 
         <!-- Equipment Parameters Grid (capacities, vessel losses, HLT water accounting) -->
         <div class="step-grid-2col">
-            <!-- Max Kettle Volume -->
-            <div class="form-group">
-                <label class="form-label">
-                    <span>Max Kettle Volume</span>
-                    <button type="button" @click="$store.units.toggle('step1_max_kettle_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_max_kettle_volume_l') }" x-text="$store.units.getLabel('step1_max_kettle_volume_l')" title="Click to toggle unit"></button>
-                </label>
-                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_kettle_volume_l, 'step1_max_kettle_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_kettle_volume_l', $event.target.value, 'step1_max_kettle_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
-                <span class="form-hint">Boil kettle brim capacity</span>
-            </div>
-
-            <!-- Max Mash Tun Volume -->
-            <div class="form-group">
-                <label class="form-label">
-                    <span>Max Mash Tun Volume</span>
-                    <button type="button" @click="$store.units.toggle('step1_max_mash_tun_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_max_mash_tun_volume_l') }" x-text="$store.units.getLabel('step1_max_mash_tun_volume_l')" title="Click to toggle unit"></button>
-                </label>
-                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_mash_tun_volume_l, 'step1_max_mash_tun_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_mash_tun_volume_l', $event.target.value, 'step1_max_mash_tun_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
-                <span class="form-hint">Mash vessel overflow limit</span>
+            <!-- ==================== Hot Liquor Tank (HLT) ==================== -->
+            <div class="step-section-header">
+                <span class="step-section-title">Hot Liquor Tank (HLT)</span>
             </div>
 
             <!-- Max HLT Volume -->
@@ -125,6 +110,21 @@
                 <span class="form-hint">Liquor retained in HLT hose and pump (water accounting)</span>
             </div>
 
+            <!-- ==================== Mash Tun ==================== -->
+            <div class="step-section-header">
+                <span class="step-section-title">Mash Tun</span>
+            </div>
+
+            <!-- Max Mash Tun Volume -->
+            <div class="form-group">
+                <label class="form-label">
+                    <span>Max Mash Tun Volume</span>
+                    <button type="button" @click="$store.units.toggle('step1_max_mash_tun_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_max_mash_tun_volume_l') }" x-text="$store.units.getLabel('step1_max_mash_tun_volume_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_mash_tun_volume_l, 'step1_max_mash_tun_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_mash_tun_volume_l', $event.target.value, 'step1_max_mash_tun_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Mash vessel overflow limit</span>
+            </div>
+
             <!-- Mash Tun Dead Space -->
             <div class="form-group">
                 <label class="form-label">
@@ -145,6 +145,21 @@
                 <span class="form-hint">Wort retained in mash tun hose and pump</span>
             </div>
 
+            <!-- ==================== Boil Kettle ==================== -->
+            <div class="step-section-header">
+                <span class="step-section-title">Boil Kettle</span>
+            </div>
+
+            <!-- Max Kettle Volume -->
+            <div class="form-group">
+                <label class="form-label">
+                    <span>Max Kettle Volume</span>
+                    <button type="button" @click="$store.units.toggle('step1_max_kettle_volume_l')" class="unit-badge" :class="{ 'unit-badge-customized': $store.units.isCustomized('step1_max_kettle_volume_l') }" x-text="$store.units.getLabel('step1_max_kettle_volume_l')" title="Click to toggle unit"></button>
+                </label>
+                <input type="number" step="0.5" min="1" :value="volDisplay(manifest.equipment.max_kettle_volume_l, 'step1_max_kettle_volume_l')" @input="setVolDisplay(manifest.equipment, 'max_kettle_volume_l', $event.target.value, 'step1_max_kettle_volume_l'); onEquipmentChange()" class="form-input tabular-nums" />
+                <span class="form-hint">Boil kettle brim capacity</span>
+            </div>
+
             <!-- Kettle Dead Space -->
             <div class="form-group">
                 <label class="form-label">
@@ -163,6 +178,11 @@
                 </label>
                 <input type="number" step="0.1" min="0" :value="volDisplay(manifest.equipment.kettle_transfer_loss_l, 'step1_kettle_transfer_loss_l')" @input="setVolDisplay(manifest.equipment, 'kettle_transfer_loss_l', $event.target.value, 'step1_kettle_transfer_loss_l'); onEquipmentChange()" class="form-input tabular-nums" />
                 <span class="form-hint">Wort retained in kettle hose and pump</span>
+            </div>
+
+            <!-- ==================== Shared / Global Parameters ==================== -->
+            <div class="step-section-header">
+                <span class="step-section-title">Shared Parameters</span>
             </div>
 
             <!-- Trub Loss -->
