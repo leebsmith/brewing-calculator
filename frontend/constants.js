@@ -108,7 +108,6 @@ export const BREW_CONSTANTS = {
     'step5_v_ferm': 'volume',
     'step5_intensive_value': 'compound',
     'step5_v_post_boil': 'volume',
-    'step5_target_og': 'gravity',
     'step5_sg_post_boil': 'gravity',
     'step5_v_pre_boil': 'volume',
     'step5_s_post_boil_target': 'mass',
