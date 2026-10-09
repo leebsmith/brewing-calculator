@@ -167,5 +167,6 @@ export const BREW_CONSTANTS = {
     BRACKET_NO_SIGN_CHANGE: 'No grain bill can satisfy these targets. Try lowering the ABV, increasing the batch volume, or adding more malt.',
     UNKNOWN_TOPOLOGY: 'Internal error: unknown constraint topology.',
     INVALID_INTENSIVE_VALUE: 'The mash thickness or runoff ratio must be greater than zero.',
+    MASH_TOO_THIN: 'The mash is too thin for this grain bill. Increase the mash thickness (L/kg) or reduce the batch size.',
   },
 };

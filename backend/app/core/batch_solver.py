@@ -760,6 +760,15 @@ def resolve_stage_cascade(
             "INVALID_INTENSIVE_VALUE",
             f"Intensive constraint must be positive; got {intensive_value}.",
         )
+    if topology == "r_l_to_g" and intensive_value < K_ABS_TRUE_METRIC:
+        raise SolverValidationError(
+            "MASH_TOO_THIN",
+            (
+                f"Liquor-to-grist ratio ({intensive_value:.2f} L/kg) is below "
+                f"the husk absorption floor ({K_ABS_TRUE_METRIC} L/kg). The "
+                f"grain bed would retain more liquid than the strike provides."
+            ),
+        )
 
     v_mc = moisture_volume(m_grist, mc_bar)
     s_conv = converted_extract(m_grist, extract_potential, eta_conv)
@@ -777,6 +786,22 @@ def resolve_stage_cascade(
         v_run1 = v_pre_boil - v_run2
         # Reverse the tun mass balance to absorb retention and displacement.
         v_strike = v_run1 + v_ret - v_mc - v_sol
+
+    # Physical realizability gate: the strike water must be sufficient to
+    # wet the grain bed. If V_run1 <= 0, the grain absorbed more liquid than
+    # the strike provided, which means the mash thickness is below the
+    # physical floor for this grist mass. This is a user-input error (too
+    # thin a mash), not a numerical failure, so it surfaces as a typed
+    # validation error rather than a silent negative volume.
+    if v_run1 <= 0.0:
+        raise SolverValidationError(
+            "MASH_TOO_THIN",
+            (
+                f"Strike water ({v_strike:.2f} L) is insufficient to wet the "
+                f"grain bed (retained {v_ret:.2f} L). Increase the mash "
+                f"thickness (R_L:G) or reduce the grist mass."
+            ),
+        )
 
     s_run1, s_run2 = stage_extract_split(
         s_conv=s_conv,
