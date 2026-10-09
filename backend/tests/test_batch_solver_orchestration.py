@@ -30,6 +30,7 @@ def standard_inputs():
         delta_v_evap=3.0,
         v_dead=0.5,
         eta_conv=0.75,
+        hlt_starting_volume_l=38.0,
     )
 
 

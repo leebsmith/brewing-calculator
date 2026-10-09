@@ -913,7 +913,7 @@ class BatchSolverInput:
     v_dead: float
     eta_conv: float
     f_shrink: float = F_SHRINK_DEFAULT
-    hlt_starting_volume_l: float = 0.0
+    hlt_starting_volume_l: float
 
 
 @dataclass(frozen=True)
