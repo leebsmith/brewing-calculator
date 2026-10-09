@@ -1706,6 +1706,36 @@ samp {
   gap: var(--space-5);
 }
 
+/* Section header inside a step-grid-2col: spans both columns and acts as a
+   visual divider between vessel groups (HLT / Mash Tun / Boil Kettle). */
+.step-section-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.step-section-header:first-child {
+  margin-top: var(--space-0);
+}
+
+.step-section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--sys-border-subtle);
+}
+
+.step-section-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sys-text-secondary);
+  white-space: nowrap;
+}
+
 /* ==========================================================================
    15. Form Input with Unit Suffix Addon
    ========================================================================== */
