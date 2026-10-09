@@ -788,8 +788,7 @@ samp {
   padding: var(--space-4);
   background-color: var(--sys-surface-overlay);
   backdrop-filter: var(--sys-backdrop-blur);
-  container-type: size;
-  container-name: modal-bounds;
+  container: modal-bounds / size;
 }
 
 .modal-dialog {
