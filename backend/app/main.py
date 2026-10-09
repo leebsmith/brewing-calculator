@@ -218,6 +218,7 @@ def solve_batch_endpoint(
             s_run2=result.cascade.s_run2,
             sg_pre_boil=result.cascade.sg_pre_boil,
             v_post_boil=result.cascade.v_post_boil,
+            mash_thickness_l_per_kg=result.cascade.mash_thickness_l_per_kg,
         ),
         max_achievable_abv=result.max_achievable_abv,
         hlt=HltWaterBudgetModel(
@@ -226,6 +227,7 @@ def solve_batch_endpoint(
             v_hlt_top_up=result.hlt.v_hlt_top_up,
             v_sparge_deliverable=result.hlt.v_sparge_deliverable,
         ),
+        mash_thickness_l_per_kg=result.mash_thickness_l_per_kg,
     )
 
 
