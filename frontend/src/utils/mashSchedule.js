@@ -176,6 +176,15 @@ export function canonicalOrderIndex(restId) {
  */
 export function sortRestsByTemperature(rests) {
   return [...rests].sort((a, b) => {
+    // Bookends are pinned: dough-in is always first, mash-out always last,
+    // regardless of their `use_temp_c`. Without this, a null dough-in temp
+    // (the state before the user sets it) sorts after any rest that a preset
+    // has seeded with a temperature, so dough-in would jump to second place
+    // the moment a style is chosen.
+    const aBookend = bookendRank(a.rest_id);
+    const bBookend = bookendRank(b.rest_id);
+    if (aBookend !== bBookend) return aBookend - bBookend;
+
     const aTemp = a.use_temp_c;
     const bTemp = b.use_temp_c;
     const aHas = typeof aTemp === 'number' && !isNaN(aTemp);
@@ -185,6 +194,19 @@ export function sortRestsByTemperature(rests) {
     if (aHas !== bHas) return aHas ? -1 : 1;
     return canonicalOrderIndex(a.rest_id) - canonicalOrderIndex(b.rest_id);
   });
+}
+
+/**
+ * Bookend rank for the sort comparator: dough-in sorts before everything,
+ * mash-out after everything, and ordinary rests in between.
+ *
+ * @param {string} restId
+ * @returns {number} -1 for dough-in, 1 for mash-out, 0 otherwise.
+ */
+function bookendRank(restId) {
+  if (restId === DOUGH_IN_REST.rest_id) return -1;
+  if (restId === MASH_OUT_REST.rest_id) return 1;
+  return 0;
 }
 
 /**
