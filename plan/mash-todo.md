@@ -48,6 +48,10 @@ The Mash Card is **primarily an input card**, with an optional summary readout.
 
 **Presets are combinations of the canonical rests.** Dough-in is the *first rest* (always present, not preset-controlled). Mash-out is a separate step (always present, 168–170 °F / 75.5–76.7 °C).
 
+**Custom-preset behavior:**
+- Selecting **Custom** clears all rest checkboxes (the user picks freely from scratch).
+- If the user manually edits any checkbox after selecting a named preset, the dropdown **automatically flips to "Custom"**. Named presets are read-only snapshots; any manual divergence means the schedule is no longer that preset.
+
 **Preset matrix:**
 
 | Preset | Rests (in order) |
@@ -65,7 +69,18 @@ The Mash Card is **primarily an input card**, with an optional summary readout.
 
 ### 3. Dough-in step fields — RESOLVED
 
-Dough-in is the first rest. Almost everything about it is pre-determined by the solver (strike water volume, mash thickness, target dough-in temp). The **only user-editable field is strike water temperature**, which is derived from the dough-in "use" temperature once the user sets it.
+Dough-in is the first rest. The **only user-editable field is the dough-in "use" temperature**; the strike water temperature is derived from it (see formula below). Strike water volume and mash thickness are *not* solver-derived — the solver ignores rests entirely (see Q7). They are computed frontend-side from the grain bill and equipment profile, which are already available on the batch.
+
+**Strike water temperature formula** (frontend, in the Mash Card):
+
+```
+T_strike = T_target + (mash_thickness_ratio) * (T_target − T_grain)
+```
+
+where:
+- `T_target` = dough-in "use" temperature (user-editable)
+- `T_grain` = grain temperature (from equipment profile / ambient; default 20 °C if unset)
+- `mash_thickness_ratio` = `mash_thickness` (L/kg) — the same value shown in the summary table
 
 The dough-in rest is visually marked with a "→" in the rest table.
 
@@ -81,34 +96,43 @@ Mash-out is a separate always-present step at 168–170 °F (75.5–76.7 °C). I
 
 Rests are **always displayed in ascending temperature order**. The order is **enforced**, not arbitrary. The user **cannot reorder** rests manually — the sort is derived from the "use" temperature of each enabled rest.
 
+**Tiebreaker:** when two enabled rests share the same "use" temperature, they are ordered by **canonical rest order** (the numbered list in Q2: Phytase/Acid → Ferulic Acid → Beta-Glucan → Protein → Beta-Amylase → Alpha-Amylase → Beta/Alpha-Amylase). The sort is therefore stable and deterministic.
+
 This means the dough-in rest (first, marked "→") and the mash-out step (last) are naturally bookends, and any enabled rests fall between them in temperature order.
 
 ### 6. Summary readout — RESOLVED
 
 Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
 
-### 7. Relationship to the solver
-Does the Mash Card's data feed into `BatchSolverRequest` (i.e., does the backend solver need to know about rests), or is it purely a frontend-side schedule the solver ignores for now? **Biggest architectural fork.**
+### 7. Relationship to the solver — RESOLVED
 
-### 8. Units
-Which fields need unit toggling? Proposed: temperatures (°C ↔ °F), durations (min — probably no toggle), strike volume (L ↔ gal), mash thickness (L/kg ↔ qt/lb). Confirm and flag any new `UNIT_REGISTRY` domains needed.
+Purely frontend-side schedule for now. Does not feed `BatchSolverRequest`; the solver ignores rests. Rests affect fermentability and mash pH, not extract mass balance, and neither model exists yet. Schedule lives in the `manifest` and is used only for display and strike-water-temp derivation. Promotion into the solver request deferred until a fermentability/pH model is built.
 
-### 9. Validation
-Should we warn (soft) or block (hard) when a rest temp is outside its recommended range? E.g., user sets Beta-Amylase to 70 °C — warn, block, or allow silently?
+### 8. Units — RESOLVED
 
-### 10. Persistence
-Does the mash schedule live inside the `manifest` (part of the recipe, saved with the batch), or is it equipment-profile-scoped?
+Temperatures (°C ↔ °F), strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not.
+
+**New `UNIT_REGISTRY` domain required:** `mash_thickness`. Mash thickness is a ratio (volume per mass), not a `mass` field, and the existing `toDisplay(domain, baseValue, fieldKey)` signature takes a single domain and a single scalar — it cannot express "volume per mass." Add a `mash_thickness` domain with its own conversion pair (L/kg ↔ qt/lb). Temperatures and strike volume map onto the existing `temperature` and `volume` domains.
+
+### 9. Validation — RESOLVED
+
+**Soft warn.** When a rest's "use" temperature falls outside its recommended range, show an inline amber note next to the field. Do not block. Ranges are advisory; experienced brewers intentionally step outside them (e.g., a 70 °C "beta" rest for a dextrinous beer). The warning clears when the value returns to range.
+
+### 10. Persistence — RESOLVED
+
+**Manifest-scoped, saved with the batch.** The mash schedule lives inside the `manifest` alongside the rest of the recipe. It is not equipment-profile-scoped. (Consistent with Q7.)
 
 ### 11. UI shape — RESOLVED
 
 Three-part card, modeled on the grain bill editor:
 
 1. **Style dropdown** — selecting a preset checks the corresponding rests in a table showing each rest's key characteristics.
-2. **"Configure Rests" button** — opens a modal (to be placed in a `<load>` include). The modal shows a fuller table: low temp range, "use" temperature, high temp range, duration, purpose. The user populates the "use" temperature and duration for each rest and clicks OK. The dough-in rest (first one) is marked with "→".
+2. **"Configure Rests" button** — opens a modal. The modal markup lives in a new partial under `frontend/src/partials/` (e.g. `frontend/src/partials/mash-rests-modal.html`) and is pulled in via the existing partial-include mechanism used by the rest of the frontend. The modal shows a fuller table: low temp range, "use" temperature, high temp range, duration, purpose. The user populates the "use" temperature and duration for each rest and clicks OK. The dough-in rest (first one) is marked with "→".
 3. **Summary table on the base card** — after OK, the modal's edits are recapitulated in a complete read-only table on the main card. Once the dough-in "use" temperature is set, the summary table computes and displays the strike water temperature.
 
-### 12. Step sequencing in the wizard
-Where does the Mash Card sit relative to the existing steps? Before or after the grain bill? Before or after equipment selection?
+### 12. Step sequencing in the wizard — RESOLVED
+
+The Mash Card sits **after the grain bill and after equipment selection**. It depends on both: the grain bill supplies grain temperature and total grain mass (for strike-water-temp derivation), and the equipment profile supplies mash thickness defaults. Placing it earlier would force the user to backtrack.
 
 ## Resolution Log
 
@@ -122,4 +146,11 @@ _(Record answers here as we resolve each question. Do not begin implementation u
 - **Q5 (Ordering & constraints):** Rests always displayed in ascending temperature order. Enforced, not arbitrary. No manual reordering — sort is derived from each rest's "use" temperature.
 - **Q6 (Summary readout):** Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
 - **Q7 (Relationship to the solver):** Purely frontend-side schedule for now. Does not feed `BatchSolverRequest`; the solver ignores rests. Rests affect fermentability and mash pH, not extract mass balance, and neither model exists yet. Schedule lives in the `manifest` and is used only for display and strike-water-temp derivation. Promotion into the solver request deferred until a fermentability/pH model is built.
-- **Q8 (Units):** Temperatures (°C ↔ °F), strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not. No new `UNIT_REGISTRY` domains needed — all fields map onto existing `temperature`, `volume`, and `mass` domains; mash thickness is a compound volume-per-mass field.
+- **Q8 (Units):** Temperatures (°C ↔ °F), strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not. **New `UNIT_REGISTRY` domain required: `mash_thickness`** (volume-per-mass ratio; the existing single-domain `toDisplay` signature cannot express it). Temperatures and strike volume map onto existing `temperature` and `volume` domains.
+- **Q9 (Validation):** Soft warn — inline amber note when a rest's "use" temperature is outside its recommended range. Non-blocking; clears when back in range.
+- **Q10 (Persistence):** Manifest-scoped, saved with the batch. Not equipment-profile-scoped. (Consistent with Q7.)
+- **Q12 (Step sequencing):** Mash Card sits after the grain bill and after equipment selection — it depends on both.
+- **Q5 (Tiebreaker):** Equal "use" temperatures are ordered by canonical rest order (Q2's numbered list). Sort is stable and deterministic.
+- **Q2 (Custom preset):** Selecting Custom clears all checkboxes; manually editing checks after a named preset auto-flips the dropdown to Custom.
+- **Q3 (Strike water temp formula):** `T_strike = T_target + (mash_thickness_ratio) * (T_target − T_grain)`. Strike volume and mash thickness are frontend-computed from grain bill + equipment profile, not solver-derived.
+- **Q11 (Modal include):** Modal markup lives in a new partial under `frontend/src/partials/` and is pulled in via the existing partial-include mechanism.
