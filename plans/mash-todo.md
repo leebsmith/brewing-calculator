@@ -1,6 +1,6 @@
 # Mash Card — Design Interview (No Code Until Complete)
 
-**Status:** In progress — do not write code until every question below is resolved.
+**Status:** Complete — all twelve questions resolved. Ready for implementation planning.
 
 ## Context
 
@@ -107,6 +107,16 @@ Below the rest table, the summary shows derived values:
 
 Other candidates (total water used, predicted first-runnings gravity, mash pH estimate) are **deferred** — they belong to the solver/water-chemistry modules, not the Mash Card summary.
 
+### 6b. Limit of Attenuation — RESOLVED
+
+The summary readout includes an informational **Limit of Attenuation (LOA)** field, computed from the mash schedule using the Braukaiser model.
+
+- **Gated on a single saccharification rest** at 63–70 °C. When the schedule has exactly one enabled saccharification rest whose "use" temp falls in that window, LOA is computed and displayed.
+- **Informational only** — it does not feed the solver (consistent with Q7) and does not block anything.
+- **Hidden when the gate is not met** (zero or multiple sacch rests, or a single sacch rest outside 63–70 °C). No warning, no placeholder — the field simply does not appear.
+- **Unit-aware** — displayed as a percentage; no unit toggle needed.
+- **Deferred:** promoting LOA into the solver once a fermentability model exists (same deferral as Q7).
+
 ### 7. Relationship to the solver — RESOLVED
 
 The Mash Card's rest schedule is **purely a frontend-side schedule** for now. It does **not** feed into `BatchSolverRequest`, and the backend solver does not need to know about rests.
@@ -191,8 +201,14 @@ Three-part card, modeled on the grain bill editor:
 2. **"Configure Rests" button** — opens a modal (to be placed in a `<load>` include). The modal shows a fuller table: low temp range, "use" temperature, high temp range, duration, purpose. The user populates the "use" temperature and duration for each rest and clicks OK. The dough-in rest (first one) is marked with "→".
 3. **Summary table on the base card** — after OK, the modal's edits are recapitulated in a complete read-only table on the main card. Once the dough-in "use" temperature is set, the summary table computes and displays the strike water temperature.
 
-### 12. Step sequencing in the wizard
-Where does the Mash Card sit relative to the existing steps? Before or after the grain bill? Before or after equipment selection?
+### 12. Step sequencing in the wizard — RESOLVED
+
+The Mash Card sits **after the Batch Sparge Solver** step in the wizard.
+
+- **Placement:** immediately following the Batch Sparge Solver. The solver produces the strike water volume and dough-in temperature that the Mash Card's dough-in rest depends on (Q3), so the Mash Card must come after it.
+- **The placeholder step is deleted.** The existing placeholder in that slot is removed and replaced by the Mash Card.
+- **Required step.** The Mash Card is a required wizard step, not skippable.
+- **Pre-populated default.** On first entry, the Mash Card is pre-populated with a default schedule (the "Custom" preset with the combined Beta/Alpha-Amylase Rest enabled, plus the always-present dough-in and mash-out bookends) so the user is never presented with an empty card.
 
 ## Resolution Log
 
@@ -206,3 +222,5 @@ _(Record answers here as we resolve each question. Do not begin implementation u
 - **Q5 (Ordering & constraints):** Ascending-temperature display, no manual reorder, no hard monotonic enforcement. Ties allowed, broken by canonical rest order. Out-of-range temps are soft warnings (Q9). Non-monotonic-sequence warning skipped. Dough-in and mash-out are pinned bookends outside the sortable set.
 - **Q9 (Validation):** Soft warning only, never a block. Amber styling (red reserved for hard failures). Inline warning in the Configure Rests modal naming the canonical range (e.g., "Outside recommended range 62–65 °C"); aggregated amber banner on the base card when any enabled rest is out of range. Both surfaces warn. No warning for dough-in or mash-out beyond their own range constraints.
 - **Q10 (Persistence):** Manifest-scoped, recipe-scoped (not equipment-profile-scoped). Shape: `manifest.mash = { preset_id, rests: [{ rest_id, enabled, use_temp_c, duration_min, is_true_mash_out? }] }`. Celsius canonical for temps, minutes for durations. `rest_id` is the stable key; `enabled` is explicit (preset switching is idempotent and preserves custom temps across toggles). `preset_id` flips to `'custom'` on any edit, matching the grain bill's `is_custom` pattern. Dough-in and mash-out are always present with `enabled: true`; dough-in's `use_temp_c` may be `null` until the solver runs.
+- **Q6b (Limit of Attenuation):** Informational LOA field in the summary readout, computed via the Braukaiser model. Gated on a single enabled saccharification rest at 63–70 °C; hidden otherwise (no warning, no placeholder). Informational only — does not feed the solver. Unit-aware (percentage, no toggle). Deferred: promoting LOA into the solver once a fermentability model exists.
+- **Q12 (Step sequencing):** Mash Card sits immediately after the Batch Sparge Solver step (the solver produces the strike water volume and dough-in temp the card depends on). The existing placeholder step is deleted and replaced by the Mash Card. Required step, not skippable. Pre-populated with a default schedule (Custom preset + combined Beta/Alpha-Amylase Rest, plus dough-in and mash-out bookends) so the user never sees an empty card.
