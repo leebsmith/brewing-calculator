@@ -77,7 +77,7 @@ the boil and is deliberately left behind. This is *not* a dead-space loss — it
 is a process loss that scales with the recipe (hop load, protein content), not
 with the vessel's geometry.
 
-### 3.5 HLT "Losses" Are Water Accounting, Not Extract Losses
+### 3.5 HLT "Losses" Are Water Debt, Not Extract Losses
 
 The HLT is the one vessel whose "losses" do not belong in the same conceptual
 category as the mash tun's and boil kettle's. The distinction is worth stating
@@ -95,6 +95,13 @@ So `hlt_dead_space_l` and `hlt_transfer_loss_l` are **water-accounting terms**,
 not process losses. They sit alongside `hlt_coil_floor_l` and
 `hlt_starting_volume_l` as constraints on how much liquor the HLT can actually
 deliver, rather than alongside `trub_loss_l` as a loss of product.
+
+**Terminology: debt, not loss.** A *loss* is liquid that leaves the system. A
+*debt* is liquid that remains in the system but can never be delivered to the
+mash tun. The HLT's undeliverable volume is a debt: it must be "paid" before
+any liquor reaches the mash tun, but it is not lost — it is simply
+unreachable. The `_loss_l` suffix is retained on the schema fields for
+consistency with the other vessels, but the conceptual category is debt.
 
 The names are kept as-is for consistency with the other vessels and because the
 `_loss_l` suffix is a useful shorthand, but the schema groups them with the
@@ -175,16 +182,40 @@ appear in any wort mass balance, because HLT liquor is water, not wort.
 
 ### 4.4 HLT Top-Up and Sparge Water Accounting
 
-Strike water is delivered into the mash tun **from the HLT**. If drawing the
-strike water lowers the HLT's total volume below `hlt_coil_floor_l`, the coil
-becomes exposed and additional liquor must be added to the HLT before the
-sparge. This added liquor is the **HLT top-up**.
+#### 4.4.1 The Four Water-System Components
 
-The top-up volume is exactly computable:
+The HLT water system comprises four physical components. Only the fourth is
+deliverable to the mash tun; the first three are permanently undeliverable
+**debt**:
+
+| # | Component | Field | Deliverable? |
+|---|---|---|---|
+| 1 | HLT vessel interior below the dip tube | `hlt_dead_space_l` | ❌ Never |
+| 2 | Transfer hose(s) internal volume | `hlt_transfer_loss_l` | ❌ Never |
+| 3 | Pump(s) internal volume | `hlt_transfer_loss_l` | ❌ Never |
+| 4 | HLT vessel interior above the dip tube | — | ✅ Yes |
+
+Components 1–3 are all the same category: liquor that is permanently in the
+system but can never reach the mash tun. They are summed into a single
+**undeliverable debt**:
+
+```
+V_hlt_debt = hlt_dead_space_l + hlt_transfer_loss_l
+```
+
+The hose and pump are **always primed**. The transfer hose is disconnected
+*while full* and reconnected to the next vessel with closed valves holding the
+liquid in place, so it never empties between draws. The hose and pump volumes
+are therefore permanent debt, not a per-draw priming cost. (This corrects an
+earlier model that treated `hlt_transfer_loss_l` as a recurring loss.)
+
+#### 4.4.2 Top-Up Decision
+
+Strike water is delivered into the mash tun **from the HLT**. Drawing the
+strike water lowers the HLT's total volume:
 
 ```
 V_hlt_after_strike = V_hlt_starting_volume_l − V_strike_drawn
-V_hlt_top_up       = max(0, hlt_coil_floor_l − V_hlt_after_strike)
 ```
 
 Where `V_hlt_starting_volume_l` is the volume of liquor in the HLT at the
@@ -192,19 +223,42 @@ start of the brew day. This is a **batch-level parameter**, not an equipment
 parameter — the brewer may fill the HLT to different levels on different brew
 days. It defaults to `max_hlt_volume_l` (fill to capacity).
 
-The sparge water volume available after the top-up is:
+After the strike draw, the HLT must satisfy **two** conditions before the
+sparge:
+
+1. **The coil must be covered** — `V_hlt_after_strike >= hlt_coil_floor_l`.
+2. **There must be enough deliverable liquor to sparge** —
+   `V_hlt_after_strike − V_hlt_debt >= V_sparge_demand`.
+
+The top-up target is the larger of the two requirements:
 
 ```
-V_sparge = V_hlt_after_strike
-         + V_hlt_top_up
-         − hlt_dead_space_l
-         − hlt_transfer_loss_l
+V_hlt_required = V_sparge_demand + V_hlt_debt
+V_hlt_target   = max(hlt_coil_floor_l, V_hlt_required)
+V_hlt_top_up   = max(0, V_hlt_target − V_hlt_after_strike)
 ```
 
-Note that `hlt_dead_space_l` and `hlt_transfer_loss_l` are subtracted here
-because they represent liquor that cannot be delivered to the mash tun. The
-coil floor is *not* subtracted, because the top-up has already ensured the
-coil is covered — the floor volume is usable for sparging.
+Note that the top-up target is `max(coil_floor, sparge_demand + debt)`, not
+just `coil_floor`. The earlier model topped up only to cover the coil, which
+could leave the HLT short of the sparge demand.
+
+#### 4.4.3 Deliverable Sparge Volume
+
+The sparge volume actually deliverable to the mash tun is:
+
+```
+V_sparge_deliverable = V_hlt_after_strike + V_hlt_top_up − V_hlt_debt
+```
+
+When the top-up is active, this equals `V_sparge_demand` exactly. The coil
+floor is *not* subtracted, because the top-up has already ensured the coil is
+covered — the floor volume is usable for sparging.
+
+#### 4.4.4 Capacity Gate
+
+If `V_hlt_target > max_hlt_volume_l`, the HLT physically cannot hold enough
+liquor to cover the coil and deliver the sparge. This is a hard validation
+error (`HLT_TOO_SMALL`), not a silent shortfall.
 
 ### 4.5 Salt Adjustment Points
 
@@ -248,9 +302,9 @@ they are physically distinct and may be tuned independently:
 | `kettle_dead_space_l` | Boil kettle | Dead space | Equipment |
 | `kettle_transfer_loss_l` | Boil kettle | Transfer | Equipment |
 | `trub_loss_l` | Boil kettle | Process | Equipment |
-| `hlt_dead_space_l` | HLT | Dead space | Equipment |
-| `hlt_transfer_loss_l` | HLT | Transfer | Equipment |
-| `hlt_coil_floor_l` | HLT | Constraint (not a loss) | Equipment |
+| `hlt_dead_space_l` | HLT | Debt (vessel) | Equipment |
+| `hlt_transfer_loss_l` | HLT | Debt (hose + pump) | Equipment |
+| `hlt_coil_floor_l` | HLT | Constraint (not a debt) | Equipment |
 
 The `Scope` column distinguishes **equipment-level** fields (properties of the
 hardware, stored in the equipment profile) from **batch-level** fields
@@ -277,7 +331,7 @@ Loss_postboil = trub_loss_l + kettle_dead_space_l + kettle_transfer_loss_l
 - `Loss_postboil` is applied **downstream** of the solver, in the chilling
   bridge that computes `V_packaged`.
 
-HLT losses (`hlt_dead_space_l`, `hlt_transfer_loss_l`) do not enter either
+HLT debt (`hlt_dead_space_l`, `hlt_transfer_loss_l`) does not enter either
 scalar, because HLT liquor is water and does not carry extract.
 
 ---
@@ -288,9 +342,10 @@ scalar, because HLT liquor is water and does not carry extract.
    [ HLT ]
         │  V_hlt_starting_volume_l
         │  − V_strike_drawn  ──────────────┐
-        │  + V_hlt_top_up (if coil exposed) │
-        │  − hlt_dead_space_l               │
-        │  − hlt_transfer_loss_l            │
+        │  + V_hlt_top_up (if needed)       │
+        │  − V_hlt_debt                     │
+        │    (= hlt_dead_space_l            │
+        │       + hlt_transfer_loss_l)      │
         ▼                                   │
    V_sparge (salted in HLT)                 │
         │                                   │
@@ -337,20 +392,20 @@ scalar, because HLT liquor is water and does not carry extract.
    post-lauter wort in the kettle. Subtracting mash dead space again would
    double-count it.
 
-4. **HLT losses are water-accounting terms, not extract losses.** They never
-   enter the wort mass balance (`Loss_preboil` / `Loss_postboil`), because HLT
-   liquor is water and carries no extract. They *do* enter the water budget:
-   `hlt_dead_space_l` and `hlt_transfer_loss_l` are subtracted in §4.4 to
-   compute deliverable sparge volume, and the post-top-up volume drives sparge
-   salt dosing (§4.5). The solver ignores them; the water-planning and
-   water-chemistry modules consume them.
+4. **HLT debt is water accounting, not an extract loss.** It never enters the
+   wort mass balance (`Loss_preboil` / `Loss_postboil`), because HLT liquor is
+   water and carries no extract. It *does* enter the water budget:
+   `hlt_dead_space_l` and `hlt_transfer_loss_l` are summed into `V_hlt_debt`
+   and subtracted in §4.4 to compute deliverable sparge volume, and the
+   post-top-up volume drives sparge salt dosing (§4.5). The solver ignores
+   them; the water-planning and water-chemistry modules consume them.
 
 5. **HLT top-up is a derived value, not a solver variable.** It is computed
-   from `hlt_starting_volume_l`, `V_strike_drawn`, and `hlt_coil_floor_l`, and
-   is displayed read-only. It does not participate in the 2-DOF boil solver.
-   It *is* consumed downstream, however: it feeds the deliverable sparge
-   volume (§4.4) and the sparge salt dosing volume (§4.5), so it must be
-   computed before either of those.
+   from `hlt_starting_volume_l`, `V_strike_drawn`, `hlt_coil_floor_l`,
+   `V_hlt_debt`, and `V_sparge_demand`, and is displayed read-only. It does
+   not participate in the 2-DOF boil solver. It *is* consumed downstream,
+   however: it feeds the deliverable sparge volume (§4.4) and the sparge salt
+   dosing volume (§4.5), so it must be computed before either of those.
 
 6. **Sparge salt dosing must use the post-top-up volume.** Any water-chemistry
    module must compute sparge salt quantities against
@@ -377,3 +432,9 @@ scalar, because HLT liquor is water and does not carry extract.
   computed silently and shown as a read-only derived value? (Deferred —
   computed and shown read-only, consistent with the solver's other derived
   outputs.)
+- ~~Is `hlt_transfer_loss_l` a recurring per-draw loss or a permanent debt?~~
+  **Resolved:** permanent debt. The transfer hose is disconnected *while full*
+  and reconnected with closed valves holding the liquid in place, so it never
+  empties between draws. `hlt_dead_space_l` and `hlt_transfer_loss_l` are
+  therefore the same category (permanently undeliverable) and are summed into
+  `V_hlt_debt`.
