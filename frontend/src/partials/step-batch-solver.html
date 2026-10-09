@@ -53,7 +53,7 @@
                             min="0.1"
                             class="form-input tabular-nums"
                             :value="volDisplay(manifest.v_ferm, 'step5_v_ferm')"
-                            @input="setVolDisplay(manifest, 'v_ferm', $event.target.value, 'step5_v_ferm')"
+                            @input="setVolDisplay(manifest, 'v_ferm', $event.target.value, 'step5_v_ferm'); markBatchSolverStale()"
                     />
                     <span class="form-hint">Cold packaged volume into the fermenter. The solver reverses kettle losses and boil-off to derive V_pre_boil.</span>
                 </div>
@@ -68,6 +68,7 @@
                             min="0.1"
                             class="form-input tabular-nums"
                             x-model.number="manifest.target_abv"
+                            @input="markBatchSolverStale()"
                     />
                     <span class="form-hint">Always expressed as a percentage (no unit toggle). Consumed by Phase 1.</span>
                 </div>
@@ -79,7 +80,7 @@
                     <label class="form-label">
                         <span>Constraint Topology</span>
                     </label>
-                    <select class="form-select text-sm" x-model="batchSolverTopology">
+                    <select class="form-select text-sm" x-model="batchSolverTopology" @change="markBatchSolverStale()">
                         <option value="r_l_to_g">{V_pre_boil, R_L:G} — fixed mash thickness</option>
                         <option value="runoff_ratio">{V_pre_boil, r} — equal-runnings optimized</option>
                     </select>
@@ -96,6 +97,7 @@
                             min="0.1"
                             class="form-input tabular-nums"
                             x-model.number="batchSolverIntensiveValue"
+                            @input="markBatchSolverStale()"
                     />
                     <span class="form-hint" x-text="batchSolverTopology === 'r_l_to_g' ? 'Strike water per kg of grist.' : 'V_run1 / V_run2; 1.0 is equal runnings.'"></span>
                 </div>
@@ -208,8 +210,8 @@
                     type="button"
                     @click="markStepComplete(5)"
                     class="btn btn-primary"
-                    :disabled="!batchSolverResult"
-                    :title="!batchSolverResult ? 'Solve the batch before finishing.' : ''"
+                    :disabled="!batchSolverResult || batchSolverStale"
+                    :title="!batchSolverResult ? 'Solve the batch before finishing.' : (batchSolverStale ? 'Inputs changed since the last solve. Solve again to finish.' : '')"
             >
                 Finish
             </button>

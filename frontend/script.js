@@ -1454,10 +1454,24 @@ Alpine.data('wizard', () => {
     batchSolverResult: null,
     batchSolverError: null,
     batchSolverLoading: false,
+    // Set to true whenever a solver input changes after a successful solve.
+    // The Finish button is gated on `batchSolverResult && !batchSolverStale`
+    // so the user cannot complete Step 5 with a displayed result that no
+    // longer reflects the current inputs.
+    batchSolverStale: false,
+
+    // Called by any Step 5 input handler. Marks the displayed result stale
+    // (if one exists) so the Finish gate re-evaluates.
+    markBatchSolverStale() {
+      if (this.batchSolverResult) {
+        this.batchSolverStale = true;
+      }
+    },
 
     async solveBatch() {
       this.batchSolverError = null;
       this.batchSolverResult = null;
+      this.batchSolverStale = false;
 
       const rows = Alpine.store('maltGrid').majorMalts;
       if (!rows || rows.length === 0) {
@@ -1525,6 +1539,7 @@ Alpine.data('wizard', () => {
 
         const result = await res.json();
         this.batchSolverResult = result;
+        this.batchSolverStale = false;
 
         // Write the derived anchors back to the manifest as a denormalized
         // cache. These are OUTPUTS, not inputs -- do not read them back into
