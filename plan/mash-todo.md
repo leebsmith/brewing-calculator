@@ -73,6 +73,52 @@ The Mash Card is **primarily an input card**, with an optional summary readout.
 
 Dough-in is the first rest. The solver pre-determines the dough-in step's **strike water volume** and **mash thickness**. The dough-in **target temperature** is a user input, and the **strike water temperature** is derived frontend-side from it via the metric formula below.
 
+#### 3a. Strike water temperature — definitive algorithm
+
+The strike water temperature is derived from the **Law of Conservation of Energy** (`Q_water_loss = Q_grain_gain`), factoring in the specific heat capacity of water versus malted barley.
+
+**Fundamental thermodynamic equation:**
+
+```
+T_strike = T_target + (C_grain / R) * (T_target - T_grain)
+```
+
+Where:
+
+- `T_strike` = required temperature of the strike water.
+- `T_target` = target temperature of the first mash step (dough-in).
+- `T_grain` = initial temperature of the dry grain storage.
+- `C_grain` = specific heat capacity of dry malted barley (standardized at `0.38 BTU/(lb·°F)` or `0.41 kcal/(kg·°C)`).
+- `R` = water-to-grist ratio (mash thickness).
+
+**Metric implementation (°C, L/kg) — the one we ship:**
+
+Because water density is `1 kg/L` and its specific heat is `1.0 kcal/(kg·°C)`, the constant `C_grain` evaluates to roughly `0.41`:
+
+```
+T_strike_c = T_target_c + (0.41 / R_L_per_kg) * (T_target_c - T_grain_c)
+```
+
+**Imperial implementation (°F, qt/lb) — reference only, NOT implemented:**
+
+Because the water-to-grist ratio is commonly expressed in quarts per pound and water density introduces a scale factor, the formula simplifies into the classic homebrewing constant:
+
+```
+T_strike_f = T_target_f + (0.2 / Ratio_qt_per_lb) * (T_target_f - T_grain_f)
+```
+
+Per Q3, the imperial form is **not** implemented separately. The metric formula runs, and the units store converts `T_strike_c` to °F at the display boundary. Implementing both would duplicate logic and risk drift.
+
+**Advanced equipment correction — deferred (see Q3):**
+
+The production-grade form adds an **Equipment Thermal Mass Offset** (`T_tun`) to account for heat absorbed by the physical walls of the mash tun (stainless kettle vs. insulated cooler):
+
+```
+T_strike_adjusted = T_strike + (C_tun * (T_target - T_tun_initial)) / Water_Mass
+```
+
+In most UI architectures this is simplified into an additive user preference (e.g. a flat `+1 °C` to `+3 °C` / `+2 °F` to `+5 °F` compensation for unheated stainless vessels). This is **out of scope for v1** per Q3. If added later, it is an additive offset applied after the base formula.
+
 **Strike water temperature formula** (frontend, in the Mash Card):
 
 The canonical storage unit is metric. The codebase stores temperatures in Celsius and the solver uses metric internally, so the formula the editor engineer implements is the metric one:
@@ -182,11 +228,11 @@ Three-part card, modeled on the grain bill editor:
 
 - **Q1 (Alpha-Amylase Rest range):** 68–72 °C (154–162 °F). Target: alpha-amylase. Objective: dextrinization — body and reduced fermentability.
 - **Q2 (Preset list):** Seven canonical rests (added Beta/Alpha-Amylase Rest, 62–72 °C, as the "single infusion" rest). Six named presets + Custom. Dough-in is the first rest (always present). Mash-out is a separate always-present step at 168–170 °F. Preset matrix recorded above. Selecting Custom clears all checkboxes; manually editing checks after a named preset auto-flips the dropdown to Custom.
-- **Q3 (Dough-in fields):** Dough-in is the first rest, marked with "→". The solver pre-determines the dough-in step's strike water volume and mash thickness. The dough-in target temperature is a user input; the strike water temperature is derived frontend-side from it via the metric formula `T_strike_c = T_target_c + (0.41 / mash_thickness_L_per_kg) * (T_target_c - T_grain_c)`. `T_grain_c` is a **batch-specific, user-editable field** on the Mash Card (stored as `manifest.mash.grain_temp_c`, default `20.0` °C, unit-aware). It is not sourced from the equipment profile. The `T_tun` equipment thermal-mass offset is deferred. Display conversion to °F is handled by the units store at the display boundary; no separate imperial formula is implemented.
+- **Q3 (Dough-in fields):** Dough-in is the first rest, marked with "→". The solver pre-determines the dough-in step's strike water volume and mash thickness. The dough-in target temperature is a user input; the strike water temperature is derived frontend-side from it via the metric formula `T_strike_c = T_target_c + (0.41 / mash_thickness_L_per_kg) * (T_target_c - T_grain_c)`. This is the metric form of the fundamental thermodynamic equation `T_strike = T_target + (C_grain / R) * (T_target - T_grain)`, where `C_grain = 0.41 kcal/(kg·°C)` for dry malted barley (equivalently `0.38 BTU/(lb·°F)`). The imperial form `T_strike_f = T_target_f + (0.2 / Ratio_qt_per_lb) * (T_target_f - T_grain_f)` is documented for reference only and is **not** implemented — the units store converts the metric result at the display boundary. `T_grain_c` is a **batch-specific, user-editable field** on the Mash Card (stored as `manifest.mash.grain_temp_c`, default `20.0` °C, unit-aware). It is not sourced from the equipment profile. The `T_tun` equipment thermal-mass offset (`T_strike_adjusted = T_strike + (C_tun * (T_target - T_tun_initial)) / Water_Mass`, simplified in UI to a flat additive preference) is deferred. Display conversion to °F is handled by the units store at the display boundary; no separate imperial formula is implemented.
 - **Q4 (Mash-out fields):** Target temp (constrained to 168–170 °F), duration, and a true-mash-out vs. hold flag.
 - **Q5 (Ordering & constraints):** Rests always displayed in ascending temperature order. Enforced, not arbitrary. No manual reordering — sort is derived from each rest's "use" temperature. Equal "use" temperatures are ordered by canonical rest order (Q2's numbered list); the sort is stable and deterministic.
 - **Q6 (Summary readout):** Per-rest rows (name with "→" on dough-in, use temp, duration, purpose) in ascending temperature order, plus derived strike water temp, grain temperature (user-editable input), and total mash time. Total water, first-runnings gravity, and mash pH deferred to solver/water-chemistry modules.
-- **Q6b (Limit of Attenuation):** Informational only; does not feed the solver (consistent with Q7). Computed frontend-side from the mash schedule using the Braukaiser model, in the same frontend module that derives strike water temp. Displayed as a read-only readout on the summary table.
+- **Q6b (Limit of Attenuation):** Informational only; does not feed the solver (consistent with Q7). Computed frontend-side from the mash schedule using the Braukaiser model, in the same frontend module that derives strike water temp. The Braukaiser model is defined for a single-infusion rest: `estimated_loa = base_attenuation - (target_temp_c - base_temp_c) * attenuation_drop_per_c`, clamped to `[60, 88]` percent, with `base_attenuation = 82.0`, `base_temp_c = 63.0`, and `attenuation_drop_per_c = 3.5`. For a step mash with multiple saccharification rests, each enabled saccharification rest is scored with this formula and the per-rest results are combined by duration into a single schedule-level estimate. The result is converted from percent to the manifest's canonical attenuation fraction. Displayed as a read-only readout on the summary table.
 - **Q7 (Relationship to the solver):** The solver pre-determines the dough-in step's strike water volume and mash thickness (see Q3). The dough-in target temperature is a user input, and the strike water temperature is derived frontend-side from it. The rest schedule itself does not feed `BatchSolverRequest`; rests affect fermentability and mash pH, not extract mass balance, and neither model exists yet. Schedule lives in the `manifest` and is used for display and strike-water-temp derivation. Promotion of the rest schedule into the solver request deferred until a fermentability/pH model is built.
 - **Q8 (Units):** Temperatures (°C ↔ °F) — including every rest's "use" temperature, the mash-out target temp, the derived strike water temperature, and the grain temperature input — strike volume (L ↔ gal), and mash thickness (L/kg ↔ qt/lb) toggle. Durations do not. **New `UNIT_REGISTRY` domain required: `mash_thickness`** (volume-per-mass ratio; the existing single-domain `toDisplay` signature cannot express it). Temperatures and strike volume map onto existing `temperature` and `volume` domains.
 - **Q9 (Validation):** Soft warn — inline amber note when a rest's "use" temperature is outside its recommended range. Non-blocking; clears when back in range.
