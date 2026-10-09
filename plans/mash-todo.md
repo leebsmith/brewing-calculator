@@ -85,8 +85,19 @@ Mash-out is a separate always-present step at 168–170 °F (75.5–76.7 °C). I
 ### 6. Summary readout
 What should it show? Candidates: total mash time, total water used (strike + infusions), strike water temp, predicted first-runnings gravity, mash pH estimate. Which matter?
 
-### 7. Relationship to the solver
-Does the Mash Card's data feed into `BatchSolverRequest` (i.e., does the backend solver need to know about rests), or is it purely a frontend-side schedule the solver ignores for now? **Biggest architectural fork.**
+### 7. Relationship to the solver — RESOLVED
+
+The Mash Card's rest schedule is **purely a frontend-side schedule** for now. It does **not** feed into `BatchSolverRequest`, and the backend solver does not need to know about rests.
+
+Rationale:
+
+- The current solver is a 2-DOF boil/extract solver. It consumes grain mass, extract potential, and the intensive constraints (`R_L:G` / `r`), and produces `V_strike`, `V1`, `V2`, and the boil cascade. Rest temperatures and durations do not enter any of those equations.
+- Rest temperatures affect *fermentability* (beta vs. alpha amylase balance) and *mash pH* (phytase/acid rest), not extract mass balance. Modeling those effects requires a separate fermentability model and a mash pH model, neither of which exists yet.
+- Adding rests to `BatchSolverRequest` now would force the backend to accept fields it cannot yet use, creating a schema that lies about what the solver actually computes.
+
+The Mash Card therefore stores its schedule in the `manifest` (see Q10) and the frontend uses it only for display and for computing the derived strike water temperature (Q6). When a fermentability or mash pH model is built, the schedule can be promoted into the solver request at that time.
+
+**Deferred:** promoting the rest schedule into `BatchSolverRequest` once a fermentability/pH model exists.
 
 ### 8. Units
 Which fields need unit toggling? Proposed: temperatures (°C ↔ °F), durations (min — probably no toggle), strike volume (L ↔ gal), mash thickness (L/kg ↔ qt/lb). Confirm and flag any new `UNIT_REGISTRY` domains needed.
