@@ -1326,7 +1326,6 @@ Alpine.data('wizard', () => {
       target_og: BREW_CONSTANTS.DEFAULT_TARGET_OG,
       preboil_volume_l: 0.0,
       preboil_gravity: 1.0,
-      postboil_volume_l: 0.0,
       postboil_gravity: 1.0,
       grain_bill: [],
       late_additions: [],
@@ -1601,11 +1600,10 @@ Alpine.data('wizard', () => {
         // the solver payload above.
         this.manifest.preboil_volume_l = result.v_pre_boil;
         this.manifest.preboil_gravity = result.cascade.sg_pre_boil;
-        this.manifest.postboil_volume_l = result.cascade.v_post_boil;
         this.manifest.postboil_gravity = result.sg_post_boil;
         // v_post_boil is the hot-side kettle balance output (V_pre_boil -
-        // delta_v_evap). Cached separately from postboil_volume_l so the
-        // Step 5 results table can display it via the step5_v_post_boil
+        // delta_v_evap). It is the canonical post-boil volume field; the
+        // Step 5 results table displays it via the step5_v_post_boil
         // FIELD_REGISTRY entry.
         this.manifest.v_post_boil = result.cascade.v_post_boil;
         // target_og is the post-boil gravity (the packaged OG at 20 C).
