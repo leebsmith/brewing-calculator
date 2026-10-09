@@ -1,0 +1,73 @@
+# Mash Card — Design Interview (No Code Until Complete)
+
+**Status:** In progress — do not write code until every question below is resolved.
+
+## Context
+
+The Mash Card is **primarily an input card**, with an optional summary readout.
+
+- Contains **two fixed bookend steps**: Dough-in and Mash-out (both configurable).
+- Contains **six optional rests** the user can toggle on/off:
+  1. Phytase / Acid Rest (35–52 °C)
+  2. Ferulic Acid Rest (43–45 °C)
+  3. Beta-Glucan Rest (45–50 °C)
+  4. Protein Rest (50–54 °C)
+  5. Beta-Amylase Rest / Sacch. Part 1 (62–65 °C)
+  6. Alpha-Amylase Rest / Sacch. Part 2 (range TBD — see Q1)
+- Each enabled rest exposes **editable temperature and duration**.
+- A **preset dropdown** (Belgian, German, etc.) can pre-populate a common combination of rests.
+
+### Reference: Common Rests
+
+| Rest Name | Temperature Range | Primary Target | Objective / Main Benefit |
+|---|---|---|---|
+| Phytase / Acid Rest | 35–52 °C (95–126 °F) | Phytase enzyme | Lowers mash pH naturally (rarely used today; replaced by modern brewing acids). |
+| Ferulic Acid Rest | 43–45 °C (109–113 °F) | Ferulic acid esterase | Releases ferulic acid to create the clove-like aroma in German Hefeweizens. |
+| Beta-Glucan Rest | 45–50 °C (113–122 °F) | Beta-glucanase | Breaks down gums in sticky, high-viscosity grains like oats, rye, and unmalted wheat. |
+| Protein Rest | 50–54 °C (122–129 °F) | Protease & Peptidase | Breaks down complex proteins to improve yeast health and reduce chill haze in under-modified malts. |
+| Beta-Amylase Rest (Saccharification Part 1) | 62–65 °C (144–149 °F) | Beta-amylase enzyme | Creates highly fermentable sugars (maltose) for a dry, clean-finishing beer with high alcohol conversion. |
+| Alpha-Amylase Rest (Saccharification Part 2) | TBD | TBD | TBD |
+
+## Open Questions
+
+### 1. Alpha-Amylase Rest range
+The original message was truncated. What is the temperature range and primary target for the Alpha-Amylase Rest? (Assumed 68–72 °C / 154–162 °F unless corrected.)
+
+### 2. Preset list
+Which mash-type presets go in the dropdown? Candidates: Single Infusion, German / Hochkurz, Belgian, British / Traditional, American, Wheat / Hefeweizen, Decoction. Which ones, and do we define their rest combinations now or defer?
+
+### 3. Dough-in step fields
+Proposed: strike water volume, strike water temperature, target dough-in temp, mash thickness (L/kg). Confirm or amend.
+
+### 4. Mash-out step fields
+Proposed: target temp (typically 75–78 °C), duration, and whether it's a true mash-out (infusion/decoction to raise temp) or just a hold. Confirm or amend.
+
+### 5. Ordering & constraints
+- Are rests always displayed in ascending temperature order, or in the order the user enabled them?
+- Can the user reorder?
+- Do we enforce monotonically increasing temperature across enabled rests, or allow arbitrary order?
+
+### 6. Summary readout
+What should it show? Candidates: total mash time, total water used (strike + infusions), strike water temp, predicted first-runnings gravity, mash pH estimate. Which matter?
+
+### 7. Relationship to the solver
+Does the Mash Card's data feed into `BatchSolverRequest` (i.e., does the backend solver need to know about rests), or is it purely a frontend-side schedule the solver ignores for now? **Biggest architectural fork.**
+
+### 8. Units
+Which fields need unit toggling? Proposed: temperatures (°C ↔ °F), durations (min — probably no toggle), strike volume (L ↔ gal), mash thickness (L/kg ↔ qt/lb). Confirm and flag any new `UNIT_REGISTRY` domains needed.
+
+### 9. Validation
+Should we warn (soft) or block (hard) when a rest temp is outside its recommended range? E.g., user sets Beta-Amylase to 70 °C — warn, block, or allow silently?
+
+### 10. Persistence
+Does the mash schedule live inside the `manifest` (part of the recipe, saved with the batch), or is it equipment-profile-scoped?
+
+### 11. UI shape
+Single card with all six rests listed as toggleable rows (like the malt grid), or a card with a "configure mash" drawer/modal? Given the malt grid already uses a drawer pattern, do we want consistency?
+
+### 12. Step sequencing in the wizard
+Where does the Mash Card sit relative to the existing steps? Before or after the grain bill? Before or after equipment selection?
+
+## Resolution Log
+
+_(Record answers here as we resolve each question. Do not begin implementation until all twelve are closed.)_
