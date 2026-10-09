@@ -17,11 +17,12 @@ equipment-level, so the invariant cannot be checked inside the solver (which
 is equipment-agnostic). It belongs at the API layer, where the equipment
 profile is resolved.
 
-- [ ] Add a validation gate in `solve_batch_endpoint` (or a Pydantic
-      `model_validator` on `BatchSolverRequest` if `max_hlt_volume_l` is
-      available there) that rejects `hlt_starting_volume_l > max_hlt_volume_l`
-      with a structured error code (e.g. `HLT_OVERFILLED`).
-- [ ] Add the corresponding `MSG_SOLVER_ERRORS` entry in
+- [x] Add a validation gate in `solve_batch_endpoint` that rejects
+      `hlt_starting_volume_l > max_hlt_volume_l` with a structured error code
+      (`HLT_OVERFILLED`). Implemented at the API layer (not a Pydantic
+      `model_validator`) so the structured `{"code", "message"}` detail reaches
+      the frontend's `solveBatch()` handler.
+- [x] Add the corresponding `MSG_SOLVER_ERRORS` entry in
       `frontend/constants.js`.
 
 ### 1.2 Salt dosing (deferred — tracked here for completeness)
@@ -118,5 +119,5 @@ the brewer to override it. Decide whether that is intended.
 - [x] `test_solve_batch_hlt_budget_is_consistent` (orchestration).
 - [x] `test_solve_batch_raises_hlt_too_small` (orchestration).
 - [x] HLT assertions in `test_solve_batch_anchors_are_physically_plausible`.
-- [ ] Add a test for the `hlt_starting_volume_l <= max_hlt_volume_l` invariant
-      once §1.1 is implemented.
+- [x] `test_solve_batch_rejects_hlt_overfilled` (endpoint) — asserts the
+      structured 422 with `code == "HLT_OVERFILLED"`.
