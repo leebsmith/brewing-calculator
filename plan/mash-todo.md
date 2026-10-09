@@ -104,3 +104,4 @@ Where does the Mash Card sit relative to the existing steps? Before or after the
 _(Record answers here as we resolve each question. Do not begin implementation until all twelve are closed.)_
 
 - **Q2 (Preset list):** Seven canonical rests (added Beta/Alpha-Amylase Rest, 62–72 °C, as the "single infusion" rest). Six named presets + Custom. Dough-in is the first rest (always present). Mash-out is a separate always-present step at 168–170 °F. Preset matrix recorded above.
+- **Q4 (Mash-out fields):** Target temp (constrained to 168–170 °F), duration, and a true-mash-out vs. hold flag.
