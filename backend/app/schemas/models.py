@@ -55,6 +55,26 @@ class BatchSolverRequest(BaseModel):
             "equipment profile's max_hlt_volume_l."
         ),
     )
+    hlt_dead_space_l: float = Field(
+        0.946,
+        ge=0,
+        description="Liquor trapped below the HLT drain port (L).",
+    )
+    hlt_transfer_loss_l: float = Field(
+        0.946,
+        ge=0,
+        description="Liquor permanently held in the HLT hose and pump (L).",
+    )
+    hlt_coil_floor_l: float = Field(
+        0.0,
+        ge=0,
+        description="Minimum HLT volume to submerge the HERMS coil (L).",
+    )
+    max_hlt_volume_l: float = Field(
+        ...,
+        gt=0,
+        description="Maximum HLT capacity (L).",
+    )
 
 
 class StageCascadeModel(BaseModel):
@@ -68,6 +88,13 @@ class StageCascadeModel(BaseModel):
     v_post_boil: float
 
 
+class HltWaterBudgetModel(BaseModel):
+    v_hlt_debt: float
+    v_hlt_after_strike: float
+    v_hlt_top_up: float
+    v_sparge_deliverable: float
+
+
 class BatchSolverResponse(BaseModel):
     sg_post_boil: float
     v_pre_boil: float
@@ -75,3 +102,4 @@ class BatchSolverResponse(BaseModel):
     m_grist: float
     cascade: StageCascadeModel
     max_achievable_abv: float
+    hlt: HltWaterBudgetModel

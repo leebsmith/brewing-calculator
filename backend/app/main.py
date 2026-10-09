@@ -13,6 +13,7 @@ from app.schemas.models import (
     BatchSolverRequest,
     BatchSolverResponse,
     StageCascadeModel,
+    HltWaterBudgetModel,
 )
 from app.schemas.templates import EquipmentProfile, EquipmentProfilesResponse
 from app.core.batch_solver import (
@@ -171,6 +172,10 @@ def solve_batch_endpoint(
         v_dead=request.v_dead,
         eta_conv=request.eta_conv,
         hlt_starting_volume_l=request.hlt_starting_volume_l,
+        hlt_dead_space_l=request.hlt_dead_space_l,
+        hlt_transfer_loss_l=request.hlt_transfer_loss_l,
+        hlt_coil_floor_l=request.hlt_coil_floor_l,
+        max_hlt_volume_l=request.max_hlt_volume_l,
         f_shrink=request.f_shrink,
     )
 
@@ -198,6 +203,12 @@ def solve_batch_endpoint(
             v_post_boil=result.cascade.v_post_boil,
         ),
         max_achievable_abv=result.max_achievable_abv,
+        hlt=HltWaterBudgetModel(
+            v_hlt_debt=result.hlt.v_hlt_debt,
+            v_hlt_after_strike=result.hlt.v_hlt_after_strike,
+            v_hlt_top_up=result.hlt.v_hlt_top_up,
+            v_sparge_deliverable=result.hlt.v_sparge_deliverable,
+        ),
     )
 
 

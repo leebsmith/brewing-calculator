@@ -872,6 +872,103 @@ def resolve_stage_cascade(
 
 
 # ---------------------------------------------------------------------------
+# HLT Water Budget
+# ---------------------------------------------------------------------------
+#
+# The HLT holds water, not wort, so this budget never enters the extract mass
+# balance. It constrains how much liquor the HLT can deliver as sparge water.
+# See ``plans/vessel-loss-model.md`` §4.4.
+
+
+@dataclass(frozen=True)
+class HltWaterBudget:
+    """Result of the HLT water budget.
+
+    Attributes:
+        v_hlt_debt: Permanently undeliverable HLT volume, in liters
+            (``hlt_dead_space_l + hlt_transfer_loss_l``).
+        v_hlt_after_strike: HLT volume after drawing the strike water, in
+            liters.
+        v_hlt_top_up: Liquor added to the HLT before the sparge, in liters.
+        v_sparge_deliverable: Sparge volume actually deliverable to the mash
+            tun, in liters.
+    """
+
+    v_hlt_debt: float
+    v_hlt_after_strike: float
+    v_hlt_top_up: float
+    v_sparge_deliverable: float
+
+
+def resolve_hlt_water_budget(
+    hlt_starting_volume_l: float,
+    v_strike_drawn: float,
+    v_sparge_demand: float,
+    hlt_dead_space_l: float,
+    hlt_transfer_loss_l: float,
+    hlt_coil_floor_l: float,
+    max_hlt_volume_l: float,
+) -> HltWaterBudget:
+    """Resolve the HLT water budget for a single batch-sparge brew day.
+
+    The HLT must satisfy two conditions before the sparge:
+
+    1. The coil must be covered: ``V_hlt_after_strike >= hlt_coil_floor_l``.
+    2. There must be enough deliverable liquor to sparge:
+       ``V_hlt_after_strike - V_hlt_debt >= V_sparge_demand``.
+
+    The top-up target is the larger of the two requirements:
+
+    ``V_hlt_required = V_sparge_demand + V_hlt_debt``
+    ``V_hlt_target   = max(hlt_coil_floor_l, V_hlt_required)``
+    ``V_hlt_top_up   = max(0, V_hlt_target - V_hlt_after_strike)``
+
+    Args:
+        hlt_starting_volume_l: Liquor in the HLT at brew-day start, in liters.
+        v_strike_drawn: Strike water drawn from the HLT, in liters.
+        v_sparge_demand: Sparge volume required by the cascade, in liters.
+        hlt_dead_space_l: Liquor trapped below the HLT drain port, in liters.
+        hlt_transfer_loss_l: Liquor held in the HLT hose and pump, in liters.
+        hlt_coil_floor_l: Minimum volume to submerge the HERMS coil, in liters.
+        max_hlt_volume_l: Maximum HLT capacity, in liters.
+
+    Returns:
+        A frozen ``HltWaterBudget`` with the derived HLT volumes.
+
+    Raises:
+        SolverValidationError: If the top-up target exceeds the HLT's maximum
+            capacity (``HLT_TOO_SMALL``).
+
+    See ``plans/vessel-loss-model.md`` §4.4.
+    """
+    v_hlt_debt = hlt_dead_space_l + hlt_transfer_loss_l
+    v_hlt_after_strike = hlt_starting_volume_l - v_strike_drawn
+
+    v_hlt_required = v_sparge_demand + v_hlt_debt
+    v_hlt_target = max(hlt_coil_floor_l, v_hlt_required)
+
+    if v_hlt_target > max_hlt_volume_l:
+        raise SolverValidationError(
+            "HLT_TOO_SMALL",
+            (
+                f"HLT top-up target ({v_hlt_target:.2f} L) exceeds the HLT's "
+                f"maximum capacity ({max_hlt_volume_l:.2f} L). The HLT cannot "
+                f"hold enough liquor to cover the coil and deliver the sparge."
+            ),
+        )
+
+    v_hlt_top_up = max(0.0, v_hlt_target - v_hlt_after_strike)
+    v_sparge_deliverable = v_hlt_after_strike + v_hlt_top_up - v_hlt_debt
+
+    return HltWaterBudget(
+        v_hlt_debt=v_hlt_debt,
+        v_hlt_after_strike=v_hlt_after_strike,
+        v_hlt_top_up=v_hlt_top_up,
+        v_sparge_deliverable=v_sparge_deliverable,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Orchestration: top-level solve_batch entry point
 # ---------------------------------------------------------------------------
 
@@ -899,6 +996,15 @@ class BatchSolverInput:
             it from the equipment profile's ``max_hlt_volume_l``. Consumed by
             the HLT water budget (top-up and deliverable sparge volume), not
             by the extract mass balance.
+        hlt_dead_space_l: Liquor trapped below the HLT drain port, in liters.
+            Permanently undeliverable debt (see ``plans/vessel-loss-model.md``
+            §4.4.1).
+        hlt_transfer_loss_l: Liquor permanently held in the HLT hose and pump,
+            in liters. Permanently undeliverable debt.
+        hlt_coil_floor_l: Minimum HLT volume required to submerge the HERMS
+            coil, in liters. A constraint, not a debt.
+        max_hlt_volume_l: Maximum HLT capacity, in liters. Used to gate the
+            top-up target (``HLT_TOO_SMALL``).
     """
 
     target_abv: float
@@ -913,6 +1019,10 @@ class BatchSolverInput:
     v_dead: float
     eta_conv: float
     hlt_starting_volume_l: float
+    hlt_dead_space_l: float
+    hlt_transfer_loss_l: float
+    hlt_coil_floor_l: float
+    max_hlt_volume_l: float
     f_shrink: float = F_SHRINK_DEFAULT
 
 
@@ -929,6 +1039,7 @@ class BatchSolverResult:
         max_achievable_abv: The Phase 1 bracket ceiling for the given
             attenuation, as a percentage. Echoed back so the frontend can
             bound the target-ABV input without duplicating the Cutaia model.
+        hlt: The HLT water budget (top-up and deliverable sparge volume).
     """
 
     sg_post_boil: float
@@ -937,6 +1048,7 @@ class BatchSolverResult:
     m_grist: float
     cascade: StageCascade
     max_achievable_abv: float
+    hlt: HltWaterBudget
 
 
 def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
@@ -1005,6 +1117,17 @@ def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
         delta_v_evap=inputs.delta_v_evap,
     )
 
+    # HLT water budget: derived from the cascade's sparge demand.
+    hlt = resolve_hlt_water_budget(
+        hlt_starting_volume_l=inputs.hlt_starting_volume_l,
+        v_strike_drawn=cascade.v_strike,
+        v_sparge_demand=cascade.v_sparge,
+        hlt_dead_space_l=inputs.hlt_dead_space_l,
+        hlt_transfer_loss_l=inputs.hlt_transfer_loss_l,
+        hlt_coil_floor_l=inputs.hlt_coil_floor_l,
+        max_hlt_volume_l=inputs.max_hlt_volume_l,
+    )
+
     return BatchSolverResult(
         sg_post_boil=sg_post_boil,
         v_pre_boil=reversal.v_pre_boil,
@@ -1012,4 +1135,5 @@ def solve_batch(inputs: BatchSolverInput) -> BatchSolverResult:
         m_grist=m_grist,
         cascade=cascade,
         max_achievable_abv=max_achievable_abv(inputs.apparent_attenuation),
+        hlt=hlt,
     )

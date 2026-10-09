@@ -31,6 +31,10 @@ def standard_inputs():
         v_dead=0.5,
         eta_conv=0.75,
         hlt_starting_volume_l=38.0,
+        hlt_dead_space_l=0.946,
+        hlt_transfer_loss_l=0.946,
+        hlt_coil_floor_l=12.0,
+        max_hlt_volume_l=38.0,
     )
 
 
@@ -83,3 +87,26 @@ def test_solve_batch_propagates_validation_errors(standard_inputs):
     with pytest.raises(SolverValidationError) as exc:
         solve_batch(inputs)
     assert exc.value.code == "INVALID_TARGET_ABV"
+
+
+def test_solve_batch_hlt_budget_is_consistent(standard_inputs):
+    result = solve_batch(standard_inputs)
+    hlt = result.hlt
+    assert hlt.v_hlt_debt == pytest.approx(
+        standard_inputs.hlt_dead_space_l + standard_inputs.hlt_transfer_loss_l
+    )
+    assert hlt.v_hlt_after_strike == pytest.approx(
+        standard_inputs.hlt_starting_volume_l - result.cascade.v_strike
+    )
+    # Deliverable sparge must cover the cascade's sparge demand.
+    assert hlt.v_sparge_deliverable >= result.cascade.v_sparge - 1e-6
+
+
+def test_solve_batch_raises_hlt_too_small(standard_inputs):
+    # A tiny HLT cannot hold enough liquor to cover the coil and sparge.
+    inputs = BatchSolverInput(
+        **{**standard_inputs.__dict__, "max_hlt_volume_l": 1.0}
+    )
+    with pytest.raises(SolverValidationError) as exc:
+        solve_batch(inputs)
+    assert exc.value.code == "HLT_TOO_SMALL"

@@ -41,6 +41,10 @@ def valid_payload():
         "eta_conv": 0.90,
         "f_shrink": 0.04,
         "hlt_starting_volume_l": 38.0,
+        "hlt_dead_space_l": 0.946,
+        "hlt_transfer_loss_l": 0.946,
+        "hlt_coil_floor_l": 12.0,
+        "max_hlt_volume_l": 38.0,
     }
 
 
@@ -63,6 +67,7 @@ def test_solve_batch_returns_200_with_full_response_shape(client, valid_payload)
         "m_grist",
         "cascade",
         "max_achievable_abv",
+        "hlt",
     }
 
     # Cascade shape, including the Stage 5 v_post_boil field.
@@ -93,6 +98,15 @@ def test_solve_batch_anchors_are_physically_plausible(client, valid_payload):
     )
     # Max achievable ABV is echoed back and exceeds the target.
     assert body["max_achievable_abv"] > valid_payload["target_abv"]
+    # HLT water budget is present and internally consistent.
+    hlt = body["hlt"]
+    assert hlt["v_hlt_debt"] == pytest.approx(
+        valid_payload["hlt_dead_space_l"] + valid_payload["hlt_transfer_loss_l"]
+    )
+    assert hlt["v_hlt_after_strike"] == pytest.approx(
+        valid_payload["hlt_starting_volume_l"] - body["cascade"]["v_strike"]
+    )
+    assert hlt["v_sparge_deliverable"] >= body["cascade"]["v_sparge"] - 1e-6
 
 
 def test_solve_batch_runoff_ratio_topology(client, valid_payload):
