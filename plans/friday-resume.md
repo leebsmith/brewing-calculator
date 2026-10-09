@@ -22,10 +22,22 @@ Test suites confirmed green:
 
 - `cd frontend && node --test tests/unitsStore.test.js` — 8 passed.
 - `cd frontend && node --test tests/maltGridStore.test.js` — 10 passed.
-- `cd backend && uv run pytest -v` — 114 passed.
+- `cd backend && uv run pytest -v` — 127 passed.
 
 The completed plan `plans/finish-frontend-solver-refactor.md` was deleted after
 this refactor landed; its content is preserved in git history.
+
+### Post-refactor follow-ups (all landed)
+
+- `9effc9e` — `refactor: reconcile ASBC coefficients between batch_solver and
+  utils`. `batch_solver.py`'s ASBC aliases now delegate to `utils.py`; the
+  duplicate coefficient copies were removed.
+- `ed3aabd` — `test: add integration tests for solve-batch endpoint`. Adds
+  `backend/tests/test_solve_batch_endpoint.py` (12 tests) exercising the full
+  HTTP stack.
+- `d8838f2` — `fix: replace deprecated HTTP_422_UNPROCESSABLE_ENTITY
+  constant`. Swaps to `HTTP_422_UNPROCESSABLE_CONTENT` in `main.py`, clearing
+  the four Starlette deprecation warnings.
 
 ## Next action
 
@@ -84,19 +96,21 @@ for that work. The list below is retained for the remaining deferred item
 Not blocking. Tracked here rather than in the work plan because none of these
 are required to make Step 5 functional.
 
-- **Stage 5: reconcile ASBC coefficients.** DONE. `batch_solver.py`'s
+- **Stage 5: reconcile ASBC coefficients.** DONE (`9effc9e`). `batch_solver.py`'s
   `asbc_plato_to_sg` / `asbc_sg_to_plato` now delegate to
   `app.core.utils.plato_to_sg` / `sg_to_plato`, which implement the official
   ASBC polynomials. The local coefficient copies were removed. A regression
   test (`test_asbc_aliases_match_utils_exactly`) pins the two modules together
   so the divergence cannot silently return.
 - **Integration test** hitting the real `/api/solve-batch` route with a mocked
-  auth dependency. DONE. `backend/tests/test_solve_batch_endpoint.py` exercises
-  the full HTTP stack via FastAPI's `TestClient`: happy path (both topologies),
-  auth gate, Pydantic request validation, and the `SolverValidationError` ->
-  HTTP 422 structured-detail mapping.
+  auth dependency. DONE (`ed3aabd`). `backend/tests/test_solve_batch_endpoint.py`
+  exercises the full HTTP stack via FastAPI's `TestClient`: happy path (both
+  topologies), auth gate, Pydantic request validation, and the
+  `SolverValidationError` -> HTTP 422 structured-detail mapping.
 - **HLT water accounting** — `plans/vessel-loss-model.md` §4.4/§4.5 describes
-  HLT top-up and sparge salt dosing, not yet implemented in the UI.
+  HLT top-up and sparge salt dosing, not yet implemented in the UI. This is the
+  only remaining deferred item. Scope is undecided: see the open question
+  below.
 - **Row Inspector field-name mismatch** — RESOLVED / no longer present. The
   inspector in `modal-grain-bill-editor.html` binds
   `x-model.number="row.color_lovibond"`, and every row-producing path in
@@ -104,3 +118,34 @@ are required to make Step 5 functional.
   `maltColorDisplay()`, `weightedSrm`) uses `color_lovibond`. There are zero
   occurrences of `color_srm` in the codebase, so the field names agree. This
   entry is retained only as a historical note; no action is required.
+
+## Open question: HLT water accounting scope
+
+`plans/vessel-loss-model.md` §4.4/§4.5 specifies HLT top-up and sparge salt
+dosing, but does not say where the UI lives. Three options:
+
+- **(A) New Step 6 ("Water Plan")** — full wizard step with its own partial,
+  `FIELD_REGISTRY` entries, and a `markStepComplete` gate. Requires bumping
+  `WIZARD_STEPS` to `[1,2,3,4,5,6]` and adding a `#step-panel-6` to
+  `index.html`.
+- **(B) Read-only panel inside Step 5** — appended to
+  `step-batch-solver.html` below the Stage Cascade table, gated on
+  `batchSolverResult`. No new step, no new registry entries beyond
+  display-only ones. `vessel-loss-model.md` §7 item 5 ("displayed read-only")
+  and §8 (deferring the explicit-field question) lean this way.
+- **(C) Standalone card outside the wizard** — a separate `x-data` component,
+  not part of the step sequence.
+
+The derived values are the same in all three cases:
+
+```
+V_hlt_after_strike = hlt_starting_volume_l - V_strike_drawn
+V_hlt_top_up       = max(0, hlt_coil_floor_l - V_hlt_after_strike)
+V_sparge           = V_hlt_after_strike + V_hlt_top_up
+                     - hlt_dead_space_l - hlt_transfer_loss_l
+V_sparge_salted    = V_hlt_after_strike + V_hlt_top_up
+```
+
+`V_strike_drawn` comes from `batchSolverResult.cascade.v_strike`, so the panel
+is only meaningful after Step 5 is solved. The solver itself ignores HLT
+losses entirely (`vessel-loss-model.md` §7 item 4).
