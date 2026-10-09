@@ -107,10 +107,24 @@ are required to make Step 5 functional.
   exercises the full HTTP stack via FastAPI's `TestClient`: happy path (both
   topologies), auth gate, Pydantic request validation, and the
   `SolverValidationError` -> HTTP 422 structured-detail mapping.
-- **HLT water accounting** — `plans/vessel-loss-model.md` §4.4/§4.5 describes
-  HLT top-up and sparge salt dosing, not yet implemented in the UI. This is the
-  only remaining deferred item. Scope is undecided: see the open question
-  below.
+- **HLT water accounting** — DONE. `plans/vessel-loss-model.md` §4.4 is
+  implemented end-to-end: `resolve_hlt_water_budget()` in
+  `backend/app/core/batch_solver.py` computes `v_hlt_debt`,
+  `v_hlt_after_strike`, `v_hlt_top_up`, and `v_sparge_deliverable`, with the
+  `HLT_TOO_SMALL` capacity gate. The five HLT fields are on
+  `BatchSolverRequest`, `HltWaterBudgetModel` is on `BatchSolverResponse`, and
+  the frontend sends all five in `solveBatch()`. The read-only "Water Plan"
+  panel lives inside Step 5 (`frontend/src/partials/step-batch-solver.html`),
+  gated on `batchSolverResult`, with rows for Strike Volume, Sparge Demand,
+  HLT Top-Up, Sparge Deliverable (with surplus footnote), and Total Water
+  Used. This is option (B) from the former open question below.
+- **Sparge salt dosing volume (`V_sparge_salted`)** — deferred. Per
+  `plans/vessel-loss-model.md` §4.5, sparge salt dosing must use
+  `V_sparge_salted = V_hlt_after_strike + V_hlt_top_up`, not the pre-strike
+  HLT volume. The solver correctly ignores this (§7 item 4); it is a
+  water-chemistry concern. The Water Plan panel does not yet surface a
+  `V_sparge_salted` row. This belongs with the water-chemistry module, not
+  with the solver, and stays deferred until that module is built.
 - **Row Inspector field-name mismatch** — RESOLVED / no longer present. The
   inspector in `modal-grain-bill-editor.html` binds
   `x-model.number="row.color_lovibond"`, and every row-producing path in
@@ -119,33 +133,12 @@ are required to make Step 5 functional.
   occurrences of `color_srm` in the codebase, so the field names agree. This
   entry is retained only as a historical note; no action is required.
 
-## Open question: HLT water accounting scope
+## Resolved: HLT water accounting scope
 
-`plans/vessel-loss-model.md` §4.4/§4.5 specifies HLT top-up and sparge salt
-dosing, but does not say where the UI lives. Three options:
-
-- **(A) New Step 6 ("Water Plan")** — full wizard step with its own partial,
-  `FIELD_REGISTRY` entries, and a `markStepComplete` gate. Requires bumping
-  `WIZARD_STEPS` to `[1,2,3,4,5,6]` and adding a `#step-panel-6` to
-  `index.html`.
-- **(B) Read-only panel inside Step 5** — appended to
-  `step-batch-solver.html` below the Stage Cascade table, gated on
-  `batchSolverResult`. No new step, no new registry entries beyond
-  display-only ones. `vessel-loss-model.md` §7 item 5 ("displayed read-only")
-  and §8 (deferring the explicit-field question) lean this way.
-- **(C) Standalone card outside the wizard** — a separate `x-data` component,
-  not part of the step sequence.
-
-The derived values are the same in all three cases:
-
-```
-V_hlt_after_strike = hlt_starting_volume_l - V_strike_drawn
-V_hlt_top_up       = max(0, hlt_coil_floor_l - V_hlt_after_strike)
-V_sparge           = V_hlt_after_strike + V_hlt_top_up
-                     - hlt_dead_space_l - hlt_transfer_loss_l
-V_sparge_salted    = V_hlt_after_strike + V_hlt_top_up
-```
-
-`V_strike_drawn` comes from `batchSolverResult.cascade.v_strike`, so the panel
-is only meaningful after Step 5 is solved. The solver itself ignores HLT
-losses entirely (`vessel-loss-model.md` §7 item 4).
+**Resolved:** option (B) — a read-only "Water Plan" panel inside Step 5,
+appended to `step-batch-solver.html` below the Stage Cascade table and gated
+on `batchSolverResult`. No new wizard step, no new `markStepComplete` gate.
+This matches `vessel-loss-model.md` §7 item 5 ("displayed read-only") and §8
+(deferring the explicit-field question). The panel is implemented and shipped;
+see the "HLT water accounting" entry in the Deferred / future work section
+above for the full inventory of what landed.
