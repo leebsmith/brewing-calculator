@@ -1,14 +1,14 @@
 # Finish Frontend Solver Refactor
 
-**Status:** PENDING — not started. The backend half of the refactor is
-complete and green; the frontend half has not been applied.
+**Status:** COMPLETE. All ten work items are implemented and both frontend
+test suites are green. The backend half was already complete.
 
-**Priority:** Blocking. Step 5 (Batch Sparge Solver) is currently
-non-functional. See "Why this is urgent" below.
+**Priority:** Resolved. Step 5 (Batch Sparge Solver) is functional
+end-to-end. See "Why this was urgent" below for the historical context.
 
-## Why this is urgent
+## Why this was urgent
 
-`frontend/script.js`'s `solveBatch()` reads `this.manifest.v_ferm` and
+`frontend/script.js`'s `solveBatch()` read `this.manifest.v_ferm` and
 `this.manifest.target_abv`, but neither field exists on the manifest literal.
 Both fall back to `BREW_CONSTANTS.DEFAULT_V_FERM_L` and
 `BREW_CONSTANTS.DEFAULT_TARGET_ABV`, which are also undefined in
@@ -34,9 +34,9 @@ code path is still running but is no longer the one `solveBatch()` calls.
 - Wizard steps are renumbered contiguously 1–5 (`frontend/index.html`,
   `frontend/constants.js` `WIZARD_STEPS`).
 
-## What remains (frontend)
+## What was done (frontend)
 
-Work items in dependency order. Each is a discrete, verifiable action.
+Work items in dependency order. Each was a discrete, verifiable action.
 
 ### 1. Add missing constants to `frontend/constants.js`
 
@@ -116,7 +116,9 @@ was never in `FIELD_REGISTRY` — a latent bug that becomes moot on removal.
 
 - `step2_*` FIELD_REGISTRY entries (`step2_preboil_volume_l`,
   `step2_postboil_volume_l`, `step2_target_volume_l`, `step2_preboil_gravity`,
-  `step2_postboil_gravity`) — the Batch Metadata step was retired.
+  `step2_postboil_gravity`) — the Batch Metadata step was retired. Confirmed:
+  `frontend/src/partials/step-batch-metadata.html` is a zero-byte orphan and
+  `frontend/index.html` no longer loads it.
 - `DEFAULT_TARGET_VOLUME_L` — replaced by `DEFAULT_V_FERM_L`.
 - `MSG_BATCH_NAME_REQUIRED`, `MSG_TARGET_VOLUME_REQUIRED`,
   `MSG_TARGET_OG_REQUIRED` — unused since Step 2 was retired.
