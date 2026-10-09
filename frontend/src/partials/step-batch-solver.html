@@ -216,6 +216,39 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <h3 class="modal-drawer-title" style="margin-top: var(--space-4);">Water Plan</h3>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <tbody>
+                            <tr>
+                                <td>Strike Volume</td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_strike, 'step5_v_strike') + ' ' + $store.units.getLabel('step5_v_strike')"></td>
+                            </tr>
+                            <tr>
+                                <td>Sparge Demand</td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.cascade.v_sparge, 'step5_v_sparge') + ' ' + $store.units.getLabel('step5_v_sparge')"></td>
+                            </tr>
+                            <tr>
+                                <td>HLT Top-Up</td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.hlt.v_hlt_top_up, 'step5_v_hlt_top_up') + ' ' + $store.units.getLabel('step5_v_hlt_top_up')"></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span>Sparge Deliverable</span>
+                                    <template x-if="hasSpargeSurplus">
+                                        <span class="text-xs text-muted" x-text="' (surplus: ' + spargeSurplusDisplay + ' ' + $store.units.getLabel('step5_v_sparge') + ')'"></span>
+                                    </template>
+                                </td>
+                                <td class="text-right tabular-nums" x-text="volDisplay(batchSolverResult.hlt.v_sparge_deliverable, 'step5_v_sparge_deliverable') + ' ' + $store.units.getLabel('step5_v_sparge_deliverable')"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Total Water Used</td>
+                                <td class="text-right tabular-nums font-bold" x-text="totalWaterUsedDisplay + ' ' + $store.units.getLabel('step5_v_sparge')"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </template>
         </div>
