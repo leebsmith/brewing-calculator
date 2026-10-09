@@ -1,6 +1,6 @@
-# Mash Card — Design Interview (No Code Until Complete)
+# Mash Card — Design Interview (Complete)
 
-**Status:** In progress — do not write code until every question below is resolved.
+**Status:** Complete — all twelve questions resolved. Implementation may proceed.
 
 ## Context
 
@@ -29,7 +29,7 @@ The Mash Card is **primarily an input card**, with an optional summary readout.
 | Alpha-Amylase Rest (Saccharification Part 2) | 68–72 °C (154–162 °F) | Alpha-amylase enzyme | Breaks down remaining starches into unfermentable dextrins, adding body and reducing fermentability. |
 | Beta/Alpha-Amylase Rest (Combined Saccharification) | 62–72 °C (144–162 °F) | Beta- and alpha-amylase enzymes | Simultaneous beta- and alpha-amylase activity for balanced everyday brewing. Used as the "single infusion" rest. |
 
-## Open Questions
+## Resolved Questions
 
 ### 1. Alpha-Amylase Rest range — RESOLVED
 
@@ -139,8 +139,6 @@ Three-part card, modeled on the grain bill editor:
 The Mash Card sits **after the grain bill and after equipment selection**. It depends on both: the grain bill supplies grain temperature and total grain mass (for strike-water-temp derivation), and the equipment profile supplies mash thickness defaults. Placing it earlier would force the user to backtrack.
 
 ## Resolution Log
-
-_All twelve questions resolved. Implementation may proceed._
 
 - **Q1 (Alpha-Amylase Rest range):** 68–72 °C (154–162 °F). Target: alpha-amylase. Objective: dextrinization — body and reduced fermentability.
 - **Q2 (Preset list):** Seven canonical rests (added Beta/Alpha-Amylase Rest, 62–72 °C, as the "single infusion" rest). Six named presets + Custom. Dough-in is the first rest (always present). Mash-out is a separate always-present step at 168–170 °F. Preset matrix recorded above. Selecting Custom clears all checkboxes; manually editing checks after a named preset auto-flips the dropdown to Custom.
