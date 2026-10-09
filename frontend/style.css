@@ -1013,8 +1013,7 @@ samp {
    visible during vertical scroll. */
 .data-table-container-scroll {
   max-height: 28rem;
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow: auto;
 }
 
 /* Header cells in fixed-layout tables must wrap rather than overflow into

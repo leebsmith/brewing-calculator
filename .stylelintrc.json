@@ -2,6 +2,9 @@
   "extends": [
     "stylelint-config-standard"
   ],
+  "ignoreFiles": [
+    "frontend/dist/**"
+  ],
   "plugins": [
     "stylelint-declaration-strict-value",
     "stylelint-value-no-unknown-custom-properties"
